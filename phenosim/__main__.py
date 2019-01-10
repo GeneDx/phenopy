@@ -33,12 +33,12 @@ def score(case_pheno_file, obo_file=None, pheno2genes_file=None):
             )
             exit(1)
 
+    # load phenotypes to genes associations
+    terms_to_genes, genes_to_terms, annotations_count = load_p2g(pheno2genes_file, logger=logger)
+
     # load/process phenotypes to genes and obo files if we don't have a processed network already
     hpo_network_file = os.path.join(data_directory, 'hpo_network.pickle')
     if not os.path.exists(hpo_network_file):
-        # load phenotypes to genes associations
-        terms_to_genes, annotations_count = load_p2g(pheno2genes_file, logger=logger)
-
         # load and process hpo network
         logger.info(f'Loading HPO OBO file: {obo_file}')
         hpo_network = load_obo(obo_file, logger=logger)

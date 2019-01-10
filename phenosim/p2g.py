@@ -33,4 +33,7 @@ def load(pheno2genes_file, logger=None):
         terms_to_genes[term] = annotations['gene_name'].tolist()
         count += len(terms_to_genes[term])
 
-    return terms_to_genes, count
+    # save map of genes to terms
+    genes_to_terms = {gene: annotations['hpo_id'].tolist() for gene, annotations in df.groupby('gene_name')}
+
+    return terms_to_genes, genes_to_terms, count
