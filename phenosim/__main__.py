@@ -51,6 +51,10 @@ def score(case_pheno_file, obo_file=None, pheno2genes_file=None):
 
     # score case hpo terms against all genes associated set of hpo terms
     logger.info(f'Scoring case HPO terms from file: {case_pheno_file}')
+    caseterms = []
+    with open(case_pheno_file) as f:
+        for line in f:
+            caseterms.append(line)
 
 
 def main():
