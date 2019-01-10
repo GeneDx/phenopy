@@ -1,0 +1,6 @@
+[hpo]
+# HPO OBO file from https://hpo.jax.org/app/download/ontology
+;obo_file = ~/.phenosim/data/hp.obo
+
+# HPO phenotypes to genes annotations file from https://hpo.jax.org/app/download/annotation
+;pheno2genes_file = ~/.phenosim/data/phenotype_to_genes.txt
