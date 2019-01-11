@@ -4,6 +4,26 @@ import networkx as nx
 import pandas as pd
 
 
+def find_lca(term_a, term_b, hpo_network):
+    """
+    Determine the lowest common ancestor for a two terms
+
+    :param term_a: HPO term A.
+    :param term_b: HPO term B.
+    :param hpo_network: HPO network.
+    :return: Least Common Ancestor for two terms, "HP:0000001"
+    """
+
+    # find common breadth-first-search predecessors
+    bfs_predecessors = []
+    for term in [term_a, term_b]:
+        bfs_predecessors.append({p[0] for p in nx.bfs_predecessors(hpo_network, term)})
+    common_bfs_predecessors = bfs_predecessors[0].intersection(bfs_predecessors[1])
+
+    # lca node
+    return max(common_bfs_predecessors, key=lambda n: hpo_network.node[n]['depth'])
+
+
 def calculate_gamma(term_a, term_b, term_lcafn, hpo_network):
     """
     TODO: Documentation?
@@ -49,20 +69,14 @@ def score_hpo_pair_hrss(term_a, term_b, hpo_network):
     # calculate beta_ic?
     beta_ic = ((mil_ic[0] - hpo_network.node[term_a]['ic']) + (mil_ic[1] - hpo_network.node[term_b]['ic'])) / 2.0
 
-    # find common bfs? predecessors
-    bfs_predecessors = []
-    for term in [term_a, term_b]:
-        bfs_predecessors.append({p[0] for p in nx.bfs_predecessors(hpo_network, term)})
-    common_bfs_predecessors = bfs_predecessors[0].intersection(bfs_predecessors[1])
-
-    # lcafn? node
-    lcafn_node = max(common_bfs_predecessors, key=lambda n: hpo_network.node[n]['depth'])
+    # find lowest common ancestors for the two terms
+    lca_node = find_lca(term_a, term_b, hpo_network)
 
     # calculate alpha_ic?
-    alpha_ic = hpo_network.node[lcafn_node]['ic']
+    alpha_ic = hpo_network.node[lca_node]['ic']
 
     # calculate gamma?
-    gamma = calculate_gamma(term_a, term_b, lcafn_node, hpo_network)
+    gamma = calculate_gamma(term_a, term_b, lca_node, hpo_network)
 
     return (1.0 / float(1.0 + gamma)) * (alpha_ic / float(alpha_ic + beta_ic))
 
