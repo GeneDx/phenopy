@@ -36,4 +36,7 @@ def load(pheno2genes_file, logger=None):
     # save map of genes to terms
     genes_to_terms = {gene: annotations['hpo_id'].tolist() for gene, annotations in df.groupby('gene_name')}
 
+    # dirty way to only score 10 genes, leaving commented until we put in a better way to do this
+    # genes_to_terms = {k: genes_to_terms[k] for k in list(genes_to_terms)[:10]}
+    #
     return terms_to_genes, genes_to_terms, count
