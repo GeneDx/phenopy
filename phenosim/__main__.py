@@ -7,6 +7,7 @@ from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
+from phenosim.scoreterms import score_case_genes
 
 
 def score(case_pheno_file, obo_file=None, pheno2genes_file=None):
@@ -49,13 +50,17 @@ def score(case_pheno_file, obo_file=None, pheno2genes_file=None):
     else:
         hpo_network = restore(hpo_network_file)
 
-    # score case hpo terms against all genes associated set of hpo terms
-    logger.info(f'Scoring case HPO terms from file: {case_pheno_file}')
+    # read case phenotype terms from file.
     caseterms = []
     with open(case_pheno_file) as f:
         for line in f:
             caseterms.append(line)
 
+
+    # score case hpo terms against all genes associated set of hpo terms
+    logger.info(f'Scoring case HPO terms from file: {case_pheno_file}')
+    results = score_case_genes(hpo_network, caseterms, genes_to_terms)
+    # write results to file or something, it's currently a dictionary
 
 def main():
     fire.Fire({
