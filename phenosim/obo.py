@@ -61,6 +61,15 @@ def process(hpo_network, terms_to_genes, annotations_count):
             annotations_count,
         )
 
+        # annotate with depth value
+        # hard-coding origin node for now
+        origin = 'HP:0000001'
+        hpo_network.node[node_id]['depth'] = nx.shortest_path_length(
+            hpo_network,
+            node_id,
+            origin
+        )
+
         # clean synonyms
         synonyms = []
         try:
