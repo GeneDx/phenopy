@@ -1,3 +1,5 @@
+import itertools
+
 import networkx as nx
 import pandas as pd
 
@@ -5,6 +7,8 @@ import pandas as pd
 class Scorer:
     def __init__(self, hpo_network):
         self.hpo_network = hpo_network
+
+        self.scores_cache = {}
 
     def find_lca(self, term_a, term_b):
         """
@@ -54,6 +58,9 @@ class Scorer:
         """
         term_a, term_b = terms
 
+        if f'{term_a}-{term_b}' in self.scores_cache:
+            return self.scores_cache[f'{term_a}-{term_b}']
+
         # find information content for the most informative leaf for each term
         mil_ic = []
         for term in [term_a, term_b]:
@@ -76,7 +83,13 @@ class Scorer:
         # calculate gamma
         gamma = self.calculate_gamma(term_a, term_b, lca_node)
 
-        return (1.0 / float(1.0 + gamma)) * (alpha_ic / float(alpha_ic + beta_ic))
+        # calculate the pairs score
+        pair_score = (1.0 / float(1.0 + gamma)) * (alpha_ic / float(alpha_ic + beta_ic))
+
+        # cache this pair score
+        self.scores_cache[f'{term_a}-{term_b}'] = pair_score
+
+        return pair_score
 
     def score(self, terms_a, terms_b):
         """
@@ -86,8 +99,13 @@ class Scorer:
         :param terms_b: List of HPO terms B.
         :return: `float` (comparison score)
         """
-        df = pd.DataFrame(index=pd.MultiIndex.from_product((terms_a, terms_b)))
-        df['score'] = df.index.map(self.score_hpo_pair_hrss).values
-        df = df.unstack()
+        term_pairs = itertools.product(terms_a, terms_b)
+
+        df = pd.DataFrame(
+            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair)) for pair in term_pairs],
+            columns=['a', 'b', 'score']
+        ).set_index(
+            ['a', 'b']
+        ).unstack()
 
         return round((df.max(axis=1).mean() + df.max(axis=0).mean()) / 2.0, 4)

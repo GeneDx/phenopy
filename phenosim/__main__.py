@@ -3,25 +3,12 @@ import os
 import sys
 
 from configparser import NoOptionError, NoSectionError
-from joblib import Parallel, delayed
 
 from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
 from phenosim.score import Scorer
-
-
-def score_case_vs_gene(case_terms, gene, hpo_network):
-    gene_name, gene_terms = gene
-
-    # filter out gene hpo terms not in the network
-    gene_terms = list(filter(lambda x: x in hpo_network.node, gene_terms))
-
-    # create instance the scorer class
-    scorer = Scorer(hpo_network)
-
-    return gene_name, scorer.score(case_terms, gene_terms)
 
 
 def score(case_hpo_file, obo_file=None, pheno2genes_file=None):
@@ -77,14 +64,20 @@ def score(case_hpo_file, obo_file=None, pheno2genes_file=None):
     # score and output case hpo terms against all genes associated set of hpo terms
     logger.info(f'Scoring case HPO terms from file: {case_hpo_file}')
 
-    # gene is a tuple of gene_name and gene_terms
-    gene_scores = Parallel(n_jobs=4)(delayed(score_case_vs_gene)(case_hpo, gene, hpo_network) for gene in genes_to_terms.items())
+    # create instance the scorer class
+    scorer = Scorer(hpo_network)
 
-    for gene in gene_scores:
-        gene_name, gene_score = gene
+    for gene in genes_to_terms.keys():
+        # filter out gene hpo terms not in the network
+        gene_hpo = list(filter(lambda x: x in hpo_network.node, genes_to_terms[gene]))
+
+        # skip genes with not hpo terms in the network
+        if not gene_hpo:
+            continue
+
         sys.stdout.write('\t'.join([
-            gene_name,
-            str(gene_score),
+            gene,
+            str(scorer.score(case_hpo, gene_hpo)),
         ]))
         sys.stdout.write('\n')
 

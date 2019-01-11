@@ -17,7 +17,6 @@ setup(
     },
     install_requires=[
         'fire',
-        'joblib',
         'networkx',
         'numpy',
         'obonet',

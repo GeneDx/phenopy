@@ -10,7 +10,6 @@ obonet = "*"
 fire = "*"
 pandas = "*"
 numpy = "*"
-joblib = "*"
 
 [requires]
 python_version = "3.7"
