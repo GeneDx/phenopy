@@ -53,16 +53,6 @@ def process(hpo_network, terms_to_genes, annotations_count):
         hpo_network.remove_nodes_from([hpo_id] + list(children))
 
     for node_id, data in hpo_network.nodes(data=True):
-        # clean synonyms
-        synonyms = []
-        try:
-            for synonym in data['synonym']:
-                synonyms.append(synonym)
-        except KeyError:
-            # continue if no synonyms
-            continue
-        hpo_network.node[node_id]['synonyms'] = re.findall(r'"(.*?)"', ','.join(synonyms))
-
         # annotate with information content value
         hpo_network.node[node_id]['ic'] = calculate_information_content(
             node_id,
@@ -70,6 +60,16 @@ def process(hpo_network, terms_to_genes, annotations_count):
             terms_to_genes,
             annotations_count,
         )
+
+        # clean synonyms
+        synonyms = []
+        try:
+            for synonym in data['synonym']:
+                synonyms.append(synonym)
+            hpo_network.node[node_id]['synonyms'] = re.findall(r'"(.*?)"', ','.join(synonyms))
+        except KeyError:
+            # pass if no synonym tags in the node
+            pass
 
     return hpo_network
 
