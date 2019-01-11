@@ -8,8 +8,7 @@ from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
-from phenosim.score import score as score_phenotypes
-from phenosim.scoreterms import score_case_genes
+from phenosim.score import Scorer
 
 
 def score(case_hpo_file, obo_file=None, pheno2genes_file=None):
@@ -64,6 +63,11 @@ def score(case_hpo_file, obo_file=None, pheno2genes_file=None):
 
     # score and output case hpo terms against all genes associated set of hpo terms
     logger.info(f'Scoring case HPO terms from file: {case_hpo_file}')
+
+    # create instance the scorer class
+    scorer = Scorer(hpo_network)
+
+    count = 1
     for gene, gene_hpo in genes_to_terms.items():
         # filter out gene hpo terms not in the network
         gene_hpo = list(filter(lambda x: x in hpo_network.node, gene_hpo))
@@ -74,14 +78,12 @@ def score(case_hpo_file, obo_file=None, pheno2genes_file=None):
 
         sys.stdout.write('\t'.join([
             gene,
-            str(score_phenotypes(case_hpo, gene_hpo, hpo_network)),
+            str(scorer.score(case_hpo, gene_hpo)),
         ]))
         sys.stdout.write('\n')
-
-    # # score case hpo terms against all genes associated set of hpo terms
-    # logger.info(f'Scoring case HPO terms from file: {case_hpo_file}')
-    # results = score_case_genes(hpo_network, case_hpo, genes_to_terms)
-    # # write results to file or something, it's currently a dictionary
+        count += 1
+        if count > 10:
+            break
 
 
 def main():

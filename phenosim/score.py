@@ -1,100 +1,93 @@
-import itertools
-
 import networkx as nx
 import pandas as pd
 
 
-def find_lca(term_a, term_b, hpo_network):
-    """
-    Determine the lowest common ancestor for a two terms
+class Scorer:
+    def __init__(self, hpo_network):
+        self.hpo_network = hpo_network
 
-    :param term_a: HPO term A.
-    :param term_b: HPO term B.
-    :param hpo_network: HPO network.
-    :return: Least Common Ancestor for two terms, "HP:0000001"
-    """
+    def find_lca(self, term_a, term_b):
+        """
+        Determine the lowest common ancestor for a two terms
 
-    # find common breadth-first-search predecessors
-    bfs_predecessors = []
-    for term in [term_a, term_b]:
-        bfs_predecessors.append({p[0] for p in nx.bfs_predecessors(hpo_network, term)})
-    common_bfs_predecessors = bfs_predecessors[0].intersection(bfs_predecessors[1])
+        :param term_a: HPO term A.
+        :param term_b: HPO term B.
+        :return: Least Common Ancestor for two terms, "HP:0000001"
+        """
 
-    # lca node
-    return max(common_bfs_predecessors, key=lambda n: hpo_network.node[n]['depth'])
+        # find common breadth-first-search predecessors
+        bfs_predecessors = []
+        for term in [term_a, term_b]:
+            bfs_predecessors.append({p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
+        common_bfs_predecessors = bfs_predecessors[0].intersection(bfs_predecessors[1])
 
+        # lca node
+        return max(common_bfs_predecessors, key=lambda n: self.hpo_network.node[n]['depth'])
 
-def calculate_gamma(term_a, term_b, term_lcafn, hpo_network):
-    """
-    TODO: Documentation?
+    def calculate_gamma(self, term_a, term_b, term_lca):
+        """
+        Calculate gamma term for the HRSS algorithm.
 
-    :param term_a: HPO term A.
-    :param term_b: HPO term B.
-    :param term_lcafn: TODO: Documentation?
-    :param hpo_network: HPO network.
-    :return: `float` (term pair comparison score)
-    """
-    # calculate gamma?
-    if term_a == term_b:
-        return 0
-    elif term_b in nx.ancestors(hpo_network, term_a):
-        if nx.shortest_path_length(hpo_network, term_b, term_a) == 1:
-            return 1
+        :param term_a: HPO term A.
+        :param term_b: HPO term B.
+        :param term_lca: Lowest common ancestor term.
+        :return: `float` (term pair comparison score)
+        """
+        # calculate gamma
+        if term_a == term_b:
+            return 0
+        elif term_b in nx.ancestors(self.hpo_network, term_a):
+            if nx.shortest_path_length(self.hpo_network, term_b, term_a) == 1:
+                return 1
 
-    a_to_lcafn = nx.shortest_path_length(hpo_network, term_a, term_lcafn)
-    b_to_lcafn = nx.shortest_path_length(hpo_network, term_b, term_lcafn)
+        a_to_lca = nx.shortest_path_length(self.hpo_network, term_a, term_lca)
+        b_to_lca = nx.shortest_path_length(self.hpo_network, term_b, term_lca)
 
-    return a_to_lcafn + b_to_lcafn
+        return a_to_lca + b_to_lca
 
+    def score_hpo_pair_hrss(self, terms):
+        """
+        Scores the comparison of a pair of terms, using Hybrid Relative Specificity Similarity (HRSS) algorithm.
 
-def score_hpo_pair_hrss(term_a, term_b, hpo_network):
-    """
-    Scores the comparison of a pair of terms, using HRSS algorithm.
-    
-    :param term_a: HPO term A.
-    :param term_b: HPO term B.
-    :param hpo_network: HPO network.
-    :return: `float` (term pair comparison score)
-    """
-    # find mils? information content for each term
-    mil_ic = []
-    for term in [term_a, term_b]:
-        if hpo_network.in_edges(term):
-            mil_ic.append(max(
-                {hpo_network.node[p]['ic'] for p in hpo_network.predecessors(term) if 'ic' in hpo_network.node[p]}
-            ))
-        else:
-            mil_ic.append(hpo_network.node[term]['ic'])
+        :param terms: HPO terms A and B.
+        :return: `float` (term pair comparison score)
+        """
+        term_a, term_b = terms
 
-    # calculate beta_ic?
-    beta_ic = ((mil_ic[0] - hpo_network.node[term_a]['ic']) + (mil_ic[1] - hpo_network.node[term_b]['ic'])) / 2.0
+        # find information content for the most informative leaf for each term
+        mil_ic = []
+        for term in [term_a, term_b]:
+            if self.hpo_network.in_edges(term):
+                mil_ic.append(max(
+                    {self.hpo_network.node[p]['ic'] for p in self.hpo_network.predecessors(term) if 'ic' in self.hpo_network.node[p]}
+                ))
+            else:
+                mil_ic.append(self.hpo_network.node[term]['ic'])
 
-    # find lowest common ancestors for the two terms
-    lca_node = find_lca(term_a, term_b, hpo_network)
+        # calculate beta_ic?
+        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic']) + (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
 
-    # calculate alpha_ic?
-    alpha_ic = hpo_network.node[lca_node]['ic']
+        # find lowest common ancestors for the two terms
+        lca_node = self.find_lca(term_a, term_b)
 
-    # calculate gamma?
-    gamma = calculate_gamma(term_a, term_b, lca_node, hpo_network)
+        # calculate alpha_ic
+        alpha_ic = self.hpo_network.node[lca_node]['ic']
 
-    return (1.0 / float(1.0 + gamma)) * (alpha_ic / float(alpha_ic + beta_ic))
+        # calculate gamma
+        gamma = self.calculate_gamma(term_a, term_b, lca_node)
 
+        return (1.0 / float(1.0 + gamma)) * (alpha_ic / float(alpha_ic + beta_ic))
 
-def score(terms_a, terms_b, hpo_network):
-    """
-    Scores the comparison of terms in list A to terms in list B.
+    def score(self, terms_a, terms_b):
+        """
+        Scores the comparison of terms in list A to terms in list B.
 
-    :param terms_a: List of HPO terms A.
-    :param terms_b: List of HPO terms B.
-    :param hpo_network: network to cache.
-    :return: `float` (comparison score)
-    """
-    df = pd.DataFrame(
-        [(a, b, score_hpo_pair_hrss(a, b, hpo_network)) for a, b in itertools.product(terms_a, terms_b)],
-        columns=['a', 'b', 'score']
-    ).set_index(
-        ['a', 'b']
-    ).unstack()
+        :param terms_a: List of HPO terms A.
+        :param terms_b: List of HPO terms B.
+        :return: `float` (comparison score)
+        """
+        df = pd.DataFrame(index=pd.MultiIndex.from_product((terms_a, terms_b)))
+        df['score'] = df.index.map(self.score_hpo_pair_hrss).values
+        df = df.unstack()
 
-    return round((df.max(axis=1).mean() + df.max(axis=0).mean()) / 2.0, 4)
+        return round((df.max(axis=1).mean() + df.max(axis=0).mean()) / 2.0, 4)
