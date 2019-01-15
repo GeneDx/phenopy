@@ -68,8 +68,7 @@ def score(case_hpo_file, obo_file=None, pheno2genes_file=None):
     scorer = Scorer(hpo_network)
 
     for gene in genes_to_terms.keys():
-        # filter out gene hpo terms not in the network
-        gene_hpo = list(filter(lambda x: x in hpo_network.node, genes_to_terms[gene]))
+        gene_hpo = genes_to_terms[gene]
 
         # skip genes with not hpo terms in the network
         if not gene_hpo:
