@@ -7,8 +7,8 @@ setup(
     packages=find_packages(),
     version=__version__,
     description='ACMG criteria variant annotator.',
-    author='Carlos Borroto',
-    author_email='<cborroto@genedx.com>',
+    author='Kevin Arvai <karvai@genedx.com>, Kyle Retterer <retterer@genedx.com>, Carlos Borroto <cborroto@genedx.com>',
+    author_email='<datascience@genedx.com>',
     license='',
     entry_points={
         'console_scripts': [
