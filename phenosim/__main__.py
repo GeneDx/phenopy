@@ -90,7 +90,7 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None):
         sys.stdout.write('\n')
 
 
-def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=4):
+def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
     """
     Scores the cross-product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
@@ -98,6 +98,7 @@ def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=4):
         pipe separated list of HPO identifier (HP:0000001).
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
+    :param threads: Multiprocessing threads to use [default: 1].
     """
     if obo_file is None:
         try:
