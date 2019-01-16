@@ -5,7 +5,7 @@ import os
 import sys
 
 from configparser import NoOptionError, NoSectionError
-from multiprocessing import Pool
+from multiprocessing import Manager, Pool
 
 from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
@@ -142,15 +142,10 @@ def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
     records_product = itertools.product(records.keys(), repeat=2)
 
     # iterate over each cross-product and score the pair of records
+    manager = Manager()
+    lock = manager.Lock()
     with Pool(threads) as p:
-        for scores in p.starmap(scorer.score_pairs, [(records, records_product, i, threads) for i in range(threads)]):
-            for pair, score in scores:
-                record_a, record_b = pair
-                sys.stdout.write('\t'.join([
-                    f'{record_a}-{record_b}',
-                    str(score),
-                ]))
-                sys.stdout.write('\n')
+        p.starmap(scorer.score_pairs, [(records, records_product, lock, i, threads) for i in range(threads)])
 
 
 def main():
