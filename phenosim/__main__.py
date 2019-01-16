@@ -5,6 +5,7 @@ import os
 import sys
 
 from configparser import NoOptionError, NoSectionError
+from multiprocessing import Pool
 
 from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
@@ -89,7 +90,7 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None):
         sys.stdout.write('\n')
 
 
-def score_all(records_file, obo_file=None, pheno2genes_file=None):
+def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=4):
     """
     Scores the cross-product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
@@ -136,13 +137,19 @@ def score_all(records_file, obo_file=None, pheno2genes_file=None):
     # create instance the scorer class
     scorer = Scorer(hpo_network)
 
+    # create records product generator
+    records_product = itertools.product(records.keys(), repeat=2)
+
     # iterate over each cross-product and score the pair of records
-    for record_a, record_b in itertools.product(records, repeat=2):
-        sys.stdout.write('\t'.join([
-            f'{record_a}-{record_b}',
-            str(scorer.score(records[record_a], records[record_b])),
-        ]))
-        sys.stdout.write('\n')
+    with Pool(threads) as p:
+        for scores in p.starmap(scorer.score_pairs, [(records, records_product, i, threads) for i in range(threads)]):
+            for pair, score in scores:
+                record_a, record_b = pair
+                sys.stdout.write('\t'.join([
+                    f'{record_a}-{record_b}',
+                    str(score),
+                ]))
+                sys.stdout.write('\n')
 
 
 def main():

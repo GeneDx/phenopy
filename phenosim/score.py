@@ -116,3 +116,21 @@ class Scorer:
         ).unstack()
 
         return round((df.max(axis=1).mean() + df.max(axis=0).mean()) / 2.0, 4)
+
+    def score_pairs(self, records, record_pairs, thread=0, number_threads=1):
+        """
+        Score list pair of records.
+
+        :param records: Records dictionary.
+        :param record_pairs: List of record pairs to score.
+        :param thread: Thread index for multiprocessing.
+        :param number_threads: Total number of threads for multiprocessing.
+        :return: `list` of `tuples`
+        """
+        scores = []
+
+        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
+        for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
+            scores.append(((record_a, record_b), self.score(records[record_a], records[record_b])))
+
+        return scores
