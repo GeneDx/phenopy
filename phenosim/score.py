@@ -64,7 +64,7 @@ class Scorer:
         elif f'{term_b}-{term_a}' in self.scores_cache:
             return self.scores_cache[f'{term_b}-{term_a}']
 
-	    # find information content for the most informative leaf for each term
+        # find information content for the most informative leaf for each term
         mil_ic = []
         for term in [term_a, term_b]:
             if self.hpo_network.in_edges(term):
