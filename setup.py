@@ -12,7 +12,7 @@ setup(
     license='',
     entry_points={
         'console_scripts': [
-            '%s = acmg_annotator.__main__:main' % __project__,
+            f'{__project__} = {__project__}.__main__:main',
         ]
     },
     install_requires=[
