@@ -12,7 +12,8 @@ from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
 from phenosim.score import Scorer
 
-def _load_hpo_network(obo_file):
+
+def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
     """
     Load and process phenotypes to genes and obo files if we don't have a processed network already.
     """
@@ -62,11 +63,11 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None):
         logger.critical(e)
         exit(1)
 
-    # load hpo network
-    hpo_network = _load_hpo_network(obo_file)
-
     # load phenotypes to genes associations
     terms_to_genes, genes_to_terms, annotations_count = load_p2g(pheno2genes_file, logger=logger)
+
+    # load hpo network
+    hpo_network = _load_hpo_network(obo_file, terms_to_genes, annotations_count)
 
     # score and output case hpo terms against all genes associated set of hpo terms
     logger.info(f'Scoring case HPO terms from file: {case_hpo_file}')
@@ -88,19 +89,29 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None):
         sys.stdout.write('\n')
 
 
-def score_all(records_file, obo_file=None):
+def score_all(records_file, obo_file=None, pheno2genes_file=None):
     """
     Scores the cross-product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
     :param records_file: One record per line, tab delimited. First column record unique identifier, second column
         pipe separated list of HPO identifier (HP:0000001).
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
+    :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     """
     if obo_file is None:
         try:
             obo_file = config.get('hpo', 'obo_file')
         except (NoSectionError, NoOptionError):
             logger.critical('No HPO OBO file provided and no "hpo:obo_file" found in the configuration file.')
+            exit(1)
+
+    if pheno2genes_file is None:
+        try:
+            pheno2genes_file = config.get('hpo', 'pheno2genes_file')
+        except (NoSectionError, NoOptionError):
+            logger.critical(
+                'No HPO pheno2genes_file file provided and no "hpo:pheno2genes_file" found in the configuration file.'
+            )
             exit(1)
 
     try:
@@ -116,8 +127,11 @@ def score_all(records_file, obo_file=None):
         logger.critical(e)
         exit(1)
 
+    # load phenotypes to genes associations
+    terms_to_genes, _, annotations_count = load_p2g(pheno2genes_file, logger=logger)
+
     # load hpo network
-    hpo_network = _load_hpo_network(obo_file)
+    hpo_network = _load_hpo_network(obo_file, terms_to_genes, annotations_count)
 
     # create instance the scorer class
     scorer = Scorer(hpo_network)
