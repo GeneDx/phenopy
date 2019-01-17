@@ -2,7 +2,6 @@ import csv
 import fire
 import itertools
 import os
-import sys
 
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
@@ -33,7 +32,7 @@ def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
     return hpo_network
 
 
-def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None):
+def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None, threads=1):
     """
     Scores a case HPO terms against all genes associated HPO.
 
@@ -76,18 +75,26 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None):
     # create instance the scorer class
     scorer = Scorer(hpo_network)
 
-    for gene in genes_to_terms.keys():
-        gene_hpo = genes_to_terms[gene]
+    case_to_genes_product = itertools.product(itertools.repeat(case_hpo), genes_to_terms)
 
-        # skip genes with not hpo terms in the network
-        if not gene_hpo:
-            continue
+    # iterate over each cross-product and score the pair of records
+    manager = Manager()
+    lock = manager.Lock()
+    with Pool(threads) as p:
+        p.starmap(scorer.score_pairs, [(genes_to_terms, case_to_genes_product, lock, i, threads) for i in range(threads)])
 
-        sys.stdout.write('\t'.join([
-            gene,
-            str(scorer.score(case_hpo, gene_hpo)),
-        ]))
-        sys.stdout.write('\n')
+    # # for gene in genes_to_terms.keys():
+    # #     gene_hpo = genes_to_terms[gene]
+    # #
+    # #     # skip genes with not hpo terms in the network
+    # #     if not gene_hpo:
+    # #         continue
+    #
+    #     sys.stdout.write('\t'.join([
+    #         gene,
+    #         str(scorer.score(case_hpo, gene_hpo)),
+    #     ]))
+    #     sys.stdout.write('\n')
 
 
 def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
