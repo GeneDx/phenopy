@@ -75,26 +75,13 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None, thr
     # create instance the scorer class
     scorer = Scorer(hpo_network)
 
-    case_to_genes_product = itertools.product(itertools.repeat(case_hpo), genes_to_terms)
-
+    # add the case terms to the genes_to_terms dict
+    genes_to_terms['case'] = case_hpo
     # iterate over each cross-product and score the pair of records
     manager = Manager()
     lock = manager.Lock()
     with Pool(threads) as p:
-        p.starmap(scorer.score_pairs, [(genes_to_terms, case_to_genes_product, lock, i, threads) for i in range(threads)])
-
-    # # for gene in genes_to_terms.keys():
-    # #     gene_hpo = genes_to_terms[gene]
-    # #
-    # #     # skip genes with not hpo terms in the network
-    # #     if not gene_hpo:
-    # #         continue
-    #
-    #     sys.stdout.write('\t'.join([
-    #         gene,
-    #         str(scorer.score(case_hpo, gene_hpo)),
-    #     ]))
-    #     sys.stdout.write('\n')
+        p.starmap(scorer.score_pairs, [(genes_to_terms, [('case', gene) for gene in genes_to_terms], lock, i, threads) for i in range(threads)])
 
 
 def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
