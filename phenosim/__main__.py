@@ -86,7 +86,7 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None, thr
 
 def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
     """
-    Scores the cross-product of HPO terms from a list of unique records (cases, genes, diseases, etc).
+    Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
     :param records_file: One record per line, tab delimited. First column record unique identifier, second column
         pipe separated list of HPO identifier (HP:0000001).
@@ -111,7 +111,7 @@ def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
             exit(1)
 
     try:
-        # read records_file and convert to DataFrame #record_id | hpo_ids
+        # read records_file
         with open(records_file) as records_fh:
             reader = csv.reader(records_fh, delimiter='\t')
             records = {}
@@ -128,6 +128,8 @@ def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
 
     # load hpo network
     hpo_network = _load_hpo_network(obo_file, terms_to_genes, annotations_count)
+
+    logger.info(f'Scoring product of records from file: {records_file}')
 
     # create instance the scorer class
     scorer = Scorer(hpo_network)
