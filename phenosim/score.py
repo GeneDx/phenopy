@@ -139,4 +139,5 @@ class Scorer:
                 ]))
                 sys.stdout.write('\n')
             finally:
+                sys.stdout.flush()
                 lock.release()
