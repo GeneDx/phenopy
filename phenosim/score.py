@@ -19,15 +19,19 @@ class Scorer:
         :param term_b: HPO term B.
         :return: Least Common Ancestor for two terms, "HP:0000001"
         """
-
+        # if either term is HP:0000001 return it
+        if any(term == 'HP:0000001' for term in [term_a, term_b]):
+            return 'HP:0000001'
         # find common breadth-first-search predecessors
-        bfs_predecessors = []
-        for term in [term_a, term_b]:
-            bfs_predecessors.append({p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
-        common_bfs_predecessors = bfs_predecessors[0].intersection(bfs_predecessors[1])
-
-        # lca node
-        return max(common_bfs_predecessors, key=lambda n: self.hpo_network.node[n]['depth'])
+        try:
+            bfs_predecessors = []
+            for term in [term_a, term_b]:
+                bfs_predecessors.append({p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
+            common_bfs_predecessors = bfs_predecessors[0].intersection(bfs_predecessors[1])
+            # lca node
+            return max(common_bfs_predecessors, key=lambda n: self.hpo_network.node[n]['depth'])
+        except ValueError:
+            raise ValueError(term_a, term_b)
 
     def calculate_gamma(self, term_a, term_b, term_lca):
         """
@@ -103,9 +107,13 @@ class Scorer:
         :param terms_b: List of HPO terms B.
         :return: `float` (comparison score)
         """
-        # filter out hpo terms not in the network
-        terms_a = list(filter(lambda x: x in self.hpo_network.node, terms_a))
-        terms_b = list(filter(lambda x: x in self.hpo_network.node, terms_b))
+        # filter out hpo terms not in the network and unique them
+        terms_a = set(filter(lambda x: x in self.hpo_network.node, terms_a))
+        terms_b = set(filter(lambda x: x in self.hpo_network.node, terms_b))
+
+        # if either set is empty return 0.0
+        if not terms_a or not terms_b:
+            return 0.0
 
         term_pairs = itertools.product(terms_a, terms_b)
 
