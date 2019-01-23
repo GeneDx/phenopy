@@ -3,9 +3,12 @@ import fire
 import itertools
 import os
 
+import pandas as pd
+
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
 
+from phenosim.cluster import cluster_phenosim
 from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
@@ -44,7 +47,8 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None, thr
         try:
             obo_file = config.get('hpo', 'obo_file')
         except (NoSectionError, NoOptionError):
-            logger.critical('No HPO OBO file provided and no "hpo:obo_file" found in the configuration file.')
+            logger.critical(
+                'No HPO OBO file provided and no "hpo:obo_file" found in the configuration file.')
             exit(1)
 
     if pheno2genes_file is None:
@@ -81,7 +85,8 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None, thr
     manager = Manager()
     lock = manager.Lock()
     with Pool(threads) as p:
-        p.starmap(scorer.score_pairs, [(genes_to_terms, [('case', gene) for gene in genes_to_terms], lock, i, threads) for i in range(threads)])
+        p.starmap(scorer.score_pairs, [(genes_to_terms, [('case', gene)
+                  for gene in genes_to_terms], lock, i, threads) for i in range(threads)])
 
 
 def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
@@ -98,7 +103,8 @@ def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
         try:
             obo_file = config.get('hpo', 'obo_file')
         except (NoSectionError, NoOptionError):
-            logger.critical('No HPO OBO file provided and no "hpo:obo_file" found in the configuration file.')
+            logger.critical(
+                'No HPO OBO file provided and no "hpo:obo_file" found in the configuration file.')
             exit(1)
 
     if pheno2genes_file is None:
@@ -141,15 +147,52 @@ def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
     manager = Manager()
     lock = manager.Lock()
     with Pool(threads) as p:
-        p.starmap(scorer.score_pairs, [(records, records_product, lock, i, threads) for i in range(threads)])
+        p.starmap(scorer.score_pairs, [(records, records_product,
+                  lock, i, threads) for i in range(threads)])
+
+
+def cluster_all(score_all_result_file=None, max_clusters=2):
+    """Runs clustering algorithms in parallel on the output of phenosim `score-all`
+    :param score_all_result_file: path to file
+    :type score_all_result_file: str
+    :param max_clusters: The maximum number of clusters to output silhouette score for.
+    :type max_clusters: int
+    """
+
+    if max_clusters < 2:
+        logger.critical('max_clusters must be >=2')
+        exit(1)
+
+    METHODS = {"complete", "average", "single"}
+    method_k_combos = itertools.product(METHODS, range(2, max_clusters+1))
+
+    try:
+        # read phenosim_result_file
+        df = pd.read_csv(score_all_result_file,
+                         sep='\t',
+                         header=None,
+                         names=['id_pairs', 'score'])
+    except (FileNotFoundError, PermissionError) as e:
+        logger.critical(e)
+        exit(1)
+
+    # process the DataFrame
+    df['id_pairs'] = df['id_pairs'].str.split('-')
+    df[['record1', 'record2']] = pd.DataFrame(df['id_pairs'].values.tolist(), index=df.index)
+    df.drop('id_pairs', axis=1, inplace=True)
+    df = df.set_index(['record1', 'record2']).unstack()
+    X = df.values
+
+    for method, k in method_k_combos:
+        cluster_phenosim(X, method, k)
 
 
 def main():
     fire.Fire({
         'score': score_case_to_genes,
         'score-all': score_all,
+        'cluster-results': cluster_all,
     })
-
 
 if __name__ == '__main__':
     main()
