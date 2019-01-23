@@ -8,7 +8,7 @@ import pandas as pd
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
 
-from phenosim.cluster import cluster_phenosim
+from phenosim.cluster import clustering_grid_search
 from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
@@ -151,7 +151,7 @@ def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
                   lock, i, threads) for i in range(threads)])
 
 
-def cluster_all(score_all_result_file=None, max_clusters=2):
+def cluster_grid_search(score_all_result_file, max_clusters=2):
     """Runs clustering algorithms in parallel on the output of phenosim `score-all`
     :param score_all_result_file: path to file
     :type score_all_result_file: str
@@ -184,14 +184,14 @@ def cluster_all(score_all_result_file=None, max_clusters=2):
     X = df.values
 
     for method, k in method_k_combos:
-        cluster_phenosim(X, method, k)
+        clustering_grid_search(X, method, k)
 
 
 def main():
     fire.Fire({
         'score': score_case_to_genes,
         'score-all': score_all,
-        'cluster-results': cluster_all,
+        'cluster-grid-search': cluster_grid_search,
     })
 
 if __name__ == '__main__':

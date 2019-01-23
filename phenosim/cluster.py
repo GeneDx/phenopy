@@ -4,7 +4,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 
 
-def cluster_phenosim(X, method, k):
+def clustering_grid_search(X, method, k):
     """cluster and provide metrics on a phenosim result file.
     """
     clusterer = AgglomerativeClustering(n_clusters=k, linkage=method, affinity='precomputed')
