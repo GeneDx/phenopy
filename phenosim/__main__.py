@@ -35,11 +35,14 @@ def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
     return hpo_network
 
 
-def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None, threads=1):
+def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1):
     """
     Scores a case HPO terms against all genes associated HPO.
 
-    :param case_hpo_file: File with case HPO terms, one per line.
+    :param query_hpo_file: File with case HPO terms, one per line.
+    :param records_file: One record per line, tab delimited. First column record unique identifier, second column
+        pipe separated list of HPO identifier (HP:0000001).
+    :param query_name: Unique identifier for
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     """
@@ -61,7 +64,7 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None, thr
             exit(1)
 
     try:
-        with open(case_hpo_file, 'r') as case_fh:
+        with open(query_hpo_file, 'r') as case_fh:
             case_hpo = case_fh.read().splitlines()
     except (FileNotFoundError, PermissionError) as e:
         logger.critical(e)
@@ -73,23 +76,46 @@ def score_case_to_genes(case_hpo_file, obo_file=None, pheno2genes_file=None, thr
     # load hpo network
     hpo_network = _load_hpo_network(obo_file, terms_to_genes, annotations_count)
 
-    # score and output case hpo terms against all genes associated set of hpo terms
-    logger.info(f'Scoring case HPO terms from file: {case_hpo_file}')
-
     # create instance the scorer class
     scorer = Scorer(hpo_network)
 
-    # add the case terms to the genes_to_terms dict
-    genes_to_terms['case'] = case_hpo
-    # iterate over each cross-product and score the pair of records
+    # multiprocessing objects
     manager = Manager()
     lock = manager.Lock()
-    with Pool(threads) as p:
-        p.starmap(scorer.score_pairs, [(genes_to_terms, [('case', gene)
-                  for gene in genes_to_terms], lock, i, threads) for i in range(threads)])
+
+    if records_file:
+        # score and output case hpo terms against all genes associated set of hpo terms
+        logger.info(f'Scoring case HPO terms from file: {query_hpo_file} against cases in: {records_file}')
+        try:
+            # read records_file
+            with open(records_file) as records_fh:
+                reader = csv.reader(records_fh, delimiter='\t')
+                records = {}
+                for line in reader:
+                    if line[0].startswith('#'):
+                        continue
+                    records[line[0]] = line[1].split('|')
+        except (FileNotFoundError, PermissionError) as e:
+            logger.critical(e)
+            exit(1)
+
+        # include the case-to-iteslf
+        records[query_name] = case_hpo
+        with Pool(threads) as p:
+            p.starmap(scorer.score_pairs, [(records, [(query_name, record) for record in records], lock, i, threads) for i in range(threads)])
+
+    else:
+        # score and output case hpo terms against all genes associated set of hpo terms
+        logger.info(f'Scoring case HPO terms from file: {query_hpo_file}')
+
+        # add the case terms to the genes_to_terms dict
+        genes_to_terms[query_name] = case_hpo
+        # iterate over each cross-product and score the pair of records
+        with Pool(threads) as p:
+            p.starmap(scorer.score_pairs, [(genes_to_terms, [(query_name, gene) for gene in genes_to_terms], lock, i, threads) for i in range(threads)])
 
 
-def score_all(records_file, obo_file=None, pheno2genes_file=None, threads=1):
+def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
@@ -189,10 +215,10 @@ def cluster_grid_search(score_all_result_file, max_clusters=2):
 
 def main():
     fire.Fire({
-        'score': score_case_to_genes,
-        'score-all': score_all,
-        'cluster-grid-search': cluster_grid_search,
+        'score': score,
+        'score-product': score_product,
     })
+
 
 if __name__ == '__main__':
     main()
