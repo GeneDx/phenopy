@@ -208,31 +208,28 @@ def cluster_grid_search(score_all_result_file, max_clusters=2):
     df.drop('id_pairs', axis=1, inplace=True)
     df = df.set_index(['record1', 'record2']).unstack()
     X = df.values
-    samples = df.index.tolist()
 
-    for method, k in linkage_k_combos:
-        clustering_grid_search(X, method, k)
+    for link_method, k in linkage_k_combos:
+        clustering_grid_search(X, link_method, k)
 
 
-def assign_clusters(score_all_result_file, method, k, **kwargs):
-    """Runs clustering algorithms in parallel on the output of phenosim `score-all`
+def assign_clusters(score_all_result_file, linkage='average', k=2):
+    """Runs agglomerative clustering algorithms in parallel on the output of phenosim `score-all`
     :param score_all_result_file: path to file
     :type score_all_result_file: str
-    :param method: The type of clustering to perform {Agglomerative, kmedoids, kmedians}
-    :type method: str
+    :param linkage: The type of linkage to perform {single, average, complete}
+    :type linkage: str
     :param k:
     :type max_clusters: int
     :param *kwargs: Placeholder for arguements to pass to pyclustering or scikit-learn
     """
-    if not any(['Agglomerative', 'kmedoid', 'kmedian', 'DBSCAN']) == method:
+    if not any(_ == linkage for _ in ['single', 'average', 'complete']):
         sys.stderr('Please select one of the allowed clustering methods')
         exit(1)
 
     if k <=1:
         sys.stderr('Please select k to be an int >= 2')
         exit(1)
-
-    # parse *kwargs and assign to ???defaultdict??? or something similar.
 
     try:
         # read phenosim_result_file
@@ -252,7 +249,7 @@ def assign_clusters(score_all_result_file, method, k, **kwargs):
     X = df.values
     samples = df.index.tolist()
 
-    clustering_assign(X, method, samples, k, kwargs)
+    clustering_assign(X, linkage, k, samples)
 
 
 
