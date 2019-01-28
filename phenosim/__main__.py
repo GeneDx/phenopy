@@ -8,7 +8,7 @@ import pandas as pd
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
 
-from phenosim.cluster import clustering_grid_search
+from phenosim.cluster import clustering_grid_search, clustering_assign
 from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
@@ -189,8 +189,8 @@ def cluster_grid_search(score_all_result_file, max_clusters=2):
         logger.critical('max_clusters must be >=2')
         exit(1)
 
-    METHODS = {"complete", "average", "single"}
-    method_k_combos = itertools.product(METHODS, range(2, max_clusters+1))
+    LINKAGE = {"complete", "average", "single"}
+    linkage_k_combos = itertools.product(LINKAGE, range(2, max_clusters+1))
 
     try:
         # read phenosim_result_file
@@ -208,15 +208,60 @@ def cluster_grid_search(score_all_result_file, max_clusters=2):
     df.drop('id_pairs', axis=1, inplace=True)
     df = df.set_index(['record1', 'record2']).unstack()
     X = df.values
+    samples = df.index.tolist()
 
-    for method, k in method_k_combos:
+    for method, k in linkage_k_combos:
         clustering_grid_search(X, method, k)
+
+
+def assign_clusters(score_all_result_file, method, k, **kwargs):
+    """Runs clustering algorithms in parallel on the output of phenosim `score-all`
+    :param score_all_result_file: path to file
+    :type score_all_result_file: str
+    :param method: The type of clustering to perform {Agglomerative, kmedoids, kmedians}
+    :type method: str
+    :param k:
+    :type max_clusters: int
+    :param *kwargs: Placeholder for arguements to pass to pyclustering or scikit-learn
+    """
+    if not any(['Agglomerative', 'kmedoid', 'kmedian', 'DBSCAN']) == method:
+        sys.stderr('Please select one of the allowed clustering methods')
+        exit(1)
+
+    if k <=1:
+        sys.stderr('Please select k to be an int >= 2')
+        exit(1)
+
+    # parse *kwargs and assign to ???defaultdict??? or something similar.
+
+    try:
+        # read phenosim_result_file
+        df = pd.read_csv(score_all_result_file,
+                         sep='\t',
+                         header=None,
+                         names=['id_pairs', 'score'])
+    except (FileNotFoundError, PermissionError) as e:
+        logger.critical(e)
+        exit(1)
+
+    # process the DataFrame
+    df['id_pairs'] = df['id_pairs'].str.split('-')
+    df[['record1', 'record2']] = pd.DataFrame(df['id_pairs'].values.tolist(), index=df.index)
+    df.drop('id_pairs', axis=1, inplace=True)
+    df = df.set_index(['record1', 'record2']).unstack()
+    X = df.values
+    samples = df.index.tolist()
+
+    clustering_assign(X, method, samples, k, kwargs)
+
 
 
 def main():
     fire.Fire({
         'score': score,
         'score-product': score_product,
+        'cluster-grid-search': cluster_grid_search,
+        'cluster-assign': assign_clusters,
     })
 
 
