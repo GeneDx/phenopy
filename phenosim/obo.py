@@ -49,8 +49,9 @@ def process(hpo_network, terms_to_genes, annotations_count):
 
     # remove non-phenotype branches
     for _, hpo_id in non_phenotypes.items():
-        children = nx.ancestors(hpo_network, hpo_id)
-        hpo_network.remove_nodes_from([hpo_id] + list(children))
+        if hpo_id in hpo_network.nodes:
+            children = nx.ancestors(hpo_network, hpo_id)
+            hpo_network.remove_nodes_from([hpo_id] + list(children))
 
     for node_id, data in hpo_network.nodes(data=True):
         # annotate with information content value

@@ -1,0 +1,291 @@
+format-version: 1.2
+data-version: releases/2018-12-21
+saved-by: Peter Robinson, Sebastian Koehler, Sandra Doelken, Chris Mungall, Melissa Haendel, Nicole Vasilevsky, Monarch Initiative, et al.
+subsetdef: hposlim_core "Core clinical terminology"
+subsetdef: secondary_consequence "Consequence of a disorder in another organ system."
+synonymtypedef: HP:0031859 "obsolete"
+synonymtypedef: HP:0045076 "UK spelling"
+synonymtypedef: HP:0045077 "abbreviation"
+synonymtypedef: HP:0045078 "plural form"
+synonymtypedef: layperson "layperson term"
+default-namespace: human_phenotype
+ontology: hp
+property_value: http://purl.org/dc/elements/1.1/contributor "Chris Mungall" xsd:string
+property_value: http://purl.org/dc/elements/1.1/contributor "Courtney Hum" xsd:string
+property_value: http://purl.org/dc/elements/1.1/contributor "Joie Davis" xsd:string
+property_value: http://purl.org/dc/elements/1.1/contributor "Mark Engelstad" xsd:string
+property_value: http://purl.org/dc/elements/1.1/contributor "Melissa Haendel" xsd:string
+property_value: http://purl.org/dc/elements/1.1/contributor "Nicole Vasilevsky" xsd:string
+property_value: http://purl.org/dc/elements/1.1/contributor "Sandra Doelken" xsd:string
+property_value: http://purl.org/dc/elements/1.1/creator "Peter N Robinson" xsd:string
+property_value: http://purl.org/dc/elements/1.1/creator "Sebastian Koehler" xsd:string
+property_value: http://purl.org/dc/elements/1.1/creator "The Human Phenotype Ontology Consortium" xsd:string
+property_value: http://purl.org/dc/elements/1.1/creator "The Monarch Initiative" xsd:string
+property_value: http://purl.org/dc/elements/1.1/license "see http://www.human-phenotype-ontology.org" xsd:string
+property_value: http://purl.org/dc/elements/1.1/rights "Peter Robinson, Sebastian Koehler, The Human Phenotype Ontology Consortium, and The Monarch Initiative" xsd:string
+property_value: http://purl.org/dc/elements/1.1/subject "Phenotypic abnormalities encountered in human disease" xsd:string
+owl-axioms: Prefix(owl:=<http://www.w3.org/2002/07/owl#>)\nPrefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)\nPrefix(xml:=<http://www.w3.org/XML/1998/namespace>)\nPrefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)\nPrefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)\n\n\nOntology(\nAnnotationAssertion(<http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym> <http://purl.obolibrary.org/obo/HP_0000991> \"\")\nAnnotationAssertion(<http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym> <http://purl.obolibrary.org/obo/HP_0000510> \"\")\nAnnotationAssertion(<http://www.geneontology.org/formats/oboInOwl#hasOBONamespace> <http://purl.obolibrary.org/obo/HP_0030243> \"\")\nAnnotationAssertion(rdfs:comment <http://purl.obolibrary.org/obo/HP_0032072> \"\")\nAnnotationAssertion(<http://www.geneontology.org/formats/oboInOwl#hasOBONamespace> <http://purl.obolibrary.org/obo/HP_0030370> \"\")\nAnnotationAssertion(rdfs:comment <http://purl.obolibrary.org/obo/HP_0040081> \"\")\n)
+logical-definition-view-relation: has_part
+
+[Term]
+id: HP:0000001
+name: All
+comment: Root of all terms in the Human Phenotype Ontology.
+xref: UMLS:C0444868
+
+[Term]
+id: HP:0000009
+name: Functional abnormality of the bladder
+alt_id: HP:0004424
+alt_id: HP:0008731
+def: "Dysfunction of the urinary bladder." [HPO:probinson]
+synonym: "Poor bladder function" EXACT []
+xref: UMLS:C3806583
+is_a: HP:0000014 ! Abnormality of the bladder
+
+[Term]
+id: HP:0000011
+name: Neurogenic bladder
+def: "A type of bladder dysfunction caused by neurologic damage. Neurogenic bladder can be flaccid or spastic. Common manifestatios of neurogenic bladder are overflow incontinence, frequency, urgency, urge incontinence, and retention." [HPO:probinson, PMID:18095004, PMID:22400020]
+comment: Neurogenic bladder sphincter dysfunction (NBSD) can develop as a result of a lesion at any level in the nervous system, including the cerebral cortex, spinal cord, or peripheral nervous system. Neurologic conditions in children leading to neurogenic bladder dysfunction are predominantly congenital neural tube defects (including myelomeningocele, lipomeningocele, sacral agenesis, and occult lesions causing tethered cord). Acquired causes such as spinal cord tumors or trauma or sequelae of transverse myelitis are less frequent. Whereas from an etiologic standpoint neurogenic bladder dysfunction is a heterogeneous group, medical management will be similar irrespective of the underlying cause.
+synonym: "Lack of bladder control due to nervous system injury" EXACT layperson [ORCID:0000-0002-6548-5200]
+xref: MSH:D001750
+xref: SNOMEDCT_US:397732007
+xref: SNOMEDCT_US:398064005
+xref: UMLS:C0005697
+is_a: HP:0000009 ! Functional abnormality of the bladder
+
+[Term]
+id: HP:0000014
+name: Abnormality of the bladder
+def: "An abnormality of the urinary bladder." [HPO:probinson]
+xref: UMLS:C0149632
+is_a: HP:0010936 ! Abnormality of the lower urinary tract
+
+[Term]
+id: HP:0000057
+name: obsolete Clitoromegaly
+is_obsolete: true
+replaced_by: HP:0008665
+
+[Term]
+id: HP:0000079
+name: Abnormality of the urinary system
+def: "An abnormality of the urinary system." [HPO:probinson]
+synonym: "Urinary tract abnormalities" EXACT layperson []
+synonym: "Urinary tract abnormality" EXACT layperson []
+synonym: "Urinary tract anomalies" EXACT layperson []
+xref: UMLS:C4021821
+is_a: HP:0000119 ! Abnormality of the genitourinary system
+
+[Term]
+id: HP:0000118
+name: Phenotypic abnormality
+def: "A phenotypic abnormality." [HPO:probinson]
+comment: This is the root of the phenotypic abnormality subontology of the HPO.
+synonym: "Organ abnormality" EXACT []
+xref: UMLS:C4021819
+is_a: HP:0000001 ! All
+
+[Term]
+id: HP:0000119
+name: Abnormality of the genitourinary system
+alt_id: HP:0008658
+alt_id: HP:0008688
+alt_id: HP:0008704
+alt_id: HP:0008713
+def: "The presence of any abnormality of the genitourinary system." [HPO:curators]
+synonym: "Genitourinary abnormality" EXACT []
+synonym: "Genitourinary disease" RELATED []
+synonym: "Genitourinary dysplasia" RELATED []
+synonym: "Genitourinary tract anomalies" EXACT []
+synonym: "Genitourinary tract malformation" EXACT []
+synonym: "Urogenital abnormalities" EXACT []
+synonym: "Urogenital anomalies" EXACT []
+xref: MSH:D014564
+xref: SNOMEDCT_US:287085006
+xref: SNOMEDCT_US:42030000
+xref: UMLS:C0042063
+xref: UMLS:C0080276
+xref: UMLS:C4020895
+is_a: HP:0000118 ! Phenotypic abnormality
+
+[Term]
+id: HP:0000478
+name: Abnormality of the eye
+def: "Any abnormality of the eye, including location, spacing, and intraocular abnormalities." [HPO:probinson]
+subset: hposlim_core
+synonym: "Abnormal eye" EXACT layperson [HPO:skoehler]
+synonym: "Abnormality of the eye" EXACT layperson []
+synonym: "Eye disease" RELATED layperson []
+xref: MSH:D005124
+xref: MSH:D005128
+xref: SNOMEDCT_US:19416009
+xref: SNOMEDCT_US:371405004
+xref: SNOMEDCT_US:371409005
+xref: UMLS:C0015393
+xref: UMLS:C0015397
+is_a: HP:0000118 ! Phenotypic abnormality
+
+[Term]
+id: HP:0000486
+name: Strabismus
+alt_id: HP:0000487
+def: "A misalignment of the eyes so that the visual axes deviate from bifoveal fixation. The classification of strabismus may be based on a number of features including the relative position of the eyes, whether the deviation is latent or manifest, intermittent or constant, concomitant or otherwise and according to the age of onset and the relevance of any associated refractive error." [HPO:probinson, PMID:26319345, UManchester:psergouniotis]
+subset: hposlim_core
+synonym: "Cross-eyed" EXACT layperson []
+synonym: "Squint" EXACT layperson []
+synonym: "Squint eyes" EXACT layperson [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
+xref: MSH:D013285
+xref: SNOMEDCT_US:128602000
+xref: SNOMEDCT_US:22066006
+xref: UMLS:C0038379
+is_a: HP:0000549 ! Abnormal conjugate eye movement
+
+[Term]
+id: HP:0000496
+name: Abnormality of eye movement
+alt_id: HP:0006860
+def: "An abnormality in voluntary or involuntary eye movements or their control." [HPO:probinson]
+subset: hposlim_core
+synonym: "Abnormal extraocular movement" EXACT []
+synonym: "Abnormal extraocular movements" EXACT []
+synonym: "Abnormal eye motility" EXACT []
+synonym: "Abnormal eye movement" EXACT layperson []
+synonym: "Abnormal eye movements" EXACT layperson []
+synonym: "Abnormal motility of the globe of the eye" EXACT [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
+synonym: "Abnormal movement of the globe of the eye" EXACT [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
+synonym: "Abnormal ocular movements" EXACT []
+synonym: "Abnormality of eye movement" EXACT layperson []
+synonym: "Eye movement abnormalities" EXACT layperson []
+synonym: "Eye movement issue" EXACT layperson []
+synonym: "Ocular movement abnormalities" EXACT []
+synonym: "Oculomotor abnormalities" EXACT []
+xref: SNOMEDCT_US:103252009
+xref: UMLS:C0497202
+is_a: HP:0012373 ! Abnormal eye physiology
+
+[Term]
+id: HP:0000501
+name: Glaucoma
+def: "Glaucoma refers loss of retinal ganglion cells in a characteristic pattern of optic neuropathy usually associated with increased intraocular pressure." [HPO:probinson, pmid:11815354]
+comment: The feature that differentiates glaucoma from other causes of visual morbidity is a characteristic pattern of damage to the optic nerve head. This is most easily recognised at the superior and inferior poles of the optic disc. The vertical cup:disc ratio (VCDR) has proved to be a simple, relatively robust index of glaucomatous loss of the neuroretinal rim. As with intraocular pressure, VCDR is a continuous variable within the population.
+subset: hposlim_core
+xref: MSH:D005901
+xref: SNOMEDCT_US:23986001
+xref: UMLS:C0017601
+is_a: HP:0012373 ! Abnormal eye physiology
+
+[Term]
+id: HP:0000539
+name: Abnormality of refraction
+def: "An abnormality in the process of focusing of light by the eye in order to produce a sharp image on the retina." [HPO:probinson]
+xref: UMLS:C4025843
+is_a: HP:0012373 ! Abnormal eye physiology
+
+[Term]
+id: HP:0000545
+name: Myopia
+alt_id: HP:0001110
+alt_id: HP:0007847
+alt_id: HP:0008012
+def: "An abnormality of refraction characterized by the ability to see objects nearby clearly, while objects in the distance appear blurry." [HPO:probinson]
+subset: hposlim_core
+synonym: "Close sighted" EXACT layperson [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
+synonym: "Near sighted" EXACT layperson [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
+synonym: "Near sightedness" EXACT layperson [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
+synonym: "Nearsightedness" EXACT layperson []
+xref: MSH:D009216
+xref: SNOMEDCT_US:57190000
+xref: UMLS:C0027092
+is_a: HP:0000539 ! Abnormality of refraction
+
+[Term]
+id: HP:0000549
+name: Abnormal conjugate eye movement
+def: "Any deviation from the normal motor coordination of the eyes that allows for bilateral fixation on a single object." [HPO:probinson]
+synonym: "Disconjugate eye movements" EXACT []
+xref: UMLS:C1845274
+is_a: HP:0000496 ! Abnormality of eye movement
+
+[Term]
+id: HP:0001087
+name: Developmental glaucoma
+def: "Glaucoma which forms during the early years of a child's life is called developmental or congenital glaucoma." []
+synonym: "Childhood glaucoma" EXACT [ORCID:0000-0001-6908-9849]
+synonym: "Infantile glaucoma" EXACT [ORCID:0000-0001-6908-9849]
+synonym: "Pediatric glaucoma" EXACT [ORCID:0000-0001-6908-9849]
+xref: MSH:D006871
+xref: SNOMEDCT_US:204113001
+xref: SNOMEDCT_US:413728006
+xref: UMLS:C0020302
+is_a: HP:0000501 ! Glaucoma
+is_a: HP:0007700 ! Anterior segment developmental abnormality
+
+[Term]
+id: HP:0004328
+name: Abnormal anterior eye segment morphology
+def: "An abnormality of the anterior segment of the eyeball (which comprises the structures in front of the vitreous humour: the cornea, iris, ciliary body, and lens)." [HPO:probinson]
+comment: The anterior segment comprises the structures in front of the vitreous humour: the cornea, iris, ciliary body, and lens.
+synonym: "Abnormal anterior segment morphology" EXACT []
+synonym: "Abnormality of the anterior segment of the eye" EXACT []
+synonym: "Abnormality of the anterior segment of the eyeball" EXACT []
+synonym: "Abnormality of the anterior segment of the globe" EXACT []
+xref: UMLS:C4025355
+is_a: HP:0012372 ! Abnormal eye morphology
+created_by: peter
+creation_date: 2008-02-27T04:23:00Z
+
+[Term]
+id: HP:0007700
+name: Anterior segment developmental abnormality
+alt_id: HP:0007696
+alt_id: HP:0007699
+alt_id: HP:0008040
+def: "Abnormal development (dysgenesis) of the anterior segment of the eye globe. These structures are mainly of mesenchymal origin." [DDD:ncarter]
+comment: In anterior segment mesenchymal ocular dysgenesis (ASMOD), multiple tissues are affected, including the iris, cornea, and lens as well as the Schlemm's canal and trabecular meshwork drainage structures located at the anterior segment angle where the iris and cornea meet. These abnormalities may result from a primary defect in the migration and/or differentiation of the mesenchymal cells that contribute to development of the cornea, iris, and drainage structures.
+synonym: "Anterior chamber cleavage defect" EXACT []
+synonym: "Anterior chamber cleavage disorder" EXACT []
+synonym: "Anterior chamber malformation" EXACT []
+synonym: "Anterior chamber mesodermal anomalies" EXACT []
+synonym: "Anterior segment dysgenesis" EXACT []
+synonym: "Anterior segment mesencyhmal dysgenesis" EXACT []
+synonym: "Anterior segment ocular dysgenesis" EXACT []
+xref: SNOMEDCT_US:65075004
+xref: UMLS:C0266525
+is_a: HP:0004328 ! Abnormal anterior eye segment morphology
+
+[Term]
+id: HP:0010936
+name: Abnormality of the lower urinary tract
+def: "An abnormality of the lower urinary tract." [HPO:probinson]
+comment: The lower urinary tract is a subdivision of urinary system which consists of the urinary bladder and the urethra.
+xref: UMLS:C4023640
+is_a: HP:0000079 ! Abnormality of the urinary system
+created_by: peter
+creation_date: 2011-01-16T11:39:17Z
+
+[Term]
+id: HP:0012372
+name: Abnormal eye morphology
+alt_id: HP:0000489
+alt_id: HP:0012374
+def: "A structural anomaly of the globe of the eye, or bulbus oculi." [HPO:probinson]
+synonym: "Abnormal eye morphology" EXACT layperson []
+synonym: "Abnormality of the globe" EXACT []
+synonym: "Abnormally shaped eye" EXACT layperson [ORCID:0000-0001-5208-3432]
+xref: Fyler:4863
+xref: UMLS:C4022925
+is_a: HP:0000478 ! Abnormality of the eye
+created_by: peter
+creation_date: 2013-10-13T03:44:43Z
+
+[Term]
+id: HP:0012373
+name: Abnormal eye physiology
+def: "A functional anomaly of the eye." [HPO:probinson]
+synonym: "Abnormal eye physiology" EXACT layperson []
+xref: UMLS:C4022924
+is_a: HP:0000478 ! Abnormality of the eye
+created_by: peter
+creation_date: 2013-10-13T03:45:37Z
