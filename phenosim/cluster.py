@@ -1,5 +1,7 @@
 import sys
 
+import pandas as pd
+
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 
@@ -33,12 +35,14 @@ def clustering_grid_search(X, linkage, k):
     clusterer = AgglomerativeClustering(n_clusters=k, linkage=linkage, affinity='precomputed')
     cluster_labels = clusterer.fit_predict(X)
     silhouette_avg = silhouette_score(X, cluster_labels, metric='precomputed').round(4)
+    cluster_sizes = pd.Series(cluster_labels).sort_index().value_counts().tolist()
 
     try:
         sys.stdout.write('\t'.join([
             f'{k}',
             f'{linkage}',
             f'{silhouette_avg}',
+            f'{cluster_sizes}',
         ]))
         sys.stdout.write('\n')
     finally:
