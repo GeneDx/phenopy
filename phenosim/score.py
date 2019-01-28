@@ -2,7 +2,10 @@ import itertools
 import sys
 
 import networkx as nx
+import numpy as np
 import pandas as pd
+
+from sklearn.preprocessing import MinMaxScaler
 
 
 class Scorer:
@@ -10,6 +13,7 @@ class Scorer:
         self.hpo_network = hpo_network
 
         self.scores_cache = {}
+        self.scaler = MinMaxScaler(feature_range=(0, 1))
 
     def find_lca(self, term_a, term_b):
         """
@@ -26,8 +30,10 @@ class Scorer:
         try:
             bfs_predecessors = []
             for term in [term_a, term_b]:
-                bfs_predecessors.append({p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
-            common_bfs_predecessors = bfs_predecessors[0].intersection(bfs_predecessors[1])
+                bfs_predecessors.append(
+                    {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
+            common_bfs_predecessors = bfs_predecessors[0].intersection(
+                bfs_predecessors[1])
             # lca node
             return max(common_bfs_predecessors, key=lambda n: self.hpo_network.node[n]['depth'])
         except ValueError:
@@ -74,13 +80,15 @@ class Scorer:
         for term in [term_a, term_b]:
             if self.hpo_network.in_edges(term):
                 mil_ic.append(max(
-                    {self.hpo_network.node[p]['ic'] for p in self.hpo_network.predecessors(term) if 'ic' in self.hpo_network.node[p]}
+                    {self.hpo_network.node[p]['ic'] for p in self.hpo_network.predecessors(
+                        term) if 'ic' in self.hpo_network.node[p]}
                 ))
             else:
                 mil_ic.append(self.hpo_network.node[term]['ic'])
 
         # calculate beta_ic?
-        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic']) + (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
+        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic']) +
+                   (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
 
         # find lowest common ancestors for the two terms
         lca_node = self.find_lca(term_a, term_b)
@@ -92,7 +100,8 @@ class Scorer:
         gamma = self.calculate_gamma(term_a, term_b, lca_node)
 
         # calculate the pairs score
-        pair_score = (1.0 / float(1.0 + gamma)) * (alpha_ic / float(alpha_ic + beta_ic))
+        pair_score = (1.0 / float(1.0 + gamma)) * \
+            (alpha_ic / float(alpha_ic + beta_ic))
 
         # cache this pair score
         self.scores_cache[f'{term_a}-{term_b}'] = pair_score
@@ -116,13 +125,20 @@ class Scorer:
             return 0.0
 
         term_pairs = itertools.product(terms_a, terms_b)
-
-        df = pd.DataFrame(
-            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair)) for pair in term_pairs],
+        df_scores = pd.DataFrame(
+            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair))
+             for pair in term_pairs],
             columns=['a', 'b', 'score']
         ).set_index(
             ['a', 'b']
-        ).unstack()
+        )
+        # scale the scores then drop the raw scores
+        df_scores['scaled_scores'] = self.scaler.fit_transform(
+            df_scores[['score']])
+        df_scores.drop(columns=['score'], inplace=True)
+        # unstack the DataFrame
+        df = df_scores.unstack()
+        del df_scores
 
         return round((df.max(axis=1).mean() + df.max(axis=0).mean()) / 2.0, 4)
 
