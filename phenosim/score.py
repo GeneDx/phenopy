@@ -28,14 +28,14 @@ class Scorer:
             return 'HP:0000001'
         # find common breadth-first-search predecessors
         try:
-            bfs_predecessors = []
+            parents = []
             for term in [term_a, term_b]:
-                bfs_predecessors.append(
+                parents.append(
                     {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
-            common_bfs_predecessors = bfs_predecessors[0].intersection(
-                bfs_predecessors[1])
+            common_parents = parents[0].intersection(
+                parents[1])
             # lca node
-            return max(common_bfs_predecessors, key=lambda n: self.hpo_network.node[n]['depth'])
+            return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
         except ValueError:
             raise ValueError(term_a, term_b)
 
