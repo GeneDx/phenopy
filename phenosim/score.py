@@ -27,14 +27,14 @@ class Scorer:
             return 'HP:0000001'
         # find common breadth-first-search predecessors
         try:
-            bfs_predecessors = []
+            parents = []
             for term in [term_a, term_b]:
-                bfs_predecessors.append(
+                parents.append(
                     {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
-            common_bfs_predecessors = bfs_predecessors[0].intersection(
-                bfs_predecessors[1])
+            common_parents = parents[0].intersection(
+                parents[1])
             # lca node
-            return max(common_bfs_predecessors, key=lambda n: self.hpo_network.node[n]['depth'])
+            return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
         except ValueError:
             raise ValueError(term_a, term_b)
 
@@ -78,16 +78,21 @@ class Scorer:
         mil_ic = []
         for term in [term_a, term_b]:
             if self.hpo_network.in_edges(term):
-                mil_ic.append(max(
-                    {self.hpo_network.node[p]['ic'] for p in self.hpo_network.predecessors(
-                        term) if 'ic' in self.hpo_network.node[p]}
-                ))
+                # children terms generator
+                children = nx.ancestors(self.hpo_network, term)
+                if children:
+                    # append the max IC leaf
+                    mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
+                        p) >= 1 and self.hpo_network.in_degree(p) == 0}))
+                # node is a leaf
+                else:
+                    mil_ic.append(self.hpo_network.node[term]['ic'])
             else:
                 mil_ic.append(self.hpo_network.node[term]['ic'])
 
         # calculate beta_ic?
-        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic']) +
-                   (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
+        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic'])
+                   + (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
 
         # find lowest common ancestors for the two terms
         lca_node = self.find_lca(term_a, term_b)
@@ -139,7 +144,7 @@ class Scorer:
         df = df_scores.unstack()
         del df_scores
 
-        return round((df.max(axis=1).mean() + df.max(axis=0).mean()) / 2.0, 4)
+        return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
 
     def score_pairs(self, records, record_pairs, lock, thread=0, number_threads=1):
         """
