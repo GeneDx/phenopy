@@ -145,7 +145,7 @@ class Scorer:
         df = df_scores.unstack()
         del df_scores
 
-        return round((df.max(axis=1).mean() + df.max(axis=0).mean()) / 2.0, 4)
+        return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
 
     def score_pairs(self, records, record_pairs, lock, thread=0, number_threads=1):
         """
