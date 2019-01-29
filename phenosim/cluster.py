@@ -2,6 +2,7 @@ import sys
 
 import pandas as pd
 
+from scipy.stats.mstats import gmean
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 
@@ -36,12 +37,15 @@ def clustering_grid_search(X, linkage, k):
     cluster_labels = clusterer.fit_predict(X)
     silhouette_avg = silhouette_score(X, cluster_labels, metric='precomputed').round(4)
     cluster_sizes = pd.Series(cluster_labels).sort_index().value_counts().tolist()
+    # output geometric mean for cluster sizes
+    cluster_size_gmean = gmean(cluster_sizes)
 
     try:
         sys.stdout.write('\t'.join([
             f'{k}',
             f'{linkage}',
             f'{silhouette_avg}',
+            f'{cluster_size_gmean}',
             f'{cluster_sizes}',
         ]))
         sys.stdout.write('\n')
