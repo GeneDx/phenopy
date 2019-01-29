@@ -26,17 +26,14 @@ class Scorer:
         if any(term == 'HP:0000001' for term in [term_a, term_b]):
             return 'HP:0000001'
         # find common breadth-first-search predecessors
-        try:
-            parents = []
-            for term in [term_a, term_b]:
-                parents.append(
-                    {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
-            common_parents = parents[0].intersection(
-                parents[1])
-            # lca node
-            return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
-        except ValueError:
-            raise ValueError(term_a, term_b)
+        parents = []
+        for term in [term_a, term_b]:
+            parents.append(
+                {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
+        common_parents = parents[0].intersection(
+            parents[1])
+        # lca node
+        return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
 
     def calculate_gamma(self, term_a, term_b, term_lca):
         """
