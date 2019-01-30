@@ -253,7 +253,6 @@ def assign_clusters(score_all_result_file, linkage='average', k=2):
     clustering_assign(X, linkage, k, samples)
 
 
-
 def main():
     fire.Fire({
         'score': score,

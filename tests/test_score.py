@@ -30,3 +30,19 @@ class ScorerTestCase(unittest.TestCase):
         lca = self.scorer.find_lca('HP:0000501', 'HP:0000545')
 
         self.assertEqual(lca, 'HP:0012373')
+
+        # make sure that when the root node is passed, it's returned as lca.
+        root_lca = self.scorer.find_lca('HP:0000501', 'HP:0000001')
+
+        self.assertEqual(root_lca, 'HP:0000001')
+
+    def test_calculate_gamma(self):
+        t1 = 'HP:0012372'
+        t2 = 'HP:0012373'
+
+        # term to itself should be distance 0
+        gamma0 = self.scorer.calculate_gamma(t1, t1, 'HP:0000478')
+        self.assertEqual(gamma0, 0)
+
+        gamma2 = self.scorer.calculate_gamma(t1, t2, 'HP:0000478')
+        self.assertEqual(gamma2, 2)
