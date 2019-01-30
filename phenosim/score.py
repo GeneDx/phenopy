@@ -47,9 +47,6 @@ class Scorer:
         # calculate gamma
         if term_a == term_b:
             return 0
-        elif term_b in nx.ancestors(self.hpo_network, term_a):
-            if nx.shortest_path_length(self.hpo_network, term_b, term_a) == 1:
-                return 1
 
         a_to_lca = nx.shortest_path_length(self.hpo_network, term_a, term_lca)
         b_to_lca = nx.shortest_path_length(self.hpo_network, term_b, term_lca)
