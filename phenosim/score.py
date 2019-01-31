@@ -8,11 +8,13 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 class Scorer:
-    def __init__(self, hpo_network):
+    def __init__(self, hpo_network, scale=False):
         self.hpo_network = hpo_network
 
         self.scores_cache = {}
-        self.scaler = MinMaxScaler(feature_range=(0, 1))
+        self.SCALE = scale
+        if scale:
+            self.scaler = MinMaxScaler(feature_range=(0, 1))
 
     def find_lca(self, term_a, term_b):
         """
@@ -45,6 +47,7 @@ class Scorer:
         :return: `float` (term pair comparison score)
         """
         # calculate gamma
+        # "such that the value equals zero if the two terms are the same"
         if term_a == term_b:
             return 0
 
@@ -130,13 +133,17 @@ class Scorer:
         ).set_index(
             ['a', 'b']
         )
-        # scale the scores then drop the raw scores
-        df_scores['scaled_scores'] = self.scaler.fit_transform(
-            df_scores[['score']])
-        df_scores.drop(columns=['score'], inplace=True)
-        # unstack the DataFrame
-        df = df_scores.unstack()
-        del df_scores
+        if self.SCALE:
+            # scale the scores then drop the raw scores
+            df_scores['scaled_scores'] = self.scaler.fit_transform(
+                df_scores[['score']])
+            df_scores.drop(columns=['score'], inplace=True)
+            # unstack the DataFrame
+            df = df_scores.unstack()
+            del df_scores
+        else:
+            df = df_scores.unstack()
+            del df_scores
 
         return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
 
