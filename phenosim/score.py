@@ -29,12 +29,10 @@ class Scorer:
             return 'HP:0000001'
 
         # if one of the terms is a child of the other return the parent
-        if term_b in nx.ancestors(self.hpo_network, term_a):
-            if nx.shortest_path_length(self.hpo_network, term_b, term_a) == 1:
-                return term_a
-        if term_a in nx.ancestors(self.hpo_network, term_b):
-            if nx.shortest_path_length(self.hpo_network, term_a, term_b) == 1:
-                return term_b
+        if self.hpo_network.has_edge(term_a, term_b):
+            return term_b
+        if self.hpo_network.has_edge(term_b, term_a):
+            return term_a
 
         # find common breadth-first-search predecessors
         parents = []
@@ -64,12 +62,10 @@ class Scorer:
         term_a_child = False
         term_b_child = False
 
-        if term_b in nx.ancestors(self.hpo_network, term_a):
-            if nx.shortest_path_length(self.hpo_network, term_b, term_a) == 1:
-                term_b_child = True
-        if term_a in nx.ancestors(self.hpo_network, term_b):
-            if nx.shortest_path_length(self.hpo_network, term_a, term_b) == 1:
-                term_a_child = True
+        if self.hpo_network.has_edge(term_a, term_b):
+            term_b_child = True
+        if self.hpo_network.has_edge(term_b, term_a):
+            term_a_child = True
 
         if (term_a_child or term_b_child):
             return 1
