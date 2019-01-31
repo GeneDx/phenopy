@@ -27,6 +27,15 @@ class Scorer:
         # if either term is HP:0000001 return it
         if any(term == 'HP:0000001' for term in [term_a, term_b]):
             return 'HP:0000001'
+
+        # if one of the terms is a child of the other return the parent
+        if term_b in nx.ancestors(self.hpo_network, term_a):
+            if nx.shortest_path_length(self.hpo_network, term_b, term_a) == 1:
+                return term_a
+        if term_a in nx.ancestors(self.hpo_network, term_b):
+            if nx.shortest_path_length(self.hpo_network, term_a, term_b) == 1:
+                return term_b
+
         # find common breadth-first-search predecessors
         parents = []
         for term in [term_a, term_b]:
