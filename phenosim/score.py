@@ -42,12 +42,12 @@ class Scorer:
         :param term_a: HPO term A.
         :param term_b: HPO term B.
         :param term_lca: Lowest common ancestor term.
-        :return: `float` (term pair comparison score)
+        :return: `int` (term pair distance to lca)
         """
         # calculate gamma
         # "such that the value equals zero if the two terms are the same"
         if term_a == term_b:
-            return 0.0
+            return 0
 
         # if one of the terms is a child of the other
         term_a_child = False
@@ -61,7 +61,7 @@ class Scorer:
                 term_a_child = True
 
         if (term_a_child or term_b_child):
-            return 1.0
+            return 1
 
         a_to_lca = nx.shortest_path_length(self.hpo_network, term_a, term_lca)
         b_to_lca = nx.shortest_path_length(self.hpo_network, term_b, term_lca)
