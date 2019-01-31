@@ -45,8 +45,23 @@ class Scorer:
         :return: `float` (term pair comparison score)
         """
         # calculate gamma
+        # "such that the value equals zero if the two terms are the same"
         if term_a == term_b:
-            return 0
+            return 0.0
+
+        # if one of the terms is a child of the other
+        term_a_child = False
+        term_b_child = False
+
+        if term_b in nx.ancestors(self.hpo_network, term_a):
+            if nx.shortest_path_length(self.hpo_network, term_b, term_a) == 1:
+                term_b_child = True
+        if term_a in nx.ancestors(self.hpo_network, term_b):
+            if nx.shortest_path_length(self.hpo_network, term_a, term_b) == 1:
+                term_a_child = True
+
+        if (term_a_child or term_b_child):
+            return 1.0
 
         a_to_lca = nx.shortest_path_length(self.hpo_network, term_a, term_lca)
         b_to_lca = nx.shortest_path_length(self.hpo_network, term_b, term_lca)
