@@ -36,7 +36,8 @@ def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
     return hpo_network
 
 
-def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1, scale=False):
+def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1,
+          scale=False):
     """
     Scores a case HPO terms against all genes associated HPO.
 
@@ -46,7 +47,8 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     :param query_name: Unique identifier for the query file.
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
-    :param scale: boolean flag, when set, it artificallys scales raw scores to [0-1]
+    :param threads: Number of parallel process to use.
+    :param scale: boolean flag, when set, it artificially scales raw scores to [0-1]
         https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html
     """
     if obo_file is None:
