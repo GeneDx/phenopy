@@ -188,7 +188,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1)
 
 
 def cluster_grid_search(score_all_result_file, max_clusters=2):
-    """Runs clustering algorithms in parallel on the output of phenosim `score-all`
+    """Runs clustering algorithms in parallel on the output of phenosim `score-product`
     :param score_all_result_file: path to file
     :type score_all_result_file: str
     :param max_clusters: The maximum number of clusters to output silhouette score for.
@@ -225,7 +225,7 @@ def cluster_grid_search(score_all_result_file, max_clusters=2):
 
 
 def assign_clusters(score_all_result_file, linkage='average', k=2):
-    """Runs agglomerative clustering algorithms in parallel on the output of phenosim `score-all`
+    """Runs agglomerative clustering algorithms in parallel on the output of phenosim `score-product`
     :param score_all_result_file: path to file
     :type score_all_result_file: str
     :param linkage: The type of linkage to perform {single, average, complete}
