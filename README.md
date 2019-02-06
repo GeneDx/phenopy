@@ -73,7 +73,7 @@ To use 4 threads add to any scoring function:
 `--threads 4`
 
 ## Under the hood
-Phenosim will create a `.phenosim` directory in your home directory. This has data files from the [Human Phenotype Ontology]() and
+Phenosim will create a `.phenosim` directory in your home directory. This has data files from the [Human Phenotype Ontology](https://hpo.jax.org/app/) and
 ```bash
 ./phenosim/
   data/
