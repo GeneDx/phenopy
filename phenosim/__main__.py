@@ -187,10 +187,10 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1)
                                         lock, i, threads) for i in range(threads)])
 
 
-def cluster_grid_search(score_all_result_file, max_clusters=2):
+def cluster_grid_search(score_product_result_file, max_clusters=2):
     """Runs clustering algorithms in parallel on the output of phenosim `score-product`
-    :param score_all_result_file: path to file
-    :type score_all_result_file: str
+    :param score_product_result_file: path to file
+    :type score_product_result_file: str
     :param max_clusters: The maximum number of clusters to output silhouette score for.
     :type max_clusters: int
     """
@@ -204,7 +204,7 @@ def cluster_grid_search(score_all_result_file, max_clusters=2):
 
     try:
         # read phenosim_result_file
-        df = pd.read_csv(score_all_result_file,
+        df = pd.read_csv(score_product_result_file,
                          sep='\t',
                          header=None,
                          names=['id_pairs', 'score'])
@@ -224,10 +224,10 @@ def cluster_grid_search(score_all_result_file, max_clusters=2):
         clustering_grid_search(X, link_method, k)
 
 
-def assign_clusters(score_all_result_file, linkage='average', k=2):
+def assign_clusters(score_product_result_file, linkage='average', k=2):
     """Runs agglomerative clustering algorithms in parallel on the output of phenosim `score-product`
-    :param score_all_result_file: path to file
-    :type score_all_result_file: str
+    :param score_product_result_file: path to file
+    :type score_product_result_file: str
     :param linkage: The type of linkage to perform {single, average, complete}
     :type linkage: str
     :param k:
@@ -244,7 +244,7 @@ def assign_clusters(score_all_result_file, linkage='average', k=2):
 
     try:
         # read phenosim_result_file
-        df = pd.read_csv(score_all_result_file,
+        df = pd.read_csv(score_product_result_file,
                          sep='\t',
                          header=None,
                          names=['id_pairs', 'score'])
