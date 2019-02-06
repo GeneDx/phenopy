@@ -36,8 +36,7 @@ def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
     return hpo_network
 
 
-def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1,
-          scale=False):
+def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1,):
     """
     Scores a case HPO terms against all genes associated HPO.
 
@@ -48,8 +47,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     :param threads: Number of parallel process to use.
-    :param scale: boolean flag, when set, it artificially scales raw scores to [0-1]
-        https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html
+
     """
     if obo_file is None:
         try:
@@ -84,7 +82,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
         obo_file, terms_to_genes, annotations_count)
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network, scale=scale)
+    scorer = Scorer(hpo_network)
 
     # multiprocessing objects
     manager = Manager()
@@ -125,7 +123,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
                       (query_name, gene) for gene in genes_to_terms], lock, i, threads) for i in range(threads)])
 
 
-def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, scale=False):
+def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
@@ -134,7 +132,6 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     :param threads: Multiprocessing threads to use [default: 1].
-    :param scale: boolean flag, when set, it artificallys scales raw scores to [0-1]
     """
     if obo_file is None:
         try:
@@ -177,7 +174,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     logger.info(f'Scoring product of records from file: {records_file}')
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network, scale=scale)
+    scorer = Scorer(hpo_network)
 
     # create records product generator
     records_product = itertools.product(records.keys(), repeat=2)

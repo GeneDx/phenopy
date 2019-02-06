@@ -12,7 +12,6 @@ obonet = "*"
 fire = "*"
 pandas = "*"
 numpy = "*"
-scikit-learn="*"
 
 [requires]
 python_version = "3.7"
