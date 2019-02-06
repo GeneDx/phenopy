@@ -4,17 +4,12 @@ import sys
 import networkx as nx
 import pandas as pd
 
-from sklearn.preprocessing import MinMaxScaler
-
 
 class Scorer:
-    def __init__(self, hpo_network, scale=False):
+    def __init__(self, hpo_network):
         self.hpo_network = hpo_network
 
         self.scores_cache = {}
-        self.SCALE = scale
-        if scale:
-            self.scaler = MinMaxScaler(feature_range=(0, 1))
 
     def find_lca(self, term_a, term_b):
         """
@@ -107,8 +102,8 @@ class Scorer:
                 mil_ic.append(self.hpo_network.node[term]['ic'])
 
         # calculate beta_ic?
-        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic'])
-                   + (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
+        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic']) +
+                   (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
 
         # find lowest common ancestors for the two terms
         lca_node = self.find_lca(term_a, term_b)
@@ -145,24 +140,13 @@ class Scorer:
             return 0.0
 
         term_pairs = itertools.product(terms_a, terms_b)
-        df_scores = pd.DataFrame(
+        df = pd.DataFrame(
             [(pair[0], pair[1], self.score_hpo_pair_hrss(pair))
              for pair in term_pairs],
             columns=['a', 'b', 'score']
         ).set_index(
             ['a', 'b']
-        )
-        if self.SCALE:
-            # scale the scores then drop the raw scores
-            df_scores['scaled_scores'] = self.scaler.fit_transform(
-                df_scores[['score']])
-            df_scores.drop(columns=['score'], inplace=True)
-            # unstack the DataFrame
-            df = df_scores.unstack()
-            del df_scores
-        else:
-            df = df_scores.unstack()
-            del df_scores
+        ).unstack()
 
         return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
 
