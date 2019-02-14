@@ -32,7 +32,7 @@ def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
     return hpo_network
 
 
-def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1,):
+def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1, aggregate_score='BMA'):
     """
     Scores a case HPO terms against all genes associated HPO.
 
@@ -43,8 +43,15 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     :param threads: Number of parallel process to use.
-
+    :param aggretgate_score: The aggregation method to use for summarizing the similarity matrix between two term sets
+        Must be one of {'BMA', 'maximum'}
     """
+
+    if aggregate_score not in {'BMA', 'maximum', }:
+        logger.critical(
+            'aggregate_score must be one of {BMA, maximum}.')
+        exit(1)
+
     if obo_file is None:
         try:
             obo_file = config.get('hpo', 'obo_file')
@@ -116,10 +123,10 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
         # iterate over each cross-product and score the pair of records
         with Pool(threads) as p:
             p.starmap(scorer.score_pairs, [(genes_to_terms, [
-                      (query_name, gene) for gene in genes_to_terms], lock, i, threads) for i in range(threads)])
+                      (query_name, gene) for gene in genes_to_terms], lock, aggregate_score, i, threads) for i in range(threads)])
 
 
-def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1):
+def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, aggregate_score='BMA'):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
@@ -128,7 +135,14 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1)
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     :param threads: Multiprocessing threads to use [default: 1].
+    :param aggretgate_score: The aggregation method to use for summarizing the similarity matrix between two term sets
+        Must be one of {'BMA', 'maximum'}
     """
+    if aggregate_score not in {'BMA', 'maximum', }:
+        logger.critical(
+            'aggregate_score must be one of {BMA, maximum}.')
+        exit(1)
+
     if obo_file is None:
         try:
             obo_file = config.get('hpo', 'obo_file')
@@ -180,7 +194,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1)
     lock = manager.Lock()
     with Pool(threads) as p:
         p.starmap(scorer.score_pairs, [(records, records_product,
-                                        lock, i, threads) for i in range(threads)])
+                                        lock, aggregate_score, i, threads) for i in range(threads)])
 
 
 def main():

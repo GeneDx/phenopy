@@ -134,12 +134,14 @@ class Scorer:
 
         return pair_score
 
-    def score(self, terms_a, terms_b):
+    def score(self, terms_a, terms_b, aggregate_score):
         """
         Scores the comparison of terms in list A to terms in list B.
 
         :param terms_a: List of HPO terms A.
         :param terms_b: List of HPO terms B.
+        :param aggretgate_score: The aggregation method to use for summarizing the similarity matrix between two term sets
+            Must be one of {'BMA', }
         :return: `float` (comparison score)
         """
         # filter out hpo terms not in the network and unique them
@@ -159,9 +161,14 @@ class Scorer:
             ['a', 'b']
         ).unstack()
 
-        return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
+        if aggregate_score == 'BMA':
+            return self.best_match_average(df)
+        elif aggregate_score == 'maximum':
+            return self.maximum(df)
+        else:
+            return 0.0
 
-    def score_pairs(self, records, record_pairs, lock, thread=0, number_threads=1):
+    def score_pairs(self, records, record_pairs, lock, aggregate_score, thread=0, number_threads=1):
         """
         Score list pair of records.
 
@@ -173,7 +180,8 @@ class Scorer:
         """
         # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
-            score = self.score(records[record_a], records[record_b])
+            score = self.score(records[record_a],
+                               records[record_b], aggregate_score)
             lock.acquire()
             try:
                 sys.stdout.write('\t'.join([
@@ -184,3 +192,12 @@ class Scorer:
             finally:
                 sys.stdout.flush()
                 lock.release()
+
+    def best_match_average(self, df):
+        """Returns the Best-Match average of a termlist to termlist similarity matrix."""
+
+        return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
+
+    def maximum(self, df):
+        """Returns the maximum similarity value between to term lists"""
+        return df.values.max().round(4)
