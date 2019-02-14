@@ -134,7 +134,7 @@ class Scorer:
 
         return pair_score
 
-    def score(self, terms_a, terms_b, aggregate_score):
+    def score(self, terms_a, terms_b, agg_score):
         """
         Scores the comparison of terms in list A to terms in list B.
 
@@ -161,14 +161,14 @@ class Scorer:
             ['a', 'b']
         ).unstack()
 
-        if aggregate_score == 'BMA':
+        if agg_score == 'BMA':
             return self.best_match_average(df)
-        elif aggregate_score == 'maximum':
+        elif agg_score == 'maximum':
             return self.maximum(df)
         else:
             return 0.0
 
-    def score_pairs(self, records, record_pairs, lock, aggregate_score, thread=0, number_threads=1):
+    def score_pairs(self, records, record_pairs, lock, agg_score, thread=0, number_threads=1):
         """
         Score list pair of records.
 
@@ -181,7 +181,7 @@ class Scorer:
         # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
             score = self.score(records[record_a],
-                               records[record_b], aggregate_score)
+                               records[record_b], agg_score)
             lock.acquire()
             try:
                 sys.stdout.write('\t'.join([
