@@ -2,14 +2,10 @@ import csv
 import fire
 import itertools
 import os
-import sys
-
-import pandas as pd
 
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
 
-from phenosim.cluster import clustering_grid_search, clustering_assign
 from phenosim.config import config, data_directory, logger
 from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
@@ -187,89 +183,10 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1)
                                         lock, i, threads) for i in range(threads)])
 
 
-def cluster_grid_search(score_product_result_file, max_clusters=2):
-    """Runs clustering algorithms in parallel on the output of phenosim `score-product`
-    :param score_product_result_file: path to file
-    :type score_product_result_file: str
-    :param max_clusters: The maximum number of clusters to output silhouette score for.
-    :type max_clusters: int
-    """
-
-    if max_clusters < 2:
-        logger.critical('max_clusters must be >=2')
-        exit(1)
-
-    LINKAGE = {"complete", "average", "single"}
-    linkage_k_combos = itertools.product(LINKAGE, range(2, max_clusters + 1))
-
-    try:
-        # read phenosim_result_file
-        df = pd.read_csv(score_product_result_file,
-                         sep='\t',
-                         header=None,
-                         names=['id_pairs', 'score'])
-    except (FileNotFoundError, PermissionError) as e:
-        logger.critical(e)
-        exit(1)
-
-    # process the DataFrame
-    df['id_pairs'] = df['id_pairs'].str.split('-')
-    df[['record1', 'record2']] = pd.DataFrame(
-        df['id_pairs'].values.tolist(), index=df.index)
-    df.drop('id_pairs', axis=1, inplace=True)
-    df = df.set_index(['record1', 'record2']).unstack()
-    X = df.values
-
-    for link_method, k in linkage_k_combos:
-        clustering_grid_search(X, link_method, k)
-
-
-def assign_clusters(score_product_result_file, linkage='average', k=2):
-    """Runs agglomerative clustering algorithms in parallel on the output of phenosim `score-product`
-    :param score_product_result_file: path to file
-    :type score_product_result_file: str
-    :param linkage: The type of linkage to perform {single, average, complete}
-    :type linkage: str
-    :param k:
-    :type max_clusters: int
-    :param *kwargs: Placeholder for arguements to pass to pyclustering or scikit-learn
-    """
-    if not any(_ == linkage for _ in ['single', 'average', 'complete']):
-        sys.stderr('Please select one of the allowed clustering methods')
-        exit(1)
-
-    if k <= 1:
-        sys.stderr('Please select k to be an int >= 2')
-        exit(1)
-
-    try:
-        # read phenosim_result_file
-        df = pd.read_csv(score_product_result_file,
-                         sep='\t',
-                         header=None,
-                         names=['id_pairs', 'score'])
-    except (FileNotFoundError, PermissionError) as e:
-        logger.critical(e)
-        exit(1)
-
-    # process the DataFrame
-    df['id_pairs'] = df['id_pairs'].str.split('-')
-    df[['record1', 'record2']] = pd.DataFrame(
-        df['id_pairs'].values.tolist(), index=df.index)
-    df.drop('id_pairs', axis=1, inplace=True)
-    df = df.set_index(['record1', 'record2']).unstack()
-    X = df.values
-    samples = df.index.tolist()
-
-    clustering_assign(X, linkage, k, samples)
-
-
 def main():
     fire.Fire({
         'score': score,
         'score-product': score_product,
-        'cluster-grid-search': cluster_grid_search,
-        'cluster-assign': assign_clusters,
     })
 
 
