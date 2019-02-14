@@ -39,6 +39,34 @@ class Scorer:
         # lca node
         return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
 
+    def calculate_beta(self, term_a, term_b):
+        """calculates the gamma term in HRSS equation
+
+        :param term_a: Any HPO term.
+        :param term_b: Any HPO term.
+        :return: `float` gamma
+        """
+        # find information content for the most informative leaf for each term
+        mil_ic = []
+        for term in [term_a, term_b]:
+            if self.hpo_network.in_edges(term):
+                # children terms generator
+                children = nx.ancestors(self.hpo_network, term)
+                if children:
+                    # append the max IC leaf
+                    mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
+                        p) >= 1 and self.hpo_network.in_degree(p) == 0}))
+                # node is a leaf
+                else:
+                    mil_ic.append(self.hpo_network.node[term]['ic'])
+            else:
+                mil_ic.append(self.hpo_network.node[term]['ic'])
+
+        # calculate beta_ic
+        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic'])
+                   + (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
+        return beta_ic
+
     def calculate_gamma(self, term_a, term_b, term_lca):
         """
         Calculate gamma term for the HRSS algorithm.
@@ -85,25 +113,8 @@ class Scorer:
         elif f'{term_b}-{term_a}' in self.scores_cache:
             return self.scores_cache[f'{term_b}-{term_a}']
 
-        # find information content for the most informative leaf for each term
-        mil_ic = []
-        for term in [term_a, term_b]:
-            if self.hpo_network.in_edges(term):
-                # children terms generator
-                children = nx.ancestors(self.hpo_network, term)
-                if children:
-                    # append the max IC leaf
-                    mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
-                        p) >= 1 and self.hpo_network.in_degree(p) == 0}))
-                # node is a leaf
-                else:
-                    mil_ic.append(self.hpo_network.node[term]['ic'])
-            else:
-                mil_ic.append(self.hpo_network.node[term]['ic'])
-
-        # calculate beta_ic?
-        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic']) +
-                   (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
+        # calculat beta_ic
+        beta_ic = self.calculate_beta(term_a, term_b)
 
         # find lowest common ancestors for the two terms
         lca_node = self.find_lca(term_a, term_b)
