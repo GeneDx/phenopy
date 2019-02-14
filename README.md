@@ -43,30 +43,6 @@ phenosim score-product tests/data/test.score-product.txt
 001-003	0.1211
 ```
 
-4. Perform a grid search to determine the ideal number of clusters via hierarchical clustering. The input of this function is the output of `score-product` and display performance metrics for up to `k` clusters where `--max-clusters k`. The output columns are `[k, linkage type, average silhouette, geometric mean of the cluster size, cluster sizes]`
-```bash
-phenosim cluster-grid-search score-product.results --max-clusters 3
-
-2	complete	-0.1642	49.3558	[58, 42]
-3	complete	-0.2312	26.4764	[58, 32, 10]
-2	average	0.0686	9.9498	[99, 1]
-3	average	0.0237	4.6104	[98, 1, 1]
-2	single	-0.0787	9.9498 [99, 1]
-3	single	-0.1363	4.6104 [98, 1, 1]
-```
-
-5. Assign cluster membership to entities on entities in the results file from `score-product`. Use `--linkage` and one of `{single, average, complete}` to select the type of linkage algorithm. Use `--k` and `<int>` to specify the number of clusters.
-
-```bash
-phenosim cluster-assign score-product.results --linkage complete --k 4
-
-001	3
-002	2
-003	3
-004	0
-005	0
-```
-
 ## Parameters
 Anny of the scoring Phenosim uses [`multiprocessing`](https://docs.python.org/3.4/library/multiprocessing.html?highlight=process) to parallelize computations.  
 To use 4 threads add to any scoring function:  
