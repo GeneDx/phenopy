@@ -40,11 +40,11 @@ class Scorer:
         return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
 
     def calculate_beta(self, term_a, term_b):
-        """calculates the gamma term in HRSS equation
+        """calculates the beta term in HRSS equation
 
         :param term_a: Any HPO term.
         :param term_b: Any HPO term.
-        :return: `float` gamma
+        :return: `float` beta
         """
         # find information content for the most informative leaf for each term
         mil_ic = []
