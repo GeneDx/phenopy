@@ -289,3 +289,22 @@ xref: UMLS:C4022924
 is_a: HP:0000478 ! Abnormality of the eye
 created_by: peter
 creation_date: 2013-10-13T03:45:37Z
+
+[Term]
+id: HP:0001425
+name: Heterogeneous
+synonym: "Genetic heterogeneity" EXACT []
+synonym: "Heterogeneity" EXACT []
+xref: MSH:D018740
+xref: UMLS:C0242960
+is_a: HP:0000005 ! Mode of inheritance
+
+[Term]
+id: HP:0000005
+name: Mode of inheritance
+alt_id: HP:0001453
+alt_id: HP:0001461
+def: "The pattern in which a particular genetic trait or disorder is passed from one generation to the next." [HPO:probinson]
+synonym: "Inheritance" EXACT []
+xref: UMLS:C1708511
+is_a: HP:0000001 ! All
