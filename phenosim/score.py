@@ -134,7 +134,7 @@ class Scorer:
 
         return pair_score
 
-    def score(self, terms_a, terms_b, agg_score):
+    def score(self, terms_a, terms_b, agg_score='BMA'):
         """
         Scores the comparison of terms in list A to terms in list B.
 
@@ -168,7 +168,7 @@ class Scorer:
         else:
             return 0.0
 
-    def score_pairs(self, records, record_pairs, lock, agg_score, thread=0, number_threads=1):
+    def score_pairs(self, records, record_pairs, lock, agg_score='BMA', thread=0, number_threads=1):
         """
         Score list pair of records.
 
