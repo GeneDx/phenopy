@@ -21,6 +21,5 @@ setup(
         'numpy',
         'obonet',
         'pandas',
-        'scikit-learn',
     ]
 )
