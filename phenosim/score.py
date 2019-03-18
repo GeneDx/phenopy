@@ -160,11 +160,11 @@ class Scorer:
         :return: `float` (comparison score)
         """
         # filter out hpo terms not in the network and unique them
-        terms_a = set(filter(lambda x: x in self.hpo_network.node, terms_a))
-        terms_b = set(filter(lambda x: x in self.hpo_network.node, terms_b))
+        terms_a = list(filter(lambda x: x in self.hpo_network.node, terms_a))
+        terms_b = list(filter(lambda x: x in self.hpo_network.node, terms_b))
 
-        terms_a = self._remove_parent_termlist(terms_a)
-        terms_b = self._remove_parent_termlist(terms_b)
+        terms_a = set(self._remove_parent_termlist(terms_a))
+        terms_b = set(self._remove_parent_termlist(terms_b))
 
         # if either set is empty return 0.0
         if not terms_a or not terms_b:
