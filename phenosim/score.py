@@ -134,6 +134,21 @@ class Scorer:
 
         return pair_score
 
+    def _remove_parent_termlist(self, termlist):
+        """remove parents from termlist
+        :param termlist: List of HPO terms
+        :param hpo_netowrk: A networkx Graph object of the HPO
+        """
+        for source_term in termlist:
+            for target_term in termlist:
+                # has_path will evaluate True for a term to itself, include additional check
+                termlist_not_equal = source_term != target_term
+                has_path = nx.has_path(self.hpo_network, source_term, target_term)
+                if has_path and termlist_not_equal:
+                    termlist.remove(target_term)
+                    self._remove_parent_termlist(termlist)
+        return termlist
+
     def score(self, terms_a, terms_b, agg_score='BMA'):
         """
         Scores the comparison of terms in list A to terms in list B.
@@ -147,6 +162,9 @@ class Scorer:
         # filter out hpo terms not in the network and unique them
         terms_a = set(filter(lambda x: x in self.hpo_network.node, terms_a))
         terms_b = set(filter(lambda x: x in self.hpo_network.node, terms_b))
+
+        terms_a = self._remove_parent_termlist(terms_a)
+        terms_b = self._remove_parent_termlist(terms_b)
 
         # if either set is empty return 0.0
         if not terms_a or not terms_b:
