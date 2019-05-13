@@ -22,4 +22,4 @@ def calculate_information_content(hpo_id, hpo_network, terms_to_genes, a_count):
 
     # negative log of the number of hpo annotations divided by the total number of hpo terms in the
     # phenotypes_to_genes file
-    return (-np.log((count_hpo_annos + SMOOTH) / float(a_count + SMOOTH))) / 2.0
+    return -np.log((count_hpo_annos + SMOOTH) / float(a_count + SMOOTH))
