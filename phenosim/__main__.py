@@ -32,7 +32,7 @@ def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
     return hpo_network
 
 
-def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA'):
+def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False):
     """
     Scores a case HPO terms against all genes associated HPO.
 
@@ -112,7 +112,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
         records[query_name] = case_hpo
         with Pool(threads) as p:
             p.starmap(scorer.score_pairs, [(records, [
-                      (query_name, record) for record in records], lock, i, threads) for i in range(threads)])
+                      (query_name, record) for record in records], lock, agg_score, no_parents, i, threads) for i in range(threads)])
 
     else:
         # score and output case hpo terms against all genes associated set of hpo terms
@@ -123,10 +123,10 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
         # iterate over each cross-product and score the pair of records
         with Pool(threads) as p:
             p.starmap(scorer.score_pairs, [(genes_to_terms, [
-                      (query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads) for i in range(threads)])
+                      (query_name, gene) for gene in genes_to_terms], lock, agg_score, no_parents, i, threads) for i in range(threads)])
 
 
-def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA'):
+def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
@@ -135,7 +135,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     :param threads: Multiprocessing threads to use [default: 1].
-    :param aggretgate_score: The aggregation method to use for summarizing the similarity matrix between two term sets
+    :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     """
     if agg_score not in {'BMA', 'maximum', }:
@@ -194,7 +194,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     lock = manager.Lock()
     with Pool(threads) as p:
         p.starmap(scorer.score_pairs, [(records, records_product,
-                                        lock, agg_score, i, threads) for i in range(threads)])
+                                        lock, agg_score, no_parents, i, threads) for i in range(threads)])
 
 
 def main():

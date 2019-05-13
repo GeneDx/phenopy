@@ -101,3 +101,18 @@ class ScorerTestCase(unittest.TestCase):
 
         score_max = self.scorer.score(terms_a, terms_b, agg_score='maximum')
         self.assertAlmostEqual(score_max, 0.1558, places=4)
+
+    def test_no_parents(self):
+        terms_a = ['HP:0000501', 'HP:0001087']
+        terms_b = ['HP:0012372', 'HP:0012373']
+
+        # if no terms in one set, return 0.0
+        score0 = self.scorer.score([], terms_b)
+        self.assertEqual(score0, 0.0)
+
+        # test BMA
+        score_bma = self.scorer.score(terms_a, terms_b, agg_score='BMA', no_parents=True)
+        self.assertAlmostEqual(score_bma, 0.077, places=4)
+
+        score_max = self.scorer.score(terms_a, terms_b, agg_score='maximum', no_parents=True)
+        self.assertAlmostEqual(score_max, 0.0947, places=4)
