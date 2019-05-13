@@ -134,20 +134,7 @@ class Scorer:
 
         return pair_score
 
-    def _remove_parent_termlist(self, termlist):
-        """remove parents from termlist
-        :param termlist: List of HPO terms
-        """
-        for source_term in termlist[:]:
-            for target_term in termlist[:]:
-                # has_path will evaluate True for a term to itself, include additional check
-                termlist_not_equal = source_term != target_term
-                has_path = nx.has_path(self.hpo_network, source_term, target_term)
-                if has_path and termlist_not_equal:
-                    termlist.remove(target_term)
-        return termlist
-
-    def score(self, terms_a, terms_b, agg_score='BMA', no_parents=False):
+    def score(self, terms_a, terms_b, agg_score='BMA'):
         """
         Scores the comparison of terms in list A to terms in list B.
 
@@ -155,16 +142,11 @@ class Scorer:
         :param terms_b: List of HPO terms B.
         :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
             Must be one of {'BMA', }
-        :param no_parents: boolean to indicate whether the algorithm should prune all parent terms from the termlists.
         :return: `float` (comparison score)
         """
         # filter out hpo terms not in the network and unique them
         terms_a = list(filter(lambda x: x in self.hpo_network.node, terms_a))
         terms_b = list(filter(lambda x: x in self.hpo_network.node, terms_b))
-
-        if no_parents is True:
-            terms_a = set(self._remove_parent_termlist(terms_a))
-            terms_b = set(self._remove_parent_termlist(terms_b))
 
         # if either set is empty return 0.0
         if not terms_a or not terms_b:
@@ -186,7 +168,7 @@ class Scorer:
         else:
             return 0.0
 
-    def score_pairs(self, records, record_pairs, lock, agg_score='BMA', no_parents=False, thread=0, number_threads=1):
+    def score_pairs(self, records, record_pairs, lock, agg_score='BMA', thread=0, number_threads=1):
         """
         Score list pair of records.
 
@@ -199,7 +181,7 @@ class Scorer:
         # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
             score = self.score(records[record_a],
-                               records[record_b], agg_score=agg_score, no_parents=no_parents)
+                               records[record_b], agg_score=agg_score)
             lock.acquire()
             try:
                 sys.stdout.write('\t'.join([
