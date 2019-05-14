@@ -69,7 +69,7 @@ class ScorerTestCase(unittest.TestCase):
         t2 = 'HP:0012373'
 
         beta = self.scorer.calculate_beta(t1, t2)
-        self.assertAlmostEqual(beta, 0.4479, places=4)
+        self.assertAlmostEqual(beta, 0.89587, places=4)
 
     def test_score_hpo_pair_hrss(self):
         t1 = 'HP:0000501'
