@@ -54,12 +54,12 @@ def remove_parents(termlist, hpo_network):
     :param termlist: List of HPO terms.
     :param hpo_network: The HPO networkx object.
     """
-    pruned_termlist = []
+    terms_to_remove = set()
     for source_term in termlist:
         for target_term in termlist:
             # has_path will evaluate True for a term to itself, include additional check
             same_terms = source_term == target_term
             has_path = nx.has_path(hpo_network, source_term, target_term)
-            if not has_path and not same_terms:
-                pruned_termlist.append(source_term)
-    return pruned_termlist
+            if has_path and not same_terms:
+                terms_to_remove.add(target_term)
+    return set(termlist) - terms_to_remove
