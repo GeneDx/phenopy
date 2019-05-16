@@ -11,7 +11,7 @@ from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
 from phenosim.score import Scorer
-from phenosim.util import remove_parent_termlist
+from phenosim.util import remove_parents
 
 
 def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
@@ -94,7 +94,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     lock = manager.Lock()
 
     if no_parents is True:
-        case_hpo = remove_parent_termlist(case_hpo, hpo_network)
+        case_hpo = remove_parents(case_hpo, hpo_network)
 
     if records_file:
         # score and output case hpo terms against all genes associated set of hpo terms
@@ -109,7 +109,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
                     if line[0].startswith('#'):
                         continue
                     if no_parents is True:
-                        records[line[0]] = remove_parent_termlist(line[1].split('|'), hpo_network)
+                        records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
                     else:
                         records[line[0]] = line[1].split('|')
         except (FileNotFoundError, PermissionError) as e:
@@ -186,7 +186,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
                 if line[0].startswith('#'):
                     continue
                 if no_parents is True:
-                    records[line[0]] = remove_parent_termlist(line[1].split('|'), hpo_network)
+                    records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
                 else:
                     records[line[0]] = line[1].split('|')
 

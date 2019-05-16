@@ -32,7 +32,7 @@ def export_pheno2genes_with_no_parents(pheno2genes_file, pheno2genes_no_parents_
     no_parents_df = df.copy()
     for gene, annotations in df.groupby('gene_name'):
         termlist = [node for node in annotations['hpo_id'].tolist() if node in hpo_network.nodes()]
-        termlist = remove_parent_termlist(termlist, hpo_network)
+        termlist = remove_parents(termlist, hpo_network)
         parent_idx = annotations.loc[~annotations['hpo_id'].isin(termlist)].index
         no_parents_df.drop(parent_idx, inplace=True)
 
@@ -49,7 +49,7 @@ def export_pheno2genes_with_no_parents(pheno2genes_file, pheno2genes_no_parents_
         exit(1)
 
 
-def remove_parent_termlist(termlist, hpo_network):
+def remove_parents(termlist, hpo_network):
     """remove parents from termlist
     :param termlist: List of HPO terms.
     :param hpo_network: The HPO networkx object.

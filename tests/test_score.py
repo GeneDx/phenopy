@@ -5,7 +5,7 @@ from phenosim.obo import process
 from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
 from phenosim.score import Scorer
-from phenosim.util import remove_parent_termlist
+from phenosim.util import remove_parents
 
 
 class ScorerTestCase(unittest.TestCase):
@@ -107,5 +107,5 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = ['HP:0000478', 'HP:0000501']
         terms_b = ['HP:0012372', 'HP:0012373']
 
-        self.assertEqual(len(remove_parent_termlist(terms_a, self.scorer.hpo_network)), 1)
-        self.assertEqual(len(remove_parent_termlist(terms_b, self.scorer.hpo_network)), 2)
+        self.assertEqual(len(remove_parents(terms_a, self.scorer.hpo_network)), 1)
+        self.assertEqual(len(remove_parents(terms_b, self.scorer.hpo_network)), 2)
