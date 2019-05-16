@@ -46,7 +46,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     :param threads: Number of parallel process to use.
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
-    :param no_parents: boolean for whether to run in no_parents mode.
+    :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
     """
 
     if agg_score not in {'BMA', 'maximum', }:
@@ -145,7 +145,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     :param threads: Multiprocessing threads to use [default: 1].
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
-    :param no_parents: boolean for whether or not to run in no_parents mode.
+    :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
     """
     if agg_score not in {'BMA', 'maximum', }:
         logger.critical(

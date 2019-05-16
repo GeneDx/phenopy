@@ -50,7 +50,7 @@ Anny of the scoring Phenosim uses [`multiprocessing`](https://docs.python.org/3.
 `--threads 4`
 
 **To score HPO term lists with parent terms pruned from the list:**
-`--no_parents=True`
+`--no_parents`
 
 ## Generate no_parents phenotypes_to_genes.txt file
 From `phenosim/util.py` use `export_pheno2genes_with_no_parents` to output a version of the `phenotypes_to_genes.txt` which has parent terms pruned from the annotations.
