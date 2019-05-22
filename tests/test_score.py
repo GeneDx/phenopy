@@ -5,6 +5,7 @@ from phenosim.obo import process
 from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
 from phenosim.score import Scorer
+from phenosim.util import remove_parents
 
 
 class ScorerTestCase(unittest.TestCase):
@@ -101,3 +102,10 @@ class ScorerTestCase(unittest.TestCase):
 
         score_max = self.scorer.score(terms_a, terms_b, agg_score='maximum')
         self.assertAlmostEqual(score_max, 0.1558, places=4)
+
+    def test_no_parents(self):
+        terms_a = ['HP:0000478', 'HP:0000501']
+        terms_b = ['HP:0012372', 'HP:0012373']
+
+        self.assertEqual(len(remove_parents(terms_a, self.scorer.hpo_network)), 1)
+        self.assertEqual(len(remove_parents(terms_b, self.scorer.hpo_network)), 2)

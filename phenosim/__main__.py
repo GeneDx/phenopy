@@ -11,6 +11,7 @@ from phenosim.obo import cache, process, restore
 from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
 from phenosim.score import Scorer
+from phenosim.util import remove_parents
 
 
 def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
@@ -32,7 +33,7 @@ def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
     return hpo_network
 
 
-def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA'):
+def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False):
     """
     Scores a case HPO terms against all genes associated HPO.
 
@@ -43,8 +44,9 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     :param threads: Number of parallel process to use.
-    :param aggretgate_score: The aggregation method to use for summarizing the similarity matrix between two term sets
+    :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
+    :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
     """
 
     if agg_score not in {'BMA', 'maximum', }:
@@ -91,6 +93,9 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     manager = Manager()
     lock = manager.Lock()
 
+    if no_parents is True:
+        case_hpo = remove_parents(case_hpo, hpo_network)
+
     if records_file:
         # score and output case hpo terms against all genes associated set of hpo terms
         logger.info(
@@ -103,7 +108,10 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
                 for line in reader:
                     if line[0].startswith('#'):
                         continue
-                    records[line[0]] = line[1].split('|')
+                    if no_parents is True:
+                        records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
+                    else:
+                        records[line[0]] = line[1].split('|')
         except (FileNotFoundError, PermissionError) as e:
             logger.critical(e)
             exit(1)
@@ -112,7 +120,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
         records[query_name] = case_hpo
         with Pool(threads) as p:
             p.starmap(scorer.score_pairs, [(records, [
-                      (query_name, record) for record in records], lock, i, threads) for i in range(threads)])
+                      (query_name, record) for record in records], lock, agg_score, i, threads) for i in range(threads)])
 
     else:
         # score and output case hpo terms against all genes associated set of hpo terms
@@ -126,7 +134,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
                       (query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads) for i in range(threads)])
 
 
-def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA'):
+def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
@@ -135,8 +143,9 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
     :param threads: Multiprocessing threads to use [default: 1].
-    :param aggretgate_score: The aggregation method to use for summarizing the similarity matrix between two term sets
+    :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
+    :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
     """
     if agg_score not in {'BMA', 'maximum', }:
         logger.critical(
@@ -160,6 +169,14 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
             )
             exit(1)
 
+    # load phenotypes to genes associations
+    terms_to_genes, _, annotations_count = load_p2g(
+        pheno2genes_file, logger=logger)
+
+    # load hpo network
+    hpo_network = _load_hpo_network(
+        obo_file, terms_to_genes, annotations_count)
+
     try:
         # read records_file
         with open(records_file) as records_fh:
@@ -168,18 +185,14 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
             for line in reader:
                 if line[0].startswith('#'):
                     continue
-                records[line[0]] = line[1].split('|')
+                if no_parents is True:
+                    records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
+                else:
+                    records[line[0]] = line[1].split('|')
+
     except (FileNotFoundError, PermissionError) as e:
         logger.critical(e)
         exit(1)
-
-    # load phenotypes to genes associations
-    terms_to_genes, _, annotations_count = load_p2g(
-        pheno2genes_file, logger=logger)
-
-    # load hpo network
-    hpo_network = _load_hpo_network(
-        obo_file, terms_to_genes, annotations_count)
 
     logger.info(f'Scoring product of records from file: {records_file}')
 

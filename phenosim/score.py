@@ -140,13 +140,13 @@ class Scorer:
 
         :param terms_a: List of HPO terms A.
         :param terms_b: List of HPO terms B.
-        :param aggretgate_score: The aggregation method to use for summarizing the similarity matrix between two term sets
+        :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
             Must be one of {'BMA', }
         :return: `float` (comparison score)
         """
         # filter out hpo terms not in the network and unique them
-        terms_a = set(filter(lambda x: x in self.hpo_network.node, terms_a))
-        terms_b = set(filter(lambda x: x in self.hpo_network.node, terms_b))
+        terms_a = list(filter(lambda x: x in self.hpo_network.node, terms_a))
+        terms_b = list(filter(lambda x: x in self.hpo_network.node, terms_b))
 
         # if either set is empty return 0.0
         if not terms_a or not terms_b:
@@ -181,7 +181,7 @@ class Scorer:
         # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
             score = self.score(records[record_a],
-                               records[record_b], agg_score)
+                               records[record_b], agg_score=agg_score)
             lock.acquire()
             try:
                 sys.stdout.write('\t'.join([

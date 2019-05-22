@@ -45,8 +45,16 @@ phenosim score-product tests/data/test.score-product.txt
 
 ## Parameters
 Anny of the scoring Phenosim uses [`multiprocessing`](https://docs.python.org/3.4/library/multiprocessing.html?highlight=process) to parallelize computations.  
-To use 4 threads add to any scoring function:  
+
+**To use 4 threads add to any scoring function:**  
 `--threads 4`
+
+**To score HPO term lists with parent terms pruned from the list:**
+`--no_parents`
+
+## Generate no_parents phenotypes_to_genes.txt file
+From `phenosim/util.py` use `export_pheno2genes_with_no_parents` to output a version of the `phenotypes_to_genes.txt` which has parent terms pruned from the annotations.
+
 
 ## Under the hood
 Phenosim will create a `.phenosim` directory in your home directory. This has data files from the [Human Phenotype Ontology](https://hpo.jax.org/app/) and
