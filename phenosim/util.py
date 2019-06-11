@@ -59,7 +59,10 @@ def remove_parents(termlist, hpo_network):
         for target_term in termlist:
             # has_path will evaluate True for a term to itself, include additional check
             same_terms = source_term == target_term
-            has_path = nx.has_path(hpo_network, source_term, target_term)
-            if has_path and not same_terms:
+            source_to_target = nx.has_path(hpo_network, source_term, target_term)
+            target_to_source = nx.has_path(hpo_network, target_term, source_term)
+            if source_to_target is True and not same_terms:
                 terms_to_remove.add(target_term)
+            if target_to_source is True and not same_terms:
+                terms_to_remove.add(source_term)
     return set(termlist) - terms_to_remove
