@@ -11,6 +11,9 @@ class Scorer:
 
         self.scores_cache = {}
 
+        self.alt2prim = {}
+        self.generate_alternate_ids()
+
     def find_lca(self, term_a, term_b):
         """
         Determine the lowest common ancestor for a two terms
@@ -38,6 +41,21 @@ class Scorer:
             parents[1])
         # lca node
         return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
+
+    def generate_alternate_ids(self):
+        """Create a key, value store of alternate terms to canonical terms."""
+        for n in self.hpo_network.nodes(data=True):
+            n = n[0]
+            try:
+                for alt in self.hpo_network.node[n]['alt_id']:
+                    self.alt2prim[alt] = n
+            except KeyError:
+                # no alternate HPO ids for this term
+                continue
+
+    def convert_alternate_ids(self, termlist):
+        """return a list of terms with list of alternate HPO ids converted to canonical ones."""
+        return [self.alt2prim[t] if t in self.alt2prim else t for t in termlist]
 
     def calculate_beta(self, term_a, term_b):
         """calculates the beta term in HRSS equation
@@ -144,6 +162,10 @@ class Scorer:
             Must be one of {'BMA', }
         :return: `float` (comparison score)
         """
+        # convert alternate HPO ids to canonical ones
+        terms_a = set(self.convert_alternate_ids(terms_a))
+        terms_b = set(self.convert_alternate_ids(terms_b))
+
         # filter out hpo terms not in the network and unique them
         terms_a = list(filter(lambda x: x in self.hpo_network.node, terms_a))
         terms_b = list(filter(lambda x: x in self.hpo_network.node, terms_b))
