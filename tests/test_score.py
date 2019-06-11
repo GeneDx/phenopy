@@ -109,3 +109,7 @@ class ScorerTestCase(unittest.TestCase):
 
         self.assertEqual(len(remove_parents(terms_a, self.scorer.hpo_network)), 1)
         self.assertEqual(len(remove_parents(terms_b, self.scorer.hpo_network)), 2)
+
+    def test_alt_term(self):
+        terms_a = ['HP:0000489', 'HP:0001087']
+        self.assertIn('HP:0012372', self.scorer.convert_alternate_ids(terms_a))
