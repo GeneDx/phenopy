@@ -26,7 +26,7 @@ def load(obo_file, logger=None):
         exit(1)
 
 
-def process(hpo_network, terms_to_genes, annotations_count):
+def process(hpo_network, terms_to_genes, annotations_count, custom_annotation_files=None, logger=None):
     """
     Cleans the HPO network.
 
@@ -35,6 +35,8 @@ def process(hpo_network, terms_to_genes, annotations_count):
     :param hpo_network: `networkx.MultiDiGraph` to clean.
     :param terms_to_genes: Dictionary mapping HPO terms to genes.
     :param annotations_count: Total number of terms annotations.
+    :param no_parents: boolean to flag whether or not parent terms should be pruned from the input term lists.
+    :param custom_annotation_files: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
     :return: `networkx.MultiDiGraph`
     """
 
@@ -53,6 +55,30 @@ def process(hpo_network, terms_to_genes, annotations_count):
             children = nx.ancestors(hpo_network, hpo_id)
             hpo_network.remove_nodes_from([hpo_id] + list(children))
 
+    # Before calculating information content, check for custom_annotation_files and load
+    all_custom_annos = []
+    if custom_annotation_files is not None:
+        custom_annos = {}
+        for annotations_file in custom_annotation_files:
+            try:
+                with open(annotations_file, 'r') as f:
+                    for line in f:
+                        if line.startswith('#'):
+                            continue
+                    entity_id, hpo_ids = line.split('\t')
+                    for hpo_id in hpo_ids:
+                        if hpo_id in custom_annos:
+                            custom_annos[hpo_id].append(entity_id)
+                        else:
+                            custom_annos[hpo_ids] = [entity_id]
+                # add one custom annotations dictionary to the list which will hold all of them.
+                all_custom_annos.append(custom_annos)
+            except (FileNotFoundError, PermissionError) as e:
+                logger.critical(f'{annotations_file} not found or is not accessible.')
+                raise e
+    else:
+        all_custom_annos = None
+
     for node_id, data in hpo_network.nodes(data=True):
         # annotate with information content value
         hpo_network.node[node_id]['ic'] = calculate_information_content(
@@ -60,6 +86,7 @@ def process(hpo_network, terms_to_genes, annotations_count):
             hpo_network,
             terms_to_genes,
             annotations_count,
+            all_custom_annos,
         )
 
         # annotate with depth value

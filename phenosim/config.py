@@ -47,7 +47,11 @@ config.read_dict({
         'pheno2genes_file': os.path.join(
             data_directory,
             'phenotype_to_genes.txt',
-        )
+        ),
+        'hpo_pickle': os.path.join(
+            data_directory,
+            'hpo_network.pickle',
+        ),
     },
 })
 

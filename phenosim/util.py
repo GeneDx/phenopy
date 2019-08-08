@@ -1,3 +1,4 @@
+import csv
 import sys
 import networkx as nx
 import pandas as pd
@@ -47,6 +48,25 @@ def export_pheno2genes_with_no_parents(pheno2genes_file, pheno2genes_no_parents_
         else:
             sys.stderr.write(str(e))
         exit(1)
+
+
+def read_records_file(records_file, no_parents, hpo_network, logger=None):
+    try:
+        # read records_file
+        with open(records_file) as records_fh:
+            reader = csv.reader(records_fh, delimiter='\t')
+            records = {}
+            for line in reader:
+                if line[0].startswith('#'):
+                    continue
+                if no_parents is True:
+                    records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
+                else:
+                    records[line[0]] = line[1].split('|')
+        return records
+    except (FileNotFoundError, PermissionError) as e:
+        logger.critical(e)
+        raise e
 
 
 def remove_parents(termlist, hpo_network):
