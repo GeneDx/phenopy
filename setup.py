@@ -6,7 +6,7 @@ setup(
     name=__project__,
     packages=find_packages(),
     version=__version__,
-    description='ACMG criteria variant annotator.',
+    description='Phenotype comparison scoring by semantic similarity.',
     author='Kevin Arvai <karvai@genedx.com>, Kyle Retterer <retterer@genedx.com>, Carlos Borroto <cborroto@genedx.com>',
     author_email='<datascience@genedx.com>',
     license='',
