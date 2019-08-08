@@ -1,8 +1,41 @@
 import configparser
 import logging
 import os
+import urllib.request
+import shutil
 
 from phenosim import __project__, __version__
+
+def download_hpo_files():
+    """
+    Check if HPO files exist, if not download them
+    :return: None
+    """
+    def download(url, file_path):
+        """
+        Download and save a file
+        :param url: where to get it from
+        :param file_path: where to put it
+        :return: None
+        """
+        with urllib.request.urlopen(url) as response, open(file_path, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+
+
+    # read the config file to get file paths and urls
+    phen_to_genes_path = config.get('hpo','pheno2genes_file')
+    phen_to_genes_url = config.get('hpo','pheno2genes_file_url')
+
+    obo_path = config.get('hpo','obo_file')
+    obo_url = config.get('hpo','obo_file_url')
+
+    if not os.path.isfile(phen_to_genes_path):
+        logger.info('Downloading HPO phenotype to: %s'%phen_to_genes_path)
+        download(phen_to_genes_url, phen_to_genes_path)
+    if not os.path.isfile(obo_path):
+        logger.info('Downloading HPO obo file to: %s'%obo_path)
+        download(obo_url, obo_path)
+
 
 # create logger
 logger = logging.getLogger(__project__)
@@ -37,17 +70,21 @@ except FileExistsError:
     pass
 
 
-# set defaults
+#set defaults
 config.read_dict({
     'hpo': {
         'obo_file': os.path.join(
             data_directory,
             'hp.obo',
         ),
+        'obo_file_url':'http://purl.obolibrary.org/obo/hp.obo',
+
         'pheno2genes_file': os.path.join(
             data_directory,
             'phenotype_to_genes.txt',
-        )
+        ),
+        'pheno2genes_file_url':'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt'
+
     },
 })
 
@@ -61,3 +98,11 @@ config_file = os.environ.get(
 )
 config.read(config_file)
 logger.info(f'Using configuration file: {config_file}')
+
+
+try:
+    logger.info('Checking if HPO files exist')
+    download_hpo_files()
+except FileNotFoundError:
+    logger.info('Error downloading hpo files')
+    logger.info('Try rerunning or download necessary files to: %s'%data_directory)

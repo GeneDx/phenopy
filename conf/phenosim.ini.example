@@ -1,6 +1,8 @@
 [hpo]
 # HPO OBO file from https://hpo.jax.org/app/download/ontology
-;obo_file = ~/.phenosim/data/hp.obo
+;obo_file_url = 'http://purl.obolibrary.org/obo/hp.obo'
+;obo_file = '~/.phenosim/data/hp.obo'
 
 # HPO phenotypes to genes annotations file from https://hpo.jax.org/app/download/annotation
-;pheno2genes_file = ~/.phenosim/data/phenotype_to_genes.txt
+;pheno2genes_file_url = 'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt'
+;pheno2genes_file = '~/.phenosim/data/phenotype_to_genes.txt'
