@@ -7,7 +7,7 @@ setup(
     packages=find_packages(),
     version=__version__,
     description='Phenotype comparison scoring by semantic similarity.',
-    author='Kevin Arvai <karvai@genedx.com>, Kyle Retterer <retterer@genedx.com>, Carlos Borroto <cborroto@genedx.com>',
+    author='Kevin Arvai <karvai@genedx.com>, Kyle Retterer <retterer@genedx.com>, Carlos Borroto <cborroto@genedx.com>, Vlad Gainullin <vgainullin@genedx.com>',
     author_email='<datascience@genedx.com>',
     license='',
     entry_points={
