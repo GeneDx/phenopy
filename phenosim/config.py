@@ -20,25 +20,28 @@ def download_hpo_files():
         :return: None
         """
         try:
-            with urllib.request.urlopen(url) as response, open(file_path, 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-
-        except PermissionError:
-            logger.info('No permission accessing data directory: %s' % file_path)
-            exit(1)
+            response = urllib.request.urlopen(url)
 
         except ValueError:
             logger.info('Incorrect url specified for HPO files: %s' % url)
             raise
 
-        except urllib.error.URLError:
-            logger.info('Incorrect url specified for HPO files: %s' % url)
-            raise
+        except urllib.error.URLError as e:
+            if hasattr(e, 'reason'):
+                logger.info('Incorrect url specified for HPO files: %s' % url)
+                logger.info('Reason: ', e.reason)
+            elif hasattr(e, 'code'):
+                logger.info('The server could not fulfill the request')
+                logger.info('Reason: ', e.code)
 
-        except Exception as unhandled_exception:
-            logger.info('Could not download HPO files')
-            logger.info('Try downloading them manually')
-            raise unhandled_exception
+
+        try:
+            with open(file_path, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+
+        except PermissionError:
+            logger.info('No permission accessing data directory: %s' % file_path)
+
 
 
         # read the config file to get file paths and urls
