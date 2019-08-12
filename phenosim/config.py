@@ -29,10 +29,12 @@ def download_hpo_files():
         except urllib.error.URLError as e:
             if hasattr(e, 'reason'):
                 logger.info('Incorrect url specified for HPO files: %s' % url)
+                raise
                 logger.info('Reason: ', e.reason)
             elif hasattr(e, 'code'):
                 logger.info('The server could not fulfill the request')
                 logger.info('Reason: ', e.code)
+                raise
 
 
         try:
@@ -41,7 +43,7 @@ def download_hpo_files():
 
         except PermissionError:
             logger.info('No permission accessing data directory: %s' % file_path)
-
+            raise
 
 
         # read the config file to get file paths and urls
