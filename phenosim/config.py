@@ -23,12 +23,12 @@ def download_hpo_files():
             response = urllib.request.urlopen(url)
 
         except ValueError:
-            logger.info('Incorrect url specified for HPO files: %s' % url)
+            logger.info(f'Incorrect url specified for HPO files: {url}')
             raise
 
         except urllib.error.URLError as e:
             if hasattr(e, 'reason'):
-                logger.info('Incorrect url specified for HPO files: %s' % url)
+                logger.info(f'Incorrect url specified for HPO files: {url}')
                 raise
                 logger.info('Reason: ', e.reason)
             elif hasattr(e, 'code'):
@@ -42,25 +42,23 @@ def download_hpo_files():
                 shutil.copyfileobj(response, out_file)
 
         except PermissionError:
-            logger.info('No permission accessing data directory: %s' % file_path)
+            logger.info(f'No permission accessing data directory: {file_path}')
             raise
 
-
     # read the config file to get file paths and urls
-    phen_to_genes_path = config.get('hpo','pheno2genes_file')
-    phen_to_genes_url = config.get('hpo','pheno2genes_file_url')
+    phen_to_genes_path = config.get('hpo', 'pheno2genes_file')
+    phen_to_genes_url = config.get('hpo', 'pheno2genes_file_url')
 
-    obo_path = config.get('hpo','obo_file')
-    obo_url = config.get('hpo','obo_file_url')
+    obo_path = config.get('hpo', 'obo_file')
+    obo_url = config.get('hpo', 'obo_file_url')
 
     if not os.path.isfile(phen_to_genes_path):
-        logger.info('Downloading HPO phenotype to: %s'%phen_to_genes_path)
+        logger.info(f'Downloading HPO phenotype to: {phen_to_genes_path}')
         download(phen_to_genes_url, phen_to_genes_path)
 
     if not os.path.isfile(obo_path):
-        logger.info('Downloading HPO obo file to: %s'%obo_path)
+        logger.info(f'Downloading HPO obo file to: {obo_path}')
         download(obo_url, obo_path)
-
 
 
 # create logger
@@ -95,10 +93,9 @@ try:
 except FileExistsError:
     pass
 
-
 # if config.ini doesnt exist make one
-logger.info('checking if config file exists: %s '%config_directory)
-if not os.path.isfile(config_directory+'/phenosim.ini'):
+logger.info(f'checking if config file exists: {config_directory}')
+if not os.path.isfile(os.path.join(config_directory, 'phenosim.ini')):
     config = configparser.ConfigParser()
     config['hpo'] = {
 
@@ -115,7 +112,7 @@ if not os.path.isfile(config_directory+'/phenosim.ini'):
             'pheno2genes_file_url':'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt'
         }
 
-    with open(config_directory+'/phenosim.ini', 'w') as configfile:
+    with open(os.path.join(config_directory, 'phenosim.ini'), 'w') as configfile:
         logger.info('writing config file to: %s '%config_directory)
         config.write(configfile)
 
@@ -129,7 +126,6 @@ config_file = os.environ.get(
 )
 config.read(config_file)
 logger.info(f'Using configuration file: {config_file}')
-
 
 logger.info('Checking if HPO files exist')
 download_hpo_files()
