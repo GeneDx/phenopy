@@ -14,25 +14,10 @@ python setup.py install
 ```
 
 ## Command Line Usage
-`phenosim` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or disease, but could be any concept that warrants annotation of phenotype terms.     
+`phenosim` will create a `.phenosim/` directory in your home folder and download external resources from HPO into the `.phenosim/data` directory.
+`phenosim` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or disease, but could be any concept that warrants annotation of phenotype terms. 
 
-1. Run `phenosim` to initialize the `.phenosim` directory in your home folder. 
-    ```bash
-    phenosim
-    ```
-
-2. Download the supporting HPO files:
-    ```bash
-    wget \
-       -O ~/.phenosim/data/phenotype_to_genes.txt \
-       http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt
-     
-    wget \
-       -O ~/.phenosim/data/hp.obo \
-       http://purl.obolibrary.org/obo/hp.obo
-    ```
-
-3. Score similarity of an entity defined by the HPO terms from an input file against all the genes in `.phenosim/data/phenotype_to_genes.txt`. We provide a test input file in the repo.
+1. Score similarity of an entity defined by the HPO terms from an input file against all the genes in `.phenosim/data/phenotype_to_genes.txt`. We provide a test input file in the repo.
     ```bash
     phenosim score tests/data/test.score.txt
     ```
@@ -44,7 +29,7 @@ python setup.py install
     ...
     ```
 
-4. Score similarity of an entity defined by the HPO terms from an input file against a custom list of entities with HPO annotations, referred to as the `--records-file`.
+2. Score similarity of an entity defined by the HPO terms from an input file against a custom list of entities with HPO annotations, referred to as the `--records-file`.
     ```bash
     phenosim score tests/data/test.score.txt --records-file tests/data/test.score-product.txt
     ```
@@ -56,7 +41,7 @@ python setup.py install
     ...
     ```
 
-5. Score pairwise similarity of entities defined in the `--records-file`.
+3. Score pairwise similarity of entities defined in the `--records-file`.
     ```bash
     phenosim score-product tests/data/test.score-product.txt
     ```
