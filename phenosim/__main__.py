@@ -202,6 +202,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
 
 
 def main():
+
     fire.Fire({
         'score': score,
         'score-product': score_product,
