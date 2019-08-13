@@ -46,20 +46,20 @@ def download_hpo_files():
             raise
 
 
-        # read the config file to get file paths and urls
-        phen_to_genes_path = config.get('hpo','pheno2genes_file')
-        phen_to_genes_url = config.get('hpo','pheno2genes_file_url')
+    # read the config file to get file paths and urls
+    phen_to_genes_path = config.get('hpo','pheno2genes_file')
+    phen_to_genes_url = config.get('hpo','pheno2genes_file_url')
 
-        obo_path = config.get('hpo','obo_file')
-        obo_url = config.get('hpo','obo_file_url')
+    obo_path = config.get('hpo','obo_file')
+    obo_url = config.get('hpo','obo_file_url')
 
-        if not os.path.isfile(phen_to_genes_path):
-            logger.info('Downloading HPO phenotype to: %s'%phen_to_genes_path)
-            download(phen_to_genes_url, phen_to_genes_path)
+    if not os.path.isfile(phen_to_genes_path):
+        logger.info('Downloading HPO phenotype to: %s'%phen_to_genes_path)
+        download(phen_to_genes_url, phen_to_genes_path)
 
-        if not os.path.isfile(obo_path):
-            logger.info('Downloading HPO obo file to: %s'%obo_path)
-            download(obo_url, obo_path)
+    if not os.path.isfile(obo_path):
+        logger.info('Downloading HPO obo file to: %s'%obo_path)
+        download(obo_url, obo_path)
 
 
 
@@ -96,23 +96,28 @@ except FileExistsError:
     pass
 
 
-#set defaults
-config.read_dict({
-    'hpo': {
-        'obo_file': os.path.join(
-            data_directory,
-            'hp.obo',
-        ),
-        'obo_file_url':'http://purl.obolibrary.org/obo/hp.obo',
+# if config.ini doesnt exist make one
+logger.info('checking if config file exists: %s '%config_directory)
+if not os.path.isfile(config_directory+'/phenosim.ini'):
+    config = configparser.ConfigParser()
+    config['hpo'] = {
 
-        'pheno2genes_file': os.path.join(
-            data_directory,
-            'phenotype_to_genes.txt',
-        ),
-        'pheno2genes_file_url':'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt'
+            'obo_file': os.path.join(
+                data_directory,
+                'hp.obo',
+            ),
+            'obo_file_url':'http://purl.obolibrary.org/obo/hp.obo',
 
-    },
-})
+            'pheno2genes_file': os.path.join(
+                data_directory,
+                'phenotype_to_genes.txt',
+            ),
+            'pheno2genes_file_url':'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt'
+        }
+
+    with open(config_directory+'/phenosim.ini', 'w') as configfile:
+        logger.info('writing config file to: %s '%config_directory)
+        config.write(configfile)
 
 # log project and version
 logger.info(f'{__project__} {__version__}')
