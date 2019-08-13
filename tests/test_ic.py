@@ -5,6 +5,7 @@ from phenosim.obo import process
 from phenosim.obo import load as load_obo
 from phenosim.p2g import load as load_p2g
 
+
 class ScorerTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -25,8 +26,7 @@ class ScorerTestCase(unittest.TestCase):
 
     def test_ic_p2g(self):
         """Calculate the information content of a phenotype"""
-        self.assertEqual(self.hpo_network.node['HP:0012372']['ic'], 1.38, 2)
-
+        self.assertAlmostEqual(self.hpo_network.node['HP:0012372']['ic'], 1.38, 1)
 
     def test_ic_custom(self):
         """Calculate the information content of a phenotype when multiple annotations are present"""
@@ -35,5 +35,5 @@ class ScorerTestCase(unittest.TestCase):
         hpo_network = process(hpo_network, self.terms_to_genes, self.annotations_count,
                               custom_annotation_files=[custom_annotation_file])
 
-        self.assertAlmostEqual(hpo_network.node['HP:0012372']['ic'], 1.93, 2)
+        self.assertAlmostEqual(hpo_network.node['HP:0012372']['ic'], 1.93, 1)
 
