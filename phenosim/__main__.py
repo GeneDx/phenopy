@@ -1,4 +1,3 @@
-import csv
 import fire
 import itertools
 import os
@@ -14,32 +13,32 @@ from phenosim.score import Scorer
 from phenosim.util import remove_parents, read_records_file
 
 
-def _load_hpo_network(obo_file, hpo_network_file, terms_to_genes, annotations_count, no_parents, custom_annotations_file):
+def _load_hpo_network(obo_file, hpo_network_file, terms_to_genes, annotations_count, custom_annotations_file):
     """
     Load and process phenotypes to genes and obo files if we don't have a processed network already.
     """
-    # if the hpo_network_file is provided and it exists, load it
-    if hpo_network_file is not None and os.path.exists(hpo_network_file):
-        logger.info(f'restoring {hpo_network_file}')
-        hpo_network = restore(hpo_network_file)
-    # if not restoring from pickle, then must process the obo
-    elif hpo_network_file is not None and not os.path.exists(hpo_network_file):
-        # pickle file was provided, but doesn't exist means the user wants to cache this run
-        logger.info(f'processing {obo_file} and storing as {hpo_network_file} ')
-        hpo_network = load_obo(obo_file, logger=logger)
-        hpo_network = process(hpo_network, terms_to_genes, annotations_count, custom_annotations_file, logger=logger)
-        cache(hpo_network, os.path.join(data_directory, hpo_network_file))
-    # if no hpo_network_file is specified by the user, try to load the default pickle, or process obo from scratch
-    elif hpo_network_file is None:
-        # pickle file was not provided, use the default
+    # if the hpo_network_file is provided and it exists, load it, this ignores obo_file and custom_annotations_file
+    if hpo_network_file is not None:
+        if os.path.exists(hpo_network_file):
+            logger.info(f'restoring {hpo_network_file} from disk. Ignoring obo_file and custom_annotations_file')
+            hpo_network = restore(hpo_network_file)
+        # when the hpo_network_file is provided but does not exist, process the obo file
+        else:
+            logger.info(f'Loading {obo_file} and writing the cache to: {hpo_network_file}')
+            hpo_network = load_obo(obo_file, logger=logger)
+            hpo_network = process(hpo_network, terms_to_genes, annotations_count, custom_annotations_file,
+                                  logger=logger)
+            cache(hpo_network, hpo_network_file)
+    else:
+        # if the user doesn't provide hpo_network_file, we assume to use the default.
         hpo_network_file = os.path.join(data_directory, 'hpo_network.pickle')
         # restore default hpo_network.pickle
         if os.path.exists(hpo_network_file):
             logger.info(f'Loading the default {hpo_network_file}')
-            restore(hpo_network_file)
+            hpo_network = restore(hpo_network_file)
         # process obo from scratch and write the default pickle.
         else:
-            logger.info(f'processing {obo_file} and writing the default {hpo_network_file}')
+            logger.warning(f'processing {obo_file} and writing the default {hpo_network_file}')
             hpo_network = load_obo(obo_file, logger=logger)
             hpo_network = process(hpo_network, terms_to_genes, annotations_count, custom_annotations_file,
                                   logger=logger)
@@ -48,7 +47,7 @@ def _load_hpo_network(obo_file, hpo_network_file, terms_to_genes, annotations_co
 
 
 def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1,
-          agg_score='BMA', no_parents=False, hpo_network_file=None, custom_annotation_files=None):
+          agg_score='BMA', no_parents=False, hpo_network_file=None, custom_annotations_file=None):
     """
     Scores a case HPO terms against all genes associated HPO.
 
@@ -62,7 +61,8 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
-    :param custom_annotation_files: A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
+    :param hpo_network_file: If provided, phenosim will try to load a cached hpo_network obejct from file.
+    :param custom_annotations_file: A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
     """
 
     if agg_score not in {'BMA', 'maximum', }:
@@ -100,7 +100,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, hpo_network_file, terms_to_genes, annotations_count, no_parents, custom_annotation_files)
+        obo_file, hpo_network_file, terms_to_genes, annotations_count, custom_annotations_file)
 
     # create instance the scorer class
     scorer = Scorer(hpo_network)
@@ -150,7 +150,8 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
-    :param custom_annotation_files: A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
+    :param hpo_network_file: If provided, phenosim will try to load a cached hpo_network obejct from file.
+    :param custom_annotations_file: A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
     """
     if agg_score not in {'BMA', 'maximum', }:
         logger.critical(
@@ -180,7 +181,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, hpo_network_file, terms_to_genes, annotations_count, no_parents, custom_annotations_file)
+        obo_file, hpo_network_file, terms_to_genes, annotations_count, custom_annotations_file)
 
     # try except
     records = read_records_file(records_file, no_parents, hpo_network, logger=logger)

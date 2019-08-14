@@ -131,7 +131,7 @@ class Scorer:
         elif f'{term_b}-{term_a}' in self.scores_cache:
             return self.scores_cache[f'{term_b}-{term_a}']
 
-        # calculat beta_ic
+        # calculate beta_ic
         beta_ic = self.calculate_beta(term_a, term_b)
 
         # find lowest common ancestors for the two terms
@@ -144,8 +144,9 @@ class Scorer:
         gamma = self.calculate_gamma(term_a, term_b, lca_node)
 
         # calculate the pairs score
-        pair_score = (1.0 / float(1.0 + gamma)) * \
-            (alpha_ic / float(alpha_ic + beta_ic))
+        ic = (alpha_ic / float(alpha_ic + beta_ic))
+        pair_score = (1.0 / float(1.0 + gamma)) * ic
+
 
         # cache this pair score
         self.scores_cache[f'{term_a}-{term_b}'] = pair_score

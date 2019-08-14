@@ -22,7 +22,7 @@ class ScorerTestCase(unittest.TestCase):
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         cls.hpo_network = load_obo(cls.obo_file)
         cls.hpo_network = process(cls.hpo_network, cls.terms_to_genes, cls.annotations_count,
-                                  custom_annotation_files=None)
+                                  custom_annotations_file=None)
 
     def test_ic_p2g(self):
         """Calculate the information content of a phenotype"""
@@ -33,7 +33,7 @@ class ScorerTestCase(unittest.TestCase):
         custom_annotation_file = os.path.join(self.parent_dir, 'data/test.score-product.txt')
         hpo_network = load_obo(self.obo_file)
         hpo_network = process(hpo_network, self.terms_to_genes, self.annotations_count,
-                              custom_annotation_files=[custom_annotation_file])
+                              custom_annotations_file=custom_annotation_file)
 
         self.assertAlmostEqual(hpo_network.node['HP:0012372']['ic'], 1.93, 1)
 
