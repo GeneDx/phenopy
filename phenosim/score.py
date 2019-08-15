@@ -224,7 +224,3 @@ class Scorer:
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
-    def weighted_best_match_average(self, df):
-        """Returns the weighted Best-Match average of a termlist to termlist similarity matrix."""
-        # try [1 - np.exp(-IC[col]) for col in df.columns] and [1 - np.exp(-IC[idx]) for idx in df.index]
-        pass
