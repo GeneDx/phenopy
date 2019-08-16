@@ -74,6 +74,10 @@ Output:
         The aggregation method to use for summarizing the similarity matrix between two term sets Must be one of {'BMA', 'maximum'}
     --no_parents=NO_PARENTS
         If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
+    --hpo_network_file=HPO_NETWORK_FILE
+        If provided, phenosim will try to load a cached hpo_network obejct from file.
+    --custom_annotations_file=CUSTOM_ANNOTATIONS_FILE
+        A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
 ```  
 
 ## Library Usage
