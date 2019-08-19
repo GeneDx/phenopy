@@ -4,6 +4,8 @@
 `phenosim` is a Python package to perform phenotype similarity scoring by semantic similarity. `phenosim` is a lightweight but highly optimized command line tool and library to efficiently perform semantic similarity scoring on generic entities with phenotype annotations
 from the [Human Phenotype Ontology (HPO)](https://hpo.jax.org/app/).
 
+![Phenotype Similarity Clustering](notebooks/output/cluster_three_diseases.png)
+
 ## Installation
 ### GitHub
 Install from GitHub:
