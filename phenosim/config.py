@@ -93,7 +93,7 @@ try:
 except FileExistsError:
     pass
 
-# if config.ini doesnt exist make one
+# if phenosim.ini doesnt exist make one
 logger.info(f'checking if config file exists: {config_directory}')
 if not os.path.isfile(os.path.join(config_directory, 'phenosim.ini')):
     config = configparser.ConfigParser()
@@ -103,12 +103,12 @@ if not os.path.isfile(os.path.join(config_directory, 'phenosim.ini')):
                 'hp.obo',
             ),
             'obo_file_url':'http://purl.obolibrary.org/obo/hp.obo',
-
             'pheno2genes_file': os.path.join(
                 data_directory,
                 'phenotype_to_genes.txt',
             ),
-            'pheno2genes_file_url':'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt'
+            'pheno2genes_file_url': 'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt',
+            'hpo_network_file': '',
         }
 
     with open(os.path.join(config_directory, 'phenosim.ini'), 'w') as configfile:
