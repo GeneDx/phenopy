@@ -16,7 +16,28 @@ python setup.py install
 ```
 
 ## Command Line Usage
-`phenosim` will create a `.phenosim/` directory in your home folder and download external resources from HPO into the `.phenosim/data` directory.
+### Initial setup
+`phenosim` is designed to run with minimal setup from the user. To run `phenosim` with default parameters, skip ahead 
+to the `Commands overview`.  
+This section provides details about where `phenosim` stores resources and config files. When running `phenosim` for 
+the first time, it automatically performs these tasks:
+ 1. `phenosim` creates a `.phenosim/` directory in your home folder and downloads external resources from HPO into the
+  `$HOME/.phenosim/data/` directory.
+ 2. `phenosim` creates a `$HOME/.phenosim/phenosim.ini` config file where users can set variables for `phenosim` to use
+ at runtime.
+ 
+To avoid repeated download of the resources in `$HOME/.phenosim/data`, `phenosim` stores everything it needs to run 
+as a pickle file named `hpo_network.pickle` in your user's home directory: `$HOME/.phenosim/data/`.  
+
+**It is important to note that `phenosim` will load `$HOME/.phenosim/data/hpo_network.pickle`, if it exists.
+If you would like to run phenosim with different parameters, you will need to move (or delete) this file.**     
+
+If you would like to use a `hpo_network.pickle` file that exists in another directory, you can set the 
+`hpo_network_file` config variable to the full path of this file.   
+In `$HOME/.phenosim/phenosim.ini` modify this line: `hpo_network_file = ` to read 
+`hpo_network_file = '/path/to/hpo_network.pickle` 
+
+### Commands overview
 `phenosim` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or disease, but could be any concept that warrants annotation of phenotype terms. 
 
 1. Score similarity of an entity defined by the HPO terms from an input file against all the genes in `.phenosim/data/phenotype_to_genes.txt`. We provide a test input file in the repo.
@@ -49,9 +70,9 @@ python setup.py install
     ```
     Output:
     ```
-    001-001	0.8444
-    001-002	0.1097
-    001-003	0.1211
+    118200-118200	0.7703
+    118200-118210	0.563
+    118200-118220	0.7168
     ...
     ```
 
@@ -76,6 +97,10 @@ Output:
         The aggregation method to use for summarizing the similarity matrix between two term sets Must be one of {'BMA', 'maximum'}
     --no_parents=NO_PARENTS
         If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
+    --hpo_network_file=HPO_NETWORK_FILE
+        If provided, phenosim will try to load a cached hpo_network obejct from file.
+    --custom_annotations_file=CUSTOM_ANNOTATIONS_FILE
+        A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
 ```  
 
 ## Library Usage

@@ -1,39 +1,18 @@
-import csv
 import fire
 import itertools
-import os
 
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
 
-from phenosim.config import config, data_directory, logger
-from phenosim.obo import cache, process, restore
-from phenosim.obo import load as load_obo
+from phenosim.config import config, logger
+from phenosim.network import _load_hpo_network
 from phenosim.p2g import load as load_p2g
 from phenosim.score import Scorer
-from phenosim.util import remove_parents
+from phenosim.util import remove_parents, read_records_file
 
 
-def _load_hpo_network(obo_file, terms_to_genes, annotations_count):
-    """
-    Load and process phenotypes to genes and obo files if we don't have a processed network already.
-    """
-    hpo_network_file = os.path.join(data_directory, 'hpo_network.pickle')
-    if not os.path.exists(hpo_network_file):
-        # load and process hpo network
-        logger.info(f'Loading HPO OBO file: {obo_file}')
-        hpo_network = load_obo(obo_file, logger=logger)
-        hpo_network = process(hpo_network, terms_to_genes, annotations_count)
-
-        # save a cache of the processed network
-        cache(hpo_network, hpo_network_file)
-    else:
-        hpo_network = restore(hpo_network_file)
-
-    return hpo_network
-
-
-def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False):
+def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, pheno2genes_file=None, threads=1,
+          agg_score='BMA', no_parents=False, custom_annotations_file=None):
     """
     Scores a case HPO terms against all genes associated HPO.
 
@@ -47,6 +26,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
+    :param custom_annotations_file: A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
     """
 
     if agg_score not in {'BMA', 'maximum', }:
@@ -84,7 +64,7 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, terms_to_genes, annotations_count)
+        obo_file, terms_to_genes, annotations_count, custom_annotations_file)
 
     # create instance the scorer class
     scorer = Scorer(hpo_network)
@@ -100,21 +80,8 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
         # score and output case hpo terms against all genes associated set of hpo terms
         logger.info(
             f'Scoring case HPO terms from file: {query_hpo_file} against cases in: {records_file}')
-        try:
-            # read records_file
-            with open(records_file) as records_fh:
-                reader = csv.reader(records_fh, delimiter='\t')
-                records = {}
-                for line in reader:
-                    if line[0].startswith('#'):
-                        continue
-                    if no_parents is True:
-                        records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
-                    else:
-                        records[line[0]] = line[1].split('|')
-        except (FileNotFoundError, PermissionError) as e:
-            logger.critical(e)
-            exit(1)
+
+        records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
 
         # include the case-to-iteslf
         records[query_name] = case_hpo
@@ -134,7 +101,8 @@ def score(query_hpo_file, records_file=None, query_name='query', obo_file=None, 
                       (query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads) for i in range(threads)])
 
 
-def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False):
+def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False,
+                  custom_annotations_file=None):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
@@ -146,6 +114,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
+    :param custom_annotations_file: A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
     """
     if agg_score not in {'BMA', 'maximum', }:
         logger.critical(
@@ -175,24 +144,10 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, terms_to_genes, annotations_count)
+        obo_file, terms_to_genes, annotations_count, custom_annotations_file)
 
-    try:
-        # read records_file
-        with open(records_file) as records_fh:
-            reader = csv.reader(records_fh, delimiter='\t')
-            records = {}
-            for line in reader:
-                if line[0].startswith('#'):
-                    continue
-                if no_parents is True:
-                    records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
-                else:
-                    records[line[0]] = line[1].split('|')
-
-    except (FileNotFoundError, PermissionError) as e:
-        logger.critical(e)
-        exit(1)
+    # try except
+    records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
 
     logger.info(f'Scoring product of records from file: {records_file}')
 
