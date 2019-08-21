@@ -108,7 +108,10 @@ if not os.path.isfile(os.path.join(config_directory, 'phenosim.ini')):
                 'phenotype_to_genes.txt',
             ),
             'pheno2genes_file_url': 'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt',
-            'hpo_network_file': '',
+            'hpo_network_file': os.path.join(
+                data_directory,
+                'hpo_network.pickle',
+            ),
         }
 
     with open(os.path.join(config_directory, 'phenosim.ini'), 'w') as configfile:
