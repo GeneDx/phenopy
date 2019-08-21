@@ -39,4 +39,4 @@ class NetworkTestCase(unittest.TestCase):
                                         hpo_network_file=self.hpo_network_file
                                         )
 
-        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 2.14, 2)
+        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 1.94, 2)

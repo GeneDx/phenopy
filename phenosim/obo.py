@@ -62,13 +62,13 @@ def process(hpo_network, terms_to_genes, annotations_count, custom_annotations_f
                 for line in f:
                     if line.startswith('#'):
                         continue
-                entity_id, hpo_ids_string = line.split('\t')
-                hpo_ids = hpo_ids_string.split('|')
-                for hpo_id in hpo_ids:
-                    if hpo_id in custom_annos:
-                        custom_annos[hpo_id].append(entity_id)
-                    else:
-                        custom_annos[hpo_id] = [entity_id]
+                    entity_id, hpo_ids_string = line.split('\t')
+                    hpo_ids = hpo_ids_string.split('|')
+                    for hpo_id in hpo_ids:
+                        if hpo_id in custom_annos:
+                            custom_annos[hpo_id].append(entity_id)
+                        else:
+                            custom_annos[hpo_id] = [entity_id]
 
         except (FileNotFoundError, PermissionError, IsADirectoryError) as e:
             logger.critical(f'{custom_annotations_file} not found or is not accessible.')
