@@ -108,9 +108,9 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
                 scored_results = p.starmap(scorer.score_pairs, [(genes_to_terms,
                                      [(query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads, False)
                                                                 for i in range(threads)])
+            scored_results = [item for sublist in scored_results for item in sublist]
             scored_results_df = pd.DataFrame(data=scored_results, columns='query,gene,score'.split(','))
-            scored_results_df = scored_results_df.sort_values(by='score')
-            print(scored_results_df.head())
+            scored_results_df = scored_results_df.sort_values(by='score', ascending=False)
             scored_results_df.to_csv(output_file, sep='\t')
             logger.info(f'Scoring completed')
             logger.info(f'Writing results to file: {output_file}')

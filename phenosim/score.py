@@ -207,9 +207,10 @@ class Scorer:
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
             score = self.score(records[record_a],
                                records[record_b], agg_score=agg_score)
-            lock.acquire()
+
             if stdout:
                 try:
+                    lock.acquire()
                     sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
                     sys.stdout.write('\n')
                 finally:
