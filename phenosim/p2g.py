@@ -15,8 +15,8 @@ def load(pheno2genes_file, logger=None):
         df = pd.read_csv(
             pheno2genes_file,
             comment='#',
-            names=['hpo_id', 'gene_name'],
-            usecols=[0, 3],
+            names=['hpo_id','gene_id','gene_name'],
+            usecols=[0,2,3],
             sep='\t',
         )
     except (FileNotFoundError, PermissionError) as e:
@@ -29,12 +29,19 @@ def load(pheno2genes_file, logger=None):
     # save map of terms to genes, and keep count of total number of annotations
     terms_to_genes = {}
     count = 0
+
+    # convert gene id to string
+    df['gene_id'] = df['gene_id'].astype(str)
+
+    # make unique gene identifier
+    df['gene'] = 'NCBI:' + df['gene_id'] + '[' + df['gene_name'] + ']'
+
     for term, annotations in df.groupby('hpo_id'):
-        terms_to_genes[term] = annotations['gene_name'].tolist()
+        terms_to_genes[term] = annotations['gene'].tolist()
         count += len(terms_to_genes[term])
 
     # save map of genes to terms
     genes_to_terms = {gene: annotations['hpo_id'].tolist(
-    ) for gene, annotations in df.groupby('gene_name')}
+    ) for gene, annotations in df.groupby('gene')}
 
     return terms_to_genes, genes_to_terms, count
