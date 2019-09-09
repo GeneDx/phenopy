@@ -6,11 +6,11 @@ import pandas as pd
 
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
-from phenosim.config import config, logger
-from phenosim.network import _load_hpo_network
-from phenosim.p2g import load as load_p2g
-from phenosim.score import Scorer
-from phenosim.util import remove_parents, read_records_file
+from phenopy.config import config, logger
+from phenopy.network import _load_hpo_network
+from phenopy.p2g import load as load_p2g
+from phenopy.score import Scorer
+from phenopy.util import remove_parents, read_records_file
 
 
 def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None, pheno2genes_file=None, threads=1,

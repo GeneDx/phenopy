@@ -1,7 +1,7 @@
 [![](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
-# Phenosim
-`phenosim` is a Python package to perform phenotype similarity scoring by semantic similarity. `phenosim` is a 
+# phenopy
+`phenopy` is a Python package to perform phenotype similarity scoring by semantic similarity. `phenopy` is a 
 lightweight but highly optimized command line tool and library to efficiently perform semantic similarity scoring on 
 generic entities with phenotype annotations from the [Human Phenotype Ontology (HPO)](https://hpo.jax.org/app/).
 
@@ -11,33 +11,33 @@ generic entities with phenotype annotations from the [Human Phenotype Ontology (
 ### GitHub
 Install from GitHub:
 ```bash
-git clone https://github.com/GeneDx/phenosim.git
-cd phenosim
+git clone https://github.com/GeneDx/phenopy.git
+cd phenopy
 python setup.py install
 ```
 
 ## Command Line Usage
 ### Initial setup
-Phenosim is designed to run with minimal setup from the user, to run phenosim with default parameters (recommended), skip ahead 
+phenopy is designed to run with minimal setup from the user, to run phenopy with default parameters (recommended), skip ahead 
 to the [Commands overview](#Commands-overview).  
 
-This section provides details about where phenosim stores data resources and config files. The following occurs when
-you run phenosim for the first time.
- 1. Phenosim creates a `.phenosim/` directory in your home folder and downloads external resources from HPO into the
-  `$HOME/.phenosim/data/` directory.
- 2. Phenosim stores a binary version of the HPO as a [networkx](https://networkx.github.io/documentation/stable/reference/classes/multidigraph.html) 
- graph object here: `$HOME/.phenosim/data/hpo_network.pickle`.
- 3. Phenosim creates a `$HOME/.phenosim/phenosim.ini` config file where users can set variables for phenosim to use
+This section provides details about where phenopy stores data resources and config files. The following occurs when
+you run phenopy for the first time.
+ 1. phenopy creates a `.phenopy/` directory in your home folder and downloads external resources from HPO into the
+  `$HOME/.phenopy/data/` directory.
+ 2. phenopy stores a binary version of the HPO as a [networkx](https://networkx.github.io/documentation/stable/reference/classes/multidigraph.html) 
+ graph object here: `$HOME/.phenopy/data/hpo_network.pickle`.
+ 3. phenopy creates a `$HOME/.phenopy/phenopy.ini` config file where users can set variables for phenopy to use
  at runtime.
 
 ### Commands overview
-`phenosim` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or 
+`phenopy` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or 
 disease, but could be any concept that warrants annotation of phenotype terms. 
 
 1. Score similarity of an entity defined by the HPO terms from an input file against all the genes in 
-`.phenosim/data/phenotype_to_genes.txt`. We provide a test input file in the repo.
+`.phenopy/data/phenotype_to_genes.txt`. We provide a test input file in the repo.
     ```bash
-    phenosim score tests/data/test.score.txt
+    phenopy score tests/data/test.score.txt
     ```
     Output:
     ```
@@ -50,7 +50,7 @@ disease, but could be any concept that warrants annotation of phenotype terms.
 
 2. Score similarity of an entity defined by the HPO terms from an input file against a custom list of entities with HPO annotations, referred to as the `--records-file`.
     ```bash
-    phenosim score tests/data/test.score.txt --records-file tests/data/test.score-product.txt
+    phenopy score tests/data/test.score.txt --records-file tests/data/test.score-product.txt
     ```
     Output:
     ```
@@ -63,7 +63,7 @@ disease, but could be any concept that warrants annotation of phenotype terms.
 
 3. Score pairwise similarity of entities defined in the `--records-file`.
     ```bash
-    phenosim score-product tests/data/test.score-product.txt --threads 4
+    phenopy score-product tests/data/test.score-product.txt --threads 4
     ```
     Output:
     ```
@@ -74,9 +74,9 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     ```
 
 ## Parameters
-For a full list of command arguments use `phenosim [subcommand] --help`:
+For a full list of command arguments use `phenopy [subcommand] --help`:
 ```bash
-phenosim score --help
+phenopy score --help
 ```
 Output:
 ```
@@ -95,20 +95,20 @@ Output:
     --no_parents=NO_PARENTS
         If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
     --hpo_network_file=HPO_NETWORK_FILE
-        If provided, phenosim will try to load a cached hpo_network obejct from file.
+        If provided, phenopy will try to load a cached hpo_network obejct from file.
     --custom_annotations_file=CUSTOM_ANNOTATIONS_FILE
         A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
     --output_file=OUTPUT_FILE
         filepath where to store the results.  
 ```
 ## Library Usage
-The `phenosim` library can be used as a `Python` module, allowing more control for advanced users.   
+The `phenopy` library can be used as a `Python` module, allowing more control for advanced users.   
 
 ```python
 import os
-from phenosim import config
-from phenosim.obo import restore
-from phenosim.score import Scorer
+from phenopy import config
+from phenopy.obo import restore
+from phenopy.score import Scorer
 
 network_file = os.path.join(config.data_directory, 'hpo_network.pickle')
 
@@ -128,9 +128,9 @@ Output:
 Another example is to use the library to prune parent phenotypes from the `phenotype_to_genes.txt`
 ```python
 import os
-from phenosim import config
-from phenosim.obo import restore
-from phenosim.util import export_pheno2genes_with_no_parents
+from phenopy import config
+from phenopy.obo import restore
+from phenopy.util import export_pheno2genes_with_no_parents
 
 
 network_file = os.path.join(config.data_directory, 'hpo_network.pickle')
@@ -142,16 +142,16 @@ export_pheno2genes_with_no_parents(phenotype_to_genes_file, phenotype_to_genes_n
 ```
 
 ### Config
-While we recommend using the default settings for most users, the config file *can be* modified: `$HOME/.phenosim/phenosim.ini`.
+While we recommend using the default settings for most users, the config file *can be* modified: `$HOME/.phenopy/phenopy.ini`.
 
 **IMPORTANT NOTE:  
-If the config variable `hpo_network_file` is defined, phenosim will try to load this stored version of the HPO and ignore 
+If the config variable `hpo_network_file` is defined, phenopy will try to load this stored version of the HPO and ignore 
 the following command-line arguments: `obo_file` and `custom_annotations_file`.**
 
-To run phenosim with different `obo_file` or `custom_annotations_file`: 
-Rename or move the HPO network file: `mv $HOME/.phenosim/data/hpo_network.pickle $HOME/.phenosim/data/hpo_network.old.pickle`
+To run phenopy with different `obo_file` or `custom_annotations_file`: 
+Rename or move the HPO network file: `mv $HOME/.phenopy/data/hpo_network.pickle $HOME/.phenopy/data/hpo_network.old.pickle`
 
-To run phenosim with a previously stored version of the HPO network, simply set 
+To run phenopy with a previously stored version of the HPO network, simply set 
 `hpo_network_file = '/path/to/hpo_network.pickle`.  
 
 ## Contributing

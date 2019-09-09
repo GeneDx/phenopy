@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from phenosim.obo import load
+from phenopy.obo import load
 
 
 class OboTestCase(unittest.TestCase):

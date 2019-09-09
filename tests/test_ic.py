@@ -1,9 +1,9 @@
 import os
 import unittest
 
-from phenosim.obo import process
-from phenosim.obo import load as load_obo
-from phenosim.p2g import load as load_p2g
+from phenopy.obo import process
+from phenopy.obo import load as load_obo
+from phenopy.p2g import load as load_p2g
 
 
 class ScorerTestCase(unittest.TestCase):

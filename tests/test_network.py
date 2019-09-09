@@ -1,9 +1,9 @@
 import os
 import unittest
 
-from phenosim.config import config
-from phenosim.p2g import load as load_p2g
-from phenosim.network import _load_hpo_network
+from phenopy.config import config
+from phenopy.p2g import load as load_p2g
+from phenopy.network import _load_hpo_network
 
 
 class NetworkTestCase(unittest.TestCase):

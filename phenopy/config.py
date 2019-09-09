@@ -4,7 +4,7 @@ import os
 import urllib.request
 import shutil
 
-from phenosim import __project__, __version__
+from phenopy import __project__, __version__
 
 
 def download_hpo_files():
@@ -93,9 +93,9 @@ try:
 except FileExistsError:
     pass
 
-# if phenosim.ini doesnt exist make one
+# if phenopy.ini doesnt exist make one
 logger.info(f'checking if config file exists: {config_directory}')
-if not os.path.isfile(os.path.join(config_directory, 'phenosim.ini')):
+if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
     config = configparser.ConfigParser()
     config['hpo'] = {
             'obo_file': os.path.join(
@@ -114,7 +114,7 @@ if not os.path.isfile(os.path.join(config_directory, 'phenosim.ini')):
             ),
         }
 
-    with open(os.path.join(config_directory, 'phenosim.ini'), 'w') as configfile:
+    with open(os.path.join(config_directory, 'phenopy.ini'), 'w') as configfile:
         logger.info('writing config file to: %s '%config_directory)
         config.write(configfile)
 
