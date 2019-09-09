@@ -1,6 +1,6 @@
 import unittest
 
-from phenosim.p2g import load
+from phenopy.p2g import load
 
 
 class P2GTestCase(unittest.TestCase):

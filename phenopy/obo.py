@@ -5,7 +5,7 @@ import sys
 
 import networkx as nx
 
-from phenosim.ic import calculate_information_content
+from phenopy.ic import calculate_information_content
 
 
 def load(obo_file, logger=None):

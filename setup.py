@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-from phenosim import __project__, __version__
+from phenopy import __project__, __version__
 
 setup(
     name=__project__,

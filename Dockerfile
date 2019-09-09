@@ -25,8 +25,8 @@ WORKDIR /app
 # install python requirements
 RUN pipenv install --dev --deploy --system
 
-# install phenosim
+# install phenopy
 RUN pip install .
 
 # default command
-CMD ["phenosim"]
+CMD ["phenopy"]
