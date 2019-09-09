@@ -1,9 +1,11 @@
 import fire
 import itertools
 import sys
+
+import pandas as pd
+
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
-import pandas as pd
 from phenosim.config import config, logger
 from phenosim.network import _load_hpo_network
 from phenosim.p2g import load as load_p2g
@@ -26,7 +28,8 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
-    :param custom_annotations_file: A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
+    :param custom_annotations_file: A custom entity-to-phenotype annotation file in the same format as tests/data/test.score-product.txt
+    :param output_file: filepath where to store the results.
     """
 
     if agg_score not in {'BMA', 'maximum', }:
@@ -79,15 +82,28 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
     if records_file:
         # score and output case hpo terms against all genes associated set of hpo terms
         logger.info(
-            f'Scoring case HPO terms from file: {query_hpo_file} against cases in: {records_file}')
+            f'Scoring HPO terms from file: {query_hpo_file} against entities in: {records_file}')
 
         records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
 
         # include the case-to-iteslf
         records[query_name] = case_hpo
-        with Pool(threads) as p:
-            p.starmap(scorer.score_pairs, [(records, [
-                      (query_name, record) for record in records], lock, agg_score, i, threads) for i in range(threads)])
+        if not output_file:
+            sys.stdout.write('\t'.join(['#query', 'entity_id', 'score']))
+            sys.stdout.write('\n')
+            with Pool(threads) as p:
+                p.starmap(scorer.score_pairs, [(records, [
+                          (query_name, record) for record in records], lock, agg_score, i, threads) for i in range(threads)])
+        else:
+            with Pool(threads) as p:
+                scored_results = p.starmap(scorer.score_pairs, [(records, [(query_name, record) for record in records],
+                                                                 lock, agg_score, i, threads, False) for i in range(threads)])
+            scored_results = [item for sublist in scored_results for item in sublist]
+            scored_results_df = pd.DataFrame(data=scored_results, columns='#query,entity_id,score'.split(','))
+            scored_results_df = scored_results_df.sort_values(by='score', ascending=False)
+            scored_results_df.to_csv(output_file, sep='\t', index=False)
+            logger.info(f'Scoring completed')
+            logger.info(f'Writing results to file: {output_file}')
 
     else:
         # score and output case hpo terms against all genes associated set of hpo terms
@@ -96,7 +112,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         # add the case terms to the genes_to_terms dict
         genes_to_terms[query_name] = case_hpo
         if not output_file:
-            sys.stdout.write('\t'.join(['#Query', 'Gene', 'Score']))
+            sys.stdout.write('\t'.join(['#query', 'gene', 'score']))
             sys.stdout.write('\n')
             # iterate over each cross-product and score the pair of records
             with Pool(threads) as p:
@@ -109,9 +125,9 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
                                      [(query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads, False)
                                                                 for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
-            scored_results_df = pd.DataFrame(data=scored_results, columns='query,gene,score'.split(','))
+            scored_results_df = pd.DataFrame(data=scored_results, columns='#query,gene,score'.split(','))
             scored_results_df = scored_results_df.sort_values(by='score', ascending=False)
-            scored_results_df.to_csv(output_file, sep='\t')
+            scored_results_df.to_csv(output_file, sep='\t', index=False)
             logger.info(f'Scoring completed')
             logger.info(f'Writing results to file: {output_file}')
 
@@ -129,7 +145,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
-    :param custom_annotations_file: A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
+    :param custom_annotations_file: A custom entity-to-phenotype annotation file in the same format as tests/data/test.score-product.txt
     """
     if agg_score not in {'BMA', 'maximum', }:
         logger.critical(
