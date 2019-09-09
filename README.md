@@ -152,7 +152,7 @@ To run phenopy with different `obo_file` or `custom_annotations_file`:
 Rename or move the HPO network file: `mv $HOME/.phenopy/data/hpo_network.pickle $HOME/.phenopy/data/hpo_network.old.pickle`
 
 To run phenopy with a previously stored version of the HPO network, simply set 
-`hpo_network_file = '/path/to/hpo_network.pickle`.  
+`hpo_network_file = /path/to/hpo_network.pickle`.  
 
 ## Contributing
 We welcome contributions from the community. Please follow these steps to setup a local development environment.  
