@@ -8,7 +8,11 @@ generic entities with phenotype annotations from the [Human Phenotype Ontology (
 ![Phenotype Similarity Clustering](https://raw.githubusercontent.com/GeneDx/phenopy/master/notebooks/output/cluster_three_diseases.png)
 
 ## Installation
-### GitHub
+Install using pip:
+```bash
+pip install phenopy
+```
+
 Install from GitHub:
 ```bash
 git clone https://github.com/GeneDx/phenopy.git
