@@ -17,7 +17,7 @@ def calculate_information_content(hpo_id, hpo_network, terms_to_genes, num_genes
     """
     # compile list of HPO terms to include in the calculation, term plus children
     hpo_id_plus_children = [hpo_id] + list(nx.ancestors(hpo_network, hpo_id))
-    # num_genes_annotated is
+    # num_genes_annotated is the total number of genes in the annotation corpus.
     def get_ic(hpo_ids, annotations):
         # count the number of unique genes annotated to the hpo term and it's children
         n_unique_genes = len({g for h in hpo_ids if h in annotations for g in annotations[h]})
