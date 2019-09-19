@@ -40,7 +40,15 @@ class Scorer:
         common_parents = parents[0].intersection(
             parents[1])
         # lca node
-        return max(common_parents, key=lambda n: self.hpo_network.node[n]['ic'])
+        # find the ancestor with the highest IC
+        max_ic_node = max(common_parents, key=lambda n: self.hpo_network.node[n]['ic'])
+        all_max_ic_nodes = [hpoid for hpoid in common_parents \
+                            if self.hpo_network.node[hpoid]['ic'] == self.hpo_network.node[max_ic_node]['ic']]
+        # if more than one MICA has equal IC, use the one with greater depth
+        if len(all_max_ic_nodes) > 1:
+            return max(all_max_ic_nodes, key=lambda n: self.hpo_network.node[n]['depth'])
+        else:
+            return max_ic_node
 
     def generate_alternate_ids(self):
         """Create a key, value store of alternate terms to canonical terms."""

@@ -98,7 +98,7 @@ class ScorerTestCase(unittest.TestCase):
 
         # test BMA
         score_bma = self.scorer.score(terms_a, terms_b, agg_score='BMA')
-        self.assertAlmostEqual(score_bma, 0.2961, places=4)
+        self.assertAlmostEqual(score_bma, 0.3367, places=4)
 
         score_max = self.scorer.score(terms_a, terms_b, agg_score='maximum')
         self.assertAlmostEqual(score_max, 0.5, places=4)
