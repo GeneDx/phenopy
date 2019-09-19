@@ -1,4 +1,5 @@
 [![](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
+[![](https://github.com/GeneDx/phenopy/workflows/Python%20package/badge.svg)](https://github.com/GeneDx/phenopy/actions)
 
 # phenopy
 `phenopy` is a Python package to perform phenotype similarity scoring by semantic similarity. `phenopy` is a 
