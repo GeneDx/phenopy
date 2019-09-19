@@ -2,6 +2,7 @@
 HP:0003270	Abdominal distention	672	BRCA1
 HP:0000549	Abnormal conjugate eye movement	5728	PTEN
 HP:0012372	Abnormal eye morphology	5728	PTEN
+HP:0012372	Abnormal eye morphology	8092	ALX1
 HP:0012373	Abnormal eye physiology	5728	PTEN
 HP:0000496	Abnormality of eye movement	5728	PTEN
 HP:0000478	Abnormality of the eye	5728	PTEN

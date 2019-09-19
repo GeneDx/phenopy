@@ -9,7 +9,7 @@ def load(pheno2genes_file, logger=None):
 
     :param pheno2genes_file: Phenotypes to genes file.
     :param logger: Python `logging` logger instance.
-    :return: `dict` {hpo_term: [genes]}, `int` total count of annotations
+    :return: `dict` {hpo_term: [genes]}, `dict` {gene: [hpo_ids]}, `int` number of genes  annotations
     """
     try:
         df = pd.read_csv(
@@ -44,4 +44,4 @@ def load(pheno2genes_file, logger=None):
     genes_to_terms = {gene: annotations['hpo_id'].tolist(
     ) for gene, annotations in df.groupby('gene')}
 
-    return terms_to_genes, genes_to_terms, count
+    return terms_to_genes, genes_to_terms, len(genes_to_terms)

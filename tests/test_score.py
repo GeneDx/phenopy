@@ -70,7 +70,7 @@ class ScorerTestCase(unittest.TestCase):
         t2 = 'HP:0012373'
 
         beta = self.scorer.calculate_beta(t1, t2)
-        self.assertAlmostEqual(beta, 0.89587, places=4)
+        self.assertAlmostEqual(beta, 0.2027, places=4)
 
     def test_score_hpo_pair_hrss(self):
         t1 = 'HP:0000501'
@@ -78,15 +78,15 @@ class ScorerTestCase(unittest.TestCase):
 
         # score two terms
         score = self.scorer.score_hpo_pair_hrss((t1, t2))
-        self.assertAlmostEqual(score, 0.4362, places=4)
+        self.assertAlmostEqual(score, 0.5, places=4)
 
         # test that the cache is working
         score = self.scorer.score_hpo_pair_hrss((t1, t2))
-        self.assertAlmostEqual(score, 0.4362, places=4)
+        self.assertAlmostEqual(score, 0.5, places=4)
 
         # and test that the cache is working for inverse comparisons
         score = self.scorer.score_hpo_pair_hrss((t2, t1))
-        self.assertAlmostEqual(score, 0.4362, places=4)
+        self.assertAlmostEqual(score, 0.5, places=4)
 
     def test_score(self):
         terms_a = ['HP:0000501', 'HP:0001087']
@@ -98,10 +98,10 @@ class ScorerTestCase(unittest.TestCase):
 
         # test BMA
         score_bma = self.scorer.score(terms_a, terms_b, agg_score='BMA')
-        self.assertAlmostEqual(score_bma, 0.1252, places=4)
+        self.assertAlmostEqual(score_bma, 0.2961, places=4)
 
         score_max = self.scorer.score(terms_a, terms_b, agg_score='maximum')
-        self.assertAlmostEqual(score_max, 0.1558, places=4)
+        self.assertAlmostEqual(score_max, 0.5, places=4)
 
     def test_no_parents(self):
         terms_a = ['HP:0000478', 'HP:0000501']

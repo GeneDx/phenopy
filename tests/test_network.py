@@ -30,7 +30,7 @@ class NetworkTestCase(unittest.TestCase):
 
         # this is a cleaned version of the network, so it is not the same as test_obo.py
         self.assertEqual(len(hpo_network), 20)
-        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 2.48, 2)
+        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 1.386, 2)
 
     def test_load_custom(self):
         hpo_network = _load_hpo_network(self.obo_file, self.pheno2genes_file, self.annotations_count,
@@ -39,4 +39,4 @@ class NetworkTestCase(unittest.TestCase):
                                         hpo_network_file=self.hpo_network_file
                                         )
 
-        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 1.94, 2)
+        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 0.837, 2)

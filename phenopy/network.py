@@ -5,7 +5,7 @@ from phenopy.obo import cache, process, restore
 from phenopy.obo import load as load_obo
 
 
-def _load_hpo_network(obo_file, terms_to_genes, annotations_count, custom_annotations_file, hpo_network_file=None):
+def _load_hpo_network(obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file, hpo_network_file=None):
     """
     Load and process phenotypes to genes and obo files if we don't have a processed network already.
     """
@@ -18,7 +18,7 @@ def _load_hpo_network(obo_file, terms_to_genes, annotations_count, custom_annota
         # load and process hpo network
         logger.info(f'Loading HPO OBO file: {obo_file}')
         hpo_network = load_obo(obo_file, logger=logger)
-        hpo_network = process(hpo_network, terms_to_genes, annotations_count, custom_annotations_file,
+        hpo_network = process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file,
                               logger=logger)
 
         # save a cache of the processed network

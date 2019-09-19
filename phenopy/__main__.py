@@ -62,12 +62,12 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         exit(1)
 
     # load phenotypes to genes associations
-    terms_to_genes, genes_to_terms, annotations_count = load_p2g(
+    terms_to_genes, genes_to_terms, num_genes_annotated = load_p2g(
         pheno2genes_file, logger=logger)
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, terms_to_genes, annotations_count, custom_annotations_file)
+        obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file)
 
     # create instance the scorer class
     scorer = Scorer(hpo_network)
@@ -170,12 +170,12 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
             exit(1)
 
     # load phenotypes to genes associations
-    terms_to_genes, _, annotations_count = load_p2g(
+    terms_to_genes, _, num_genes_annotated = load_p2g(
         pheno2genes_file, logger=logger)
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, terms_to_genes, annotations_count, custom_annotations_file)
+        obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file)
 
     # try except
     records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
