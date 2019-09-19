@@ -1,6 +1,8 @@
+import numpy as np
 import os
 import unittest
 
+from phenopy.ic import calculate_information_content
 from phenopy.obo import process
 from phenopy.obo import load as load_obo
 from phenopy.p2g import load as load_p2g
@@ -37,3 +39,13 @@ class ScorerTestCase(unittest.TestCase):
 
         self.assertAlmostEqual(hpo_network.node['HP:0012372']['ic'], 0.837, 1)
 
+    def test_inf_ic(self):
+        hpo_id = 'HP:0000014'
+        inf_ic = calculate_information_content(
+            hpo_id,
+            self.hpo_network,
+            self.terms_to_genes,
+            1e310,
+            None,
+        )
+        self.assertAlmostEqual(inf_ic, -np.log(np.nextafter(0, 1)))
