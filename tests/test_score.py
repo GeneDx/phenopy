@@ -1,5 +1,6 @@
 import os
 import unittest
+import pandas as pd
 
 from phenopy.obo import process
 from phenopy.obo import load as load_obo
@@ -113,3 +114,28 @@ class ScorerTestCase(unittest.TestCase):
     def test_alt_term(self):
         terms_a = ['HP:0000489', 'HP:0001087']
         self.assertIn('HP:0012372', self.scorer.convert_alternate_ids(terms_a))
+
+    def test_bmwa(self):
+
+        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322'] #ATAX, DD, HYP, SS
+        terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290'] # DD, ID, HYP
+        weights_a = [0.67, 1., 1., 0.4]
+        weights_b = [1., 1., 1.]
+
+        df = pd.DataFrame(
+            [[4.22595743e-02, 3.92122308e-02, 3.04851573e-04],
+             [1.07473687e-01, 5.05101655e-01, 3.78305515e-04],
+             [3.69780479e-04, 3.78305515e-04, 4.64651944e-01],
+             [4.17139800e-04, 4.12232546e-04, 3.67984322e-04]],
+            index=pd.Index(terms_a, name='a'),
+            columns=pd.MultiIndex.from_arrays([['score'] * len(terms_b), terms_b],
+                                              names=[None, 'b'])
+        )
+
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
+        self.assertEqual(score_bmwa, 0.3419)
+
+        # set all weights to 1.0
+        weights_a = [1.] * len(weights_a)
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
+        self.assertEqual(score_bmwa, 0.2985)

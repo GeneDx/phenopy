@@ -308,3 +308,179 @@ def: "The pattern in which a particular genetic trait or disorder is passed from
 synonym: "Inheritance" EXACT []
 xref: UMLS:C1708511
 is_a: HP:0000001 ! All
+
+
+[Term]
+id: HP:0001249
+name: Intellectual disability
+alt_id: HP:0000730
+alt_id: HP:0001267
+alt_id: HP:0001286
+alt_id: HP:0002122
+alt_id: HP:0002192
+alt_id: HP:0002316
+alt_id: HP:0002382
+alt_id: HP:0002386
+alt_id: HP:0002402
+alt_id: HP:0002458
+alt_id: HP:0002482
+alt_id: HP:0002499
+alt_id: HP:0002543
+alt_id: HP:0003767
+alt_id: HP:0006833
+alt_id: HP:0006877
+alt_id: HP:0007154
+alt_id: HP:0007176
+alt_id: HP:0007180
+def: "Subnormal intellectual functioning which originates during the developmental period. Intellectual disability, previously referred to as mental retardation, has been defined as an IQ score below 70." [HPO:probinson]
+comment: This term should be used for children at least five years old. For younger children, consider the term Global developmental delay (HP:0001263).
+synonym: "Dull intelligence" RELATED []
+synonym: "Intellectual disability" EXACT layperson []
+synonym: "Low intelligence" RELATED layperson []
+synonym: "Mental deficiency" EXACT layperson []
+synonym: "Mental retardation" EXACT layperson []
+synonym: "Mental retardation, nonspecific" EXACT layperson []
+synonym: "Mental-retardation" EXACT layperson []
+synonym: "Nonprogressive intellectual disability" EXACT []
+synonym: "Nonprogressive mental retardation" EXACT []
+synonym: "Poor school performance" RELATED layperson []
+xref: MSH:D008607
+xref: SNOMEDCT_US:228156007
+xref: SNOMEDCT_US:247578003
+xref: SNOMEDCT_US:91138005
+xref: UMLS:C0025362
+xref: UMLS:C0423903
+xref: UMLS:C0917816
+xref: UMLS:C1843367
+xref: UMLS:C3714756
+xref: UMLS:C4020876
+is_a: HP:0012759 ! Neurodevelopmental abnormality
+
+[Term]
+id: HP:0012759
+name: Neurodevelopmental abnormality
+def: "A deviation from normal of the neurological development of a child, which may include any or all of the aspects of the development of personal, social, gross or fine motor, and cognitive abilities." [KI:phemming]
+comment: This term should be used to describe abnormalities with onset in the developmental period.
+xref: UMLS:C4022737
+is_a: HP:0012638 ! Abnormality of nervous system physiology
+created_by: peter
+creation_date: 2014-04-03T12:20:28Z
+
+[Term]
+id: HP:0012638
+name: Abnormality of nervous system physiology
+def: "A functional anomaly of the nervous system." [HPO:probinson]
+xref: UMLS:C4022811
+is_a: HP:0000001 ! All
+created_by: peter
+creation_date: 2014-01-19T08:02:46Z
+
+[Term]
+id: HP:0001263
+name: Global developmental delay
+alt_id: HP:0000754
+alt_id: HP:0001255
+alt_id: HP:0001277
+alt_id: HP:0001292
+alt_id: HP:0002433
+alt_id: HP:0002473
+alt_id: HP:0002532
+alt_id: HP:0006793
+alt_id: HP:0006867
+alt_id: HP:0006885
+alt_id: HP:0006935
+alt_id: HP:0007005
+alt_id: HP:0007094
+alt_id: HP:0007106
+alt_id: HP:0007174
+alt_id: HP:0007224
+alt_id: HP:0007228
+alt_id: HP:0007342
+def: "A delay in the achievement of motor or mental milestones in the domains of development of a child, including motor skills, speech and language, cognitive skills, and social and emotional skills. This term should only be used to describe children younger than five years of age." [DDD:hvfirth, HPO:sdoelken]
+comment: Developmental retardation is any significant lag in development in the any or all of the physical, cognitive, behavioral, emotional, or social spheres. Note that the term intellectual disability (mental retardation) refers to not merely a delay in development but rather a permanent limitation. Note that the term 'psychomotor retardation' is also used in some contexts to refer to a slowing of thought and physical movements as a result of major depression or intoxication.
+synonym: "Cognitive delay" RELATED []
+synonym: "Delayed cognitive development" EXACT []
+synonym: "Delayed development" EXACT []
+synonym: "Delayed developmental milestones" EXACT []
+synonym: "Delayed intellectual development" EXACT []
+synonym: "Delayed milestones" EXACT []
+synonym: "Delayed psychomotor development" EXACT []
+synonym: "Developmental delay" EXACT []
+synonym: "Developmental delay in early childhood" EXACT []
+synonym: "Developmental delay, global" EXACT []
+synonym: "Developmental retardation" EXACT []
+synonym: "Lack of psychomotor development" EXACT []
+synonym: "Mental and motor retardation" RELATED []
+synonym: "Motor and developmental delay" EXACT []
+synonym: "Psychomotor delay" EXACT []
+synonym: "Psychomotor development deficiency" EXACT []
+synonym: "Psychomotor development failure" EXACT []
+synonym: "Psychomotor developmental delay" EXACT []
+synonym: "Retarded development" EXACT []
+synonym: "Retarded mental development" EXACT []
+synonym: "Retarded psychomotor development" EXACT []
+xref: SNOMEDCT_US:224958001
+xref: UMLS:C0557874
+xref: UMLS:C1864897
+xref: UMLS:C4020875
+is_a: HP:0012758 ! Neurodevelopmental delay
+
+[Term]
+id: HP:0012758
+name: Neurodevelopmental delay
+xref: UMLS:C4022738
+is_a: HP:0012759 ! Neurodevelopmental abnormality
+created_by: peter
+creation_date: 2014-04-03T12:16:19Z
+
+[Term]
+id: HP:0001290
+name: Generalized hypotonia
+def: "Generalized muscular hypotonia (abnormally low muscle tone)." [HPO:curators]
+synonym: "Decreased muscle tone" EXACT layperson []
+synonym: "Generalized muscular hypotonia" EXACT []
+synonym: "Hypotonia" BROAD [HPO:skoehler]
+synonym: "Hypotonia, generalized" EXACT []
+synonym: "Low muscle tone" EXACT layperson []
+xref: UMLS:C1858120
+is_a: HP:0000001 ! All
+
+[Term]
+id: HP:0001251
+name: Ataxia
+alt_id: HP:0001253
+alt_id: HP:0002513
+alt_id: HP:0007050
+alt_id: HP:0007157
+def: "Cerebellar ataxia refers to ataxia due to dysfunction of the cerebellum. This causes a variety of elementary neurological deficits including asynergy (lack of coordination between muscles, limbs and joints), dysmetria (lack of ability to judge distances that can lead to under- oder overshoot in grasping movements), and dysdiadochokinesia (inability to perform rapid movements requiring antagonizing muscle groups to be switched on and off repeatedly)." [HPO:probinson]
+comment: Ataxia can be differentiated into dyssynergy, asynergy, dysmetria (hypometria, hypermetria), dysdiadochokinesis, gait ataxia, truncal ataxia, limb ataxia, and dysarthria). Note: This term does not include sensory ataxia.
+synonym: "Cerebellar ataxia" EXACT []
+xref: MSH:D002524
+xref: SNOMEDCT_US:85102008
+xref: UMLS:C0007758
+is_a: HP:0000001 ! All
+
+[Term]
+id: HP:0004322
+name: Short stature
+alt_id: HP:0001509
+alt_id: HP:0003501
+alt_id: HP:0003507
+alt_id: HP:0003512
+alt_id: HP:0003518
+alt_id: HP:0003519
+alt_id: HP:0008871
+alt_id: HP:0008882
+alt_id: HP:0008888
+alt_id: HP:0008913
+def: "A height below that which is expected according to age and gender norms. Although there is no universally accepted definition of short stature, many refer to \"short stature\" as height more than 2 standard deviations below the mean for age and gender (or below the 3rd percentile for age and gender dependent norms)." [HPO:curators]
+synonym: "Decreased body height" EXACT layperson []
+synonym: "Height less than 3rd percentile" EXACT []
+synonym: "Short stature" EXACT layperson []
+synonym: "Small stature" EXACT layperson []
+synonym: "Stature below 3rd percentile" EXACT []
+xref: SNOMEDCT_US:237836003
+xref: UMLS:C0349588
+is_a: HP:0000001 ! All
+created_by: peter
+creation_date: 2008-02-27T03:19:00Z

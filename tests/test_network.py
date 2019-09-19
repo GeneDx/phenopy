@@ -29,7 +29,7 @@ class NetworkTestCase(unittest.TestCase):
                                         hpo_network_file=self.hpo_network_file)
 
         # this is a cleaned version of the network, so it is not the same as test_obo.py
-        self.assertEqual(len(hpo_network), 20)
+        self.assertEqual(len(hpo_network), 28)
         self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 2.48, 2)
 
     def test_load_custom(self):

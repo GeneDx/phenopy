@@ -1,6 +1,6 @@
 import itertools
 import sys
-
+import numpy as np
 import networkx as nx
 import pandas as pd
 
@@ -225,6 +225,14 @@ class Scorer:
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
 
         return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
+
+    def bmwa(self, df, weights_a, weights_b):
+        """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
+
+        max1 = df.max(axis=1).to_list()
+        max2 = df.max(axis=0).to_list()
+
+        return round(np.average(max1 + max2, weights=weights_a + weights_b), 4)
 
     def maximum(self, df):
         """Returns the maximum similarity value between to term lists"""
