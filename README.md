@@ -1,9 +1,10 @@
-[![](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
-[![](https://github.com/GeneDx/phenopy/workflows/Python%20package/badge.svg)](https://github.com/GeneDx/phenopy/actions)
+[![python-version](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
+[![github-actions](https://github.com/GeneDx/phenopy/workflows/Python%20package/badge.svg)](https://github.com/GeneDx/phenopy/actions)
+[![codecov](https://codecov.io/gh/GeneDx/phenopy/branch/develop/graph/badge.svg)](https://codecov.io/gh/GeneDx/phenopy)
 
 # phenopy
-`phenopy` is a Python package to perform phenotype similarity scoring by semantic similarity. `phenopy` is a 
-lightweight but highly optimized command line tool and library to efficiently perform semantic similarity scoring on 
+`phenopy` is a Python package to perform phenotype similarity scoring by semantic similarity. `phenopy` is a
+lightweight but highly optimized command line tool and library to efficiently perform semantic similarity scoring on
 generic entities with phenotype annotations from the [Human Phenotype Ontology (HPO)](https://hpo.jax.org/app/).
 
 ![Phenotype Similarity Clustering](https://raw.githubusercontent.com/GeneDx/phenopy/master/notebooks/output/cluster_three_diseases.png)
@@ -23,23 +24,23 @@ python setup.py install
 
 ## Command Line Usage
 ### Initial setup
-phenopy is designed to run with minimal setup from the user, to run phenopy with default parameters (recommended), skip ahead 
+phenopy is designed to run with minimal setup from the user, to run phenopy with default parameters (recommended), skip ahead
 to the [Commands overview](#Commands-overview).  
 
 This section provides details about where phenopy stores data resources and config files. The following occurs when
 you run phenopy for the first time.
  1. phenopy creates a `.phenopy/` directory in your home folder and downloads external resources from HPO into the
   `$HOME/.phenopy/data/` directory.
- 2. phenopy stores a binary version of the HPO as a [networkx](https://networkx.github.io/documentation/stable/reference/classes/multidigraph.html) 
+ 2. phenopy stores a binary version of the HPO as a [networkx](https://networkx.github.io/documentation/stable/reference/classes/multidigraph.html)
  graph object here: `$HOME/.phenopy/data/hpo_network.pickle`.
  3. phenopy creates a `$HOME/.phenopy/phenopy.ini` config file where users can set variables for phenopy to use
  at runtime.
 
 ### Commands overview
-`phenopy` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or 
-disease, but could be any concept that warrants annotation of phenotype terms. 
+`phenopy` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or
+disease, but could be any concept that warrants annotation of phenotype terms.
 
-1. Score similarity of an entity defined by the HPO terms from an input file against all the genes in 
+1. Score similarity of an entity defined by the HPO terms from an input file against all the genes in
 `.phenopy/data/phenotype_to_genes.txt`. We provide a test input file in the repo.
     ```bash
     phenopy score tests/data/test.score.txt
@@ -150,13 +151,13 @@ export_pheno2genes_with_no_parents(phenotype_to_genes_file, phenotype_to_genes_n
 While we recommend using the default settings for most users, the config file *can be* modified: `$HOME/.phenopy/phenopy.ini`.
 
 **IMPORTANT NOTE:  
-If the config variable `hpo_network_file` is defined, phenopy will try to load this stored version of the HPO and ignore 
+If the config variable `hpo_network_file` is defined, phenopy will try to load this stored version of the HPO and ignore
 the following command-line arguments: `obo_file` and `custom_annotations_file`.**
 
-To run phenopy with different `obo_file` or `custom_annotations_file`: 
+To run phenopy with different `obo_file` or `custom_annotations_file`:
 Rename or move the HPO network file: `mv $HOME/.phenopy/data/hpo_network.pickle $HOME/.phenopy/data/hpo_network.old.pickle`
 
-To run phenopy with a previously stored version of the HPO network, simply set 
+To run phenopy with a previously stored version of the HPO network, simply set
 `hpo_network_file = /path/to/hpo_network.pickle`.  
 
 ## Contributing
