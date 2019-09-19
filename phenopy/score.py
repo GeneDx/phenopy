@@ -40,7 +40,7 @@ class Scorer:
         common_parents = parents[0].intersection(
             parents[1])
         # lca node
-        return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
+        return max(common_parents, key=lambda n: self.hpo_network.node[n]['ic'])
 
     def generate_alternate_ids(self):
         """Create a key, value store of alternate terms to canonical terms."""
