@@ -27,8 +27,10 @@ def calculate_information_content(hpo_id, hpo_network, terms_to_genes, num_genes
         # include this to avoid returning zero division warnings.
         # when comparing two different leaves whose LCA is "phenotypic abnormality", the right side of the equation:
         # alphaIC / (alphaIC / betaIC), would be 0.0 / (0.0 / 0.0)
-        if np.isinf(information_content) or np.isnan(information_content):
+        if np.isnan(information_content):
             return np.nextafter(0, 1)
+        elif np.isinf(information_content):
+            return -np.log(np.nextafter(0, 1))
         return information_content
 
     annotations_list = [terms_to_genes]
