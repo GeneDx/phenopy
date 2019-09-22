@@ -15,20 +15,19 @@ class ScorerTestCase(unittest.TestCase):
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
 
         # load phenotypes to genes associations
-        pheno2genes_file = os.path.join(
-            cls.parent_dir, 'data/phenotypes_to_genes.txt')
-        cls.terms_to_genes, cls.genes_to_terms, cls.num_genes_annotated = load_p2g(
-            pheno2genes_file)
+        cls.pheno2genes_file = os.path.join(cls.parent_dir, 'data/phenotype_to_genes.txt')
+        cls.terms_to_genes, cls.genes_to_terms, cls.num_genes_annotated = load_p2g(cls.pheno2genes_file)
 
         # load and process the network
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         cls.hpo_network = load_obo(cls.obo_file)
         cls.hpo_network = process(cls.hpo_network, cls.terms_to_genes, cls.num_genes_annotated,
                                   custom_annotations_file=None)
+        cls.hpo_id = 'HP:0010863'
 
     def test_ic_p2g(self):
         """Calculate the information content of a phenotype"""
-        self.assertAlmostEqual(self.hpo_network.node['HP:0012372']['ic'], 0.287, 1)
+        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 6.12, 1)
 
     def test_ic_custom(self):
         """Calculate the information content of a phenotype when multiple annotations are present"""
@@ -37,12 +36,11 @@ class ScorerTestCase(unittest.TestCase):
         hpo_network = process(hpo_network, self.terms_to_genes, self.num_genes_annotated,
                               custom_annotations_file=custom_annotation_file)
 
-        self.assertAlmostEqual(hpo_network.node['HP:0012372']['ic'], 0.837, 1)
+        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 7.09, 1)
 
     def test_inf_ic(self):
-        hpo_id = 'HP:0000014'
         inf_ic = calculate_information_content(
-            hpo_id,
+            self.hpo_id,
             self.hpo_network,
             self.terms_to_genes,
             1e310,

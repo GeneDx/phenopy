@@ -1,26 +1,24 @@
 import os
 import unittest
 
-from phenopy.config import config
 from phenopy.p2g import load as load_p2g
 from phenopy.network import _load_hpo_network
 
 
 class NetworkTestCase(unittest.TestCase):
-    def setUp(cls):
+    @classmethod
+    def setUpClass(cls):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
-        cls.pheno2genes_file = os.path.join(cls.parent_dir, 'data/phenotypes_to_genes.txt')
+        cls.pheno2genes_file = os.path.join(cls.parent_dir, 'data/phenotype_to_genes.txt')
         cls.hpo_network_file = os.path.join(cls.parent_dir, 'data/hpo_network.pickle')
-
-        config.set('hpo', 'data_directory', os.path.join(cls.parent_dir, 'data'))
-        terms_to_genes, genes_to_terms, cls.annotations_count = load_p2g(cls.pheno2genes_file)
-        # choose an HPO id that is in the custom annotations file, so it should have different information content
-        cls.hpo_id = 'HP:0000545'
+        cls.terms_to_genes, cls.genes_to_terms, cls.num_genes_annotated = load_p2g(cls.pheno2genes_file)
+        cls.hpo_id = 'HP:0010863'
 
     def tearDown(cls):
-        os.remove(cls.hpo_network_file)
+        if os.path.exists((cls.hpo_network_file)):
+            os.remove(cls.hpo_network_file)
 
     def test_load_from_hp_obo(self):
         self.hpo_network = _load_hpo_network(self.obo_file, self.terms_to_genes,
@@ -28,8 +26,8 @@ class NetworkTestCase(unittest.TestCase):
                                         hpo_network_file=self.hpo_network_file)
 
         # this is a cleaned version of the network, so it is not the same as test_obo.py
-        self.assertEqual(len(hpo_network), 20)
-        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 1.386, 2)
+        self.assertEqual(len(self.hpo_network), 16)
+        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 6.12, 2)
 
     def test_load_custom(self):
         self.hpo_network = _load_hpo_network(self.obo_file, self.terms_to_genes, self.num_genes_annotated,
@@ -38,7 +36,7 @@ class NetworkTestCase(unittest.TestCase):
                                         hpo_network_file=self.hpo_network_file
                                         )
 
-        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 0.837, 2)
+        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 7.09, 2)
 
     def test_terms_to_genes(self):
         with self.assertRaises(ValueError) as se:

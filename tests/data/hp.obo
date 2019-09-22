@@ -34,51 +34,6 @@ comment: Root of all terms in the Human Phenotype Ontology.
 xref: UMLS:C0444868
 
 [Term]
-id: HP:0000009
-name: Functional abnormality of the bladder
-alt_id: HP:0004424
-alt_id: HP:0008731
-def: "Dysfunction of the urinary bladder." [HPO:probinson]
-synonym: "Poor bladder function" EXACT []
-xref: UMLS:C3806583
-is_a: HP:0000014 ! Abnormality of the bladder
-
-[Term]
-id: HP:0000011
-name: Neurogenic bladder
-def: "A type of bladder dysfunction caused by neurologic damage. Neurogenic bladder can be flaccid or spastic. Common manifestatios of neurogenic bladder are overflow incontinence, frequency, urgency, urge incontinence, and retention." [HPO:probinson, PMID:18095004, PMID:22400020]
-comment: Neurogenic bladder sphincter dysfunction (NBSD) can develop as a result of a lesion at any level in the nervous system, including the cerebral cortex, spinal cord, or peripheral nervous system. Neurologic conditions in children leading to neurogenic bladder dysfunction are predominantly congenital neural tube defects (including myelomeningocele, lipomeningocele, sacral agenesis, and occult lesions causing tethered cord). Acquired causes such as spinal cord tumors or trauma or sequelae of transverse myelitis are less frequent. Whereas from an etiologic standpoint neurogenic bladder dysfunction is a heterogeneous group, medical management will be similar irrespective of the underlying cause.
-synonym: "Lack of bladder control due to nervous system injury" EXACT layperson [ORCID:0000-0002-6548-5200]
-xref: MSH:D001750
-xref: SNOMEDCT_US:397732007
-xref: SNOMEDCT_US:398064005
-xref: UMLS:C0005697
-is_a: HP:0000009 ! Functional abnormality of the bladder
-
-[Term]
-id: HP:0000014
-name: Abnormality of the bladder
-def: "An abnormality of the urinary bladder." [HPO:probinson]
-xref: UMLS:C0149632
-is_a: HP:0010936 ! Abnormality of the lower urinary tract
-
-[Term]
-id: HP:0000057
-name: obsolete Clitoromegaly
-is_obsolete: true
-replaced_by: HP:0008665
-
-[Term]
-id: HP:0000079
-name: Abnormality of the urinary system
-def: "An abnormality of the urinary system." [HPO:probinson]
-synonym: "Urinary tract abnormalities" EXACT layperson []
-synonym: "Urinary tract abnormality" EXACT layperson []
-synonym: "Urinary tract anomalies" EXACT layperson []
-xref: UMLS:C4021821
-is_a: HP:0000119 ! Abnormality of the genitourinary system
-
-[Term]
 id: HP:0000118
 name: Phenotypic abnormality
 def: "A phenotypic abnormality." [HPO:probinson]
@@ -88,223 +43,243 @@ xref: UMLS:C4021819
 is_a: HP:0000001 ! All
 
 [Term]
-id: HP:0000119
-name: Abnormality of the genitourinary system
-alt_id: HP:0008658
-alt_id: HP:0008688
-alt_id: HP:0008704
-alt_id: HP:0008713
-def: "The presence of any abnormality of the genitourinary system." [HPO:curators]
-synonym: "Genitourinary abnormality" EXACT []
-synonym: "Genitourinary disease" RELATED []
-synonym: "Genitourinary dysplasia" RELATED []
-synonym: "Genitourinary tract anomalies" EXACT []
-synonym: "Genitourinary tract malformation" EXACT []
-synonym: "Urogenital abnormalities" EXACT []
-synonym: "Urogenital anomalies" EXACT []
-xref: MSH:D014564
-xref: SNOMEDCT_US:287085006
-xref: SNOMEDCT_US:42030000
-xref: UMLS:C0042063
-xref: UMLS:C0080276
-xref: UMLS:C4020895
+id: HP:0000707
+name: Abnormality of the nervous system
+alt_id: HP:0001333
+alt_id: HP:0006987
+def: "An abnormality of the nervous system." [HPO:probinson]
+comment: The nervous system comprises the neuraxis (brain, spinal cord, and ventricles), the autonomic nervous system, the enteric nervous system, and the peripheral nervous system.
+synonym: "Abnormality of the nervous system" EXACT layperson []
+synonym: "Brain and/or spinal cord issue" BROAD layperson []
+synonym: "Neurologic abnormalities" EXACT layperson []
+synonym: "Neurological abnormality" EXACT layperson []
+xref: MSH:D009421
+xref: SNOMEDCT_US:88425004
+xref: UMLS:C0497552
 is_a: HP:0000118 ! Phenotypic abnormality
 
 [Term]
-id: HP:0000478
-name: Abnormality of the eye
-def: "Any abnormality of the eye, including location, spacing, and intraocular abnormalities." [HPO:probinson]
-subset: hposlim_core
-synonym: "Abnormal eye" EXACT layperson [HPO:skoehler]
-synonym: "Abnormality of the eye" EXACT layperson []
-synonym: "Eye disease" RELATED layperson []
-xref: MSH:D005124
-xref: MSH:D005128
-xref: SNOMEDCT_US:19416009
-xref: SNOMEDCT_US:371405004
-xref: SNOMEDCT_US:371409005
-xref: UMLS:C0015393
-xref: UMLS:C0015397
-is_a: HP:0000118 ! Phenotypic abnormality
-
-[Term]
-id: HP:0000486
-name: Strabismus
-alt_id: HP:0000487
-def: "A misalignment of the eyes so that the visual axes deviate from bifoveal fixation. The classification of strabismus may be based on a number of features including the relative position of the eyes, whether the deviation is latent or manifest, intermittent or constant, concomitant or otherwise and according to the age of onset and the relevance of any associated refractive error." [HPO:probinson, PMID:26319345, UManchester:psergouniotis]
-subset: hposlim_core
-synonym: "Cross-eyed" EXACT layperson []
-synonym: "Squint" EXACT layperson []
-synonym: "Squint eyes" EXACT layperson [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
-xref: MSH:D013285
-xref: SNOMEDCT_US:128602000
-xref: SNOMEDCT_US:22066006
-xref: UMLS:C0038379
-is_a: HP:0000549 ! Abnormal conjugate eye movement
-
-[Term]
-id: HP:0000496
-name: Abnormality of eye movement
-alt_id: HP:0006860
-def: "An abnormality in voluntary or involuntary eye movements or their control." [HPO:probinson]
-subset: hposlim_core
-synonym: "Abnormal extraocular movement" EXACT []
-synonym: "Abnormal extraocular movements" EXACT []
-synonym: "Abnormal eye motility" EXACT []
-synonym: "Abnormal eye movement" EXACT layperson []
-synonym: "Abnormal eye movements" EXACT layperson []
-synonym: "Abnormal motility of the globe of the eye" EXACT [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
-synonym: "Abnormal movement of the globe of the eye" EXACT [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
-synonym: "Abnormal ocular movements" EXACT []
-synonym: "Abnormality of eye movement" EXACT layperson []
-synonym: "Eye movement abnormalities" EXACT layperson []
-synonym: "Eye movement issue" EXACT layperson []
-synonym: "Ocular movement abnormalities" EXACT []
-synonym: "Oculomotor abnormalities" EXACT []
-xref: SNOMEDCT_US:103252009
-xref: UMLS:C0497202
-is_a: HP:0012373 ! Abnormal eye physiology
-
-[Term]
-id: HP:0000501
-name: Glaucoma
-def: "Glaucoma refers loss of retinal ganglion cells in a characteristic pattern of optic neuropathy usually associated with increased intraocular pressure." [HPO:probinson, pmid:11815354]
-comment: The feature that differentiates glaucoma from other causes of visual morbidity is a characteristic pattern of damage to the optic nerve head. This is most easily recognised at the superior and inferior poles of the optic disc. The vertical cup:disc ratio (VCDR) has proved to be a simple, relatively robust index of glaucomatous loss of the neuroretinal rim. As with intraocular pressure, VCDR is a continuous variable within the population.
-subset: hposlim_core
-xref: MSH:D005901
-xref: SNOMEDCT_US:23986001
-xref: UMLS:C0017601
-is_a: HP:0012373 ! Abnormal eye physiology
-
-[Term]
-id: HP:0000539
-name: Abnormality of refraction
-def: "An abnormality in the process of focusing of light by the eye in order to produce a sharp image on the retina." [HPO:probinson]
-xref: UMLS:C4025843
-is_a: HP:0012373 ! Abnormal eye physiology
-
-[Term]
-id: HP:0000545
-name: Myopia
-alt_id: HP:0001110
-alt_id: HP:0007847
-alt_id: HP:0008012
-def: "An abnormality of refraction characterized by the ability to see objects nearby clearly, while objects in the distance appear blurry." [HPO:probinson]
-subset: hposlim_core
-synonym: "Close sighted" EXACT layperson [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
-synonym: "Near sighted" EXACT layperson [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
-synonym: "Near sightedness" EXACT layperson [ORCID:0000-0001-5208-3432, ORCID:0000-0001-5889-4463]
-synonym: "Nearsightedness" EXACT layperson []
-xref: MSH:D009216
-xref: SNOMEDCT_US:57190000
-xref: UMLS:C0027092
-is_a: HP:0000539 ! Abnormality of refraction
-
-[Term]
-id: HP:0000549
-name: Abnormal conjugate eye movement
-def: "Any deviation from the normal motor coordination of the eyes that allows for bilateral fixation on a single object." [HPO:probinson]
-synonym: "Disconjugate eye movements" EXACT []
-xref: UMLS:C1845274
-is_a: HP:0000496 ! Abnormality of eye movement
-
-[Term]
-id: HP:0001087
-name: Developmental glaucoma
-def: "Glaucoma which forms during the early years of a child's life is called developmental or congenital glaucoma." []
-synonym: "Childhood glaucoma" EXACT [ORCID:0000-0001-6908-9849]
-synonym: "Infantile glaucoma" EXACT [ORCID:0000-0001-6908-9849]
-synonym: "Pediatric glaucoma" EXACT [ORCID:0000-0001-6908-9849]
-xref: MSH:D006871
-xref: SNOMEDCT_US:204113001
-xref: SNOMEDCT_US:413728006
-xref: UMLS:C0020302
-is_a: HP:0000501 ! Glaucoma
-is_a: HP:0007700 ! Anterior segment developmental abnormality
-
-[Term]
-id: HP:0004328
-name: Abnormal anterior eye segment morphology
-def: "An abnormality of the anterior segment of the eyeball (which comprises the structures in front of the vitreous humour: the cornea, iris, ciliary body, and lens)." [HPO:probinson]
-comment: The anterior segment comprises the structures in front of the vitreous humour: the cornea, iris, ciliary body, and lens.
-synonym: "Abnormal anterior segment morphology" EXACT []
-synonym: "Abnormality of the anterior segment of the eye" EXACT []
-synonym: "Abnormality of the anterior segment of the eyeball" EXACT []
-synonym: "Abnormality of the anterior segment of the globe" EXACT []
-xref: UMLS:C4025355
-is_a: HP:0012372 ! Abnormal eye morphology
+id: HP:0012638
+name: Abnormality of nervous system physiology
+def: "A functional anomaly of the nervous system." [HPO:probinson]
+xref: UMLS:C4022811
+is_a: HP:0000707 ! Abnormality of the nervous system
 created_by: peter
-creation_date: 2008-02-27T04:23:00Z
+creation_date: 2014-01-19T08:02:46Z
 
 [Term]
-id: HP:0007700
-name: Anterior segment developmental abnormality
-alt_id: HP:0007696
-alt_id: HP:0007699
-alt_id: HP:0008040
-def: "Abnormal development (dysgenesis) of the anterior segment of the eye globe. These structures are mainly of mesenchymal origin." [DDD:ncarter]
-comment: In anterior segment mesenchymal ocular dysgenesis (ASMOD), multiple tissues are affected, including the iris, cornea, and lens as well as the Schlemm's canal and trabecular meshwork drainage structures located at the anterior segment angle where the iris and cornea meet. These abnormalities may result from a primary defect in the migration and/or differentiation of the mesenchymal cells that contribute to development of the cornea, iris, and drainage structures.
-synonym: "Anterior chamber cleavage defect" EXACT []
-synonym: "Anterior chamber cleavage disorder" EXACT []
-synonym: "Anterior chamber malformation" EXACT []
-synonym: "Anterior chamber mesodermal anomalies" EXACT []
-synonym: "Anterior segment dysgenesis" EXACT []
-synonym: "Anterior segment mesencyhmal dysgenesis" EXACT []
-synonym: "Anterior segment ocular dysgenesis" EXACT []
-xref: SNOMEDCT_US:65075004
-xref: UMLS:C0266525
-is_a: HP:0004328 ! Abnormal anterior eye segment morphology
-
-[Term]
-id: HP:0010936
-name: Abnormality of the lower urinary tract
-def: "An abnormality of the lower urinary tract." [HPO:probinson]
-comment: The lower urinary tract is a subdivision of urinary system which consists of the urinary bladder and the urethra.
-xref: UMLS:C4023640
-is_a: HP:0000079 ! Abnormality of the urinary system
+id: HP:0012759
+name: Neurodevelopmental abnormality
+def: "A deviation from normal of the neurological development of a child, which may include any or all of the aspects of the development of personal, social, gross or fine motor, and cognitive abilities." [KI:phemming]
+comment: This term should be used to describe abnormalities with onset in the developmental period.
+xref: UMLS:C4022737
+is_a: HP:0012638 ! Abnormality of nervous system physiology
 created_by: peter
-creation_date: 2011-01-16T11:39:17Z
+creation_date: 2014-04-03T12:20:28Z
 
 [Term]
-id: HP:0012372
-name: Abnormal eye morphology
-alt_id: HP:0000489
-alt_id: HP:0012374
-def: "A structural anomaly of the globe of the eye, or bulbus oculi." [HPO:probinson]
-synonym: "Abnormal eye morphology" EXACT layperson []
-synonym: "Abnormality of the globe" EXACT []
-synonym: "Abnormally shaped eye" EXACT layperson [ORCID:0000-0001-5208-3432]
-xref: Fyler:4863
-xref: UMLS:C4022925
-is_a: HP:0000478 ! Abnormality of the eye
+id: HP:0001249
+name: Intellectual disability
+alt_id: HP:0000730
+alt_id: HP:0001267
+alt_id: HP:0001286
+alt_id: HP:0002122
+alt_id: HP:0002192
+alt_id: HP:0002316
+alt_id: HP:0002382
+alt_id: HP:0002386
+alt_id: HP:0002402
+alt_id: HP:0002458
+alt_id: HP:0002482
+alt_id: HP:0002499
+alt_id: HP:0002543
+alt_id: HP:0003767
+alt_id: HP:0006833
+alt_id: HP:0006877
+alt_id: HP:0007154
+alt_id: HP:0007176
+alt_id: HP:0007180
+def: "Subnormal intellectual functioning which originates during the developmental period. Intellectual disability, previously referred to as mental retardation, has been defined as an IQ score below 70." [HPO:probinson]
+comment: This term should be used for children at least five years old. For younger children, consider the term Global developmental delay (HP:0001263).
+synonym: "Dull intelligence" RELATED []
+synonym: "Intellectual disability" EXACT layperson []
+synonym: "Low intelligence" RELATED layperson []
+synonym: "Mental deficiency" EXACT layperson []
+synonym: "Mental retardation" EXACT layperson []
+synonym: "Mental retardation, nonspecific" EXACT layperson []
+synonym: "Mental-retardation" EXACT layperson []
+synonym: "Nonprogressive intellectual disability" EXACT []
+synonym: "Nonprogressive mental retardation" EXACT []
+synonym: "Poor school performance" RELATED layperson []
+xref: MSH:D008607
+xref: SNOMEDCT_US:228156007
+xref: SNOMEDCT_US:247578003
+xref: SNOMEDCT_US:91138005
+xref: UMLS:C0025362
+xref: UMLS:C0423903
+xref: UMLS:C0917816
+xref: UMLS:C1843367
+xref: UMLS:C3714756
+xref: UMLS:C4020876
+is_a: HP:0011446 ! Abnormality of higher mental function
+is_a: HP:0012759 ! Neurodevelopmental abnormality
+
+[Term]
+id: HP:0000750
+name: Delayed speech and language development
+alt_id: HP:0002116
+alt_id: HP:0002117
+alt_id: HP:0002336
+alt_id: HP:0002399
+alt_id: HP:0002498
+alt_id: HP:0006936
+alt_id: HP:0007004
+alt_id: HP:0007127
+alt_id: HP:0007170
+alt_id: HP:0007172
+def: "A degree of language development that is significantly below the norm for a child of a specified age." [HPO:probinson]
+comment: Language delay can be characterized by a failure to meet the developmental milestones for language development, an inability to follow directions, or slow or incomprehensible speech after the age of three years, as well as with severe problems with syntax or articulation.
+synonym: "Deficiency of speech development" EXACT layperson []
+synonym: "Delayed language development" EXACT layperson []
+synonym: "Delayed speech" EXACT layperson [HPO:skoehler]
+synonym: "Delayed speech acquisition" EXACT layperson []
+synonym: "Delayed speech and language development" EXACT layperson []
+synonym: "Delayed speech development" EXACT layperson []
+synonym: "Impaired speech and language development" EXACT layperson []
+synonym: "Impaired speech development" EXACT layperson []
+synonym: "Language delay" EXACT layperson []
+synonym: "Language delayed" EXACT layperson []
+synonym: "Language development deficit" EXACT layperson []
+synonym: "Late-onset speech development" EXACT layperson []
+synonym: "Poor language development" EXACT layperson []
+synonym: "Poor speech acquisition" RELATED layperson [HPO:skoehler]
+synonym: "Poor speech development" RELATED layperson [HPO:skoehler]
+synonym: "Speech and language delay" EXACT layperson []
+synonym: "Speech and language difficulties" EXACT layperson []
+synonym: "Speech delay" EXACT layperson []
+synonym: "Speech difficulties" RELATED layperson []
+xref: MSH:D007805
+xref: SNOMEDCT_US:162294008
+xref: SNOMEDCT_US:229721007
+xref: SNOMEDCT_US:29164008
+xref: SNOMEDCT_US:62415009
+xref: UMLS:C0023012
+xref: UMLS:C0233715
+xref: UMLS:C0241210
+xref: UMLS:C0454644
+is_a: HP:0012758 ! Neurodevelopmental delay
+
+[Term]
+id: HP:0001344
+name: Absent speech
+alt_id: HP:0001617
+alt_id: HP:0006798
+def: "Complete lack of development of speech and language abilities." [HPO:probinson]
+comment: This term should not be used in very young children.
+synonym: "Absent speech development" EXACT layperson []
+synonym: "Lack of language development" EXACT layperson []
+synonym: "Lack of speech" EXACT layperson []
+synonym: "No speech development" EXACT layperson []
+synonym: "No speech or language development" EXACT layperson []
+synonym: "Nonverbal" EXACT layperson [ORCID:0000-0001-9114-8737]
+xref: UMLS:C0746940
+xref: UMLS:C1854882
+is_a: HP:0000750 ! Delayed speech and language development
+is_a: HP:0002167 ! Neurological speech impairment
+
+[Term]
+id: HP:0010863
+name: Receptive language delay
+def: "A delay in the acquisition of the ability to understand the speech of others." [HPO:probinson]
+xref: SNOMEDCT_US:229736005
+xref: UMLS:C0454642
+is_a: HP:0000750 ! Delayed speech and language development
 created_by: peter
-creation_date: 2013-10-13T03:44:43Z
+creation_date: 2010-08-03T06:02:52Z
 
 [Term]
-id: HP:0012373
-name: Abnormal eye physiology
-def: "A functional anomaly of the eye." [HPO:probinson]
-synonym: "Abnormal eye physiology" EXACT layperson []
-xref: UMLS:C4022924
-is_a: HP:0000478 ! Abnormality of the eye
+id: HP:0011351
+name: Moderate receptive language delay
+def: "A moderate delay in the acquisition of the ability to understand the speech of others." [DDD:hvfirth]
+xref: SNOMEDCT_US:89381000119107
+xref: UMLS:C3532946
+is_a: HP:0010863 ! Receptive language delay
 created_by: peter
-creation_date: 2013-10-13T03:45:37Z
+creation_date: 2012-03-01T10:53:13Z
 
 [Term]
-id: HP:0001425
-name: Heterogeneous
-synonym: "Genetic heterogeneity" EXACT []
-synonym: "Heterogeneity" EXACT []
-xref: MSH:D018740
-xref: UMLS:C0242960
-is_a: HP:0000005 ! Mode of inheritance
+id: HP:0012758
+name: Neurodevelopmental delay
+xref: UMLS:C4022738
+is_a: HP:0012759 ! Neurodevelopmental abnormality
+created_by: peter
+creation_date: 2014-04-03T12:16:19Z
 
 [Term]
-id: HP:0000005
-name: Mode of inheritance
-alt_id: HP:0001453
-alt_id: HP:0001461
-def: "The pattern in which a particular genetic trait or disorder is passed from one generation to the next." [HPO:probinson]
-synonym: "Inheritance" EXACT []
-xref: UMLS:C1708511
-is_a: HP:0000001 ! All
+id: HP:0012434
+name: Delayed social development
+def: "A failure to meet one or more age-related milestones of social behavior." [HPO:probinson]
+comment: This term should be applied to describe a child whose social development is delayed compared to age-related norms. For instance, at the age of 3 months, a child smiles in response to social interaction, at the age of 7 months, a child responds to the facial expressions of others, and at the age of 12 months a child is shy around strangers.
+synonym: "Delayed social development" EXACT layperson []
+xref: UMLS:C4022906
+is_a: HP:0012433 ! Abnormal social behavior
+is_a: HP:0012758 ! Neurodevelopmental delay
+created_by: peter
+creation_date: 2013-11-23T08:40:29Z
+
+[Term]
+id: HP:0011446
+name: Abnormality of higher mental function
+def: "Cognitive, psychiatric or memory anomaly." [DDD:ajackson]
+xref: UMLS:C4023352
+is_a: HP:0012638 ! Abnormality of nervous system physiology
+created_by: peter
+creation_date: 2012-03-18T04:23:59Z
+
+[Term]
+id: HP:0002167
+name: Neurological speech impairment
+synonym: "Speech disorder" EXACT layperson []
+synonym: "Speech impairment" EXACT layperson []
+synonym: "Speech impediment" EXACT layperson []
+xref: MSH:D013064
+xref: UMLS:C0037822
+is_a: HP:0011446 ! Abnormality of higher mental function
+
+[Term]
+id: HP:0012433
+name: Abnormal social behavior
+def: "An abnormality of actions or reactions of a person taking place during interactions with others." [HPO:probinson]
+synonym: "Abnormal social behavior" EXACT layperson []
+synonym: "Abnormal social behaviour" EXACT layperson []
+synonym: "Abnormal social interactions" RELATED layperson []
+xref: UMLS:C4020726
+xref: UMLS:C4021087
+is_a: HP:0000708 ! Behavioral abnormality
+created_by: peter
+creation_date: 2013-11-23T08:37:01Z
+
+[Term]
+id: HP:0000708
+name: Behavioral abnormality
+alt_id: HP:0000715
+alt_id: HP:0002368
+alt_id: HP:0002456
+def: "An abnormality of mental functioning including various affective, behavioural, cognitive and perceptual abnormalities." [HPO:probinson]
+synonym: "Behavioral abnormality" EXACT layperson []
+synonym: "Behavioral changes" EXACT layperson []
+synonym: "Behavioral disorders" EXACT layperson []
+synonym: "Behavioral disturbances" EXACT layperson []
+synonym: "Behavioral problems" EXACT layperson []
+synonym: "Behavioral symptoms" RELATED layperson []
+synonym: "Behavioral/psychiatric abnormalities" EXACT layperson []
+synonym: "Behavioural/Psychiatric abnormality" EXACT layperson []
+synonym: "Psychiatric disorders" EXACT layperson []
+synonym: "Psychiatric disturbances" EXACT layperson []
+xref: MSH:D000066553
+xref: MSH:D001526
+xref: SNOMEDCT_US:25786006
+xref: SNOMEDCT_US:277843001
+xref: UMLS:C0004941
+xref: UMLS:C0233514
+is_a: HP:0012638 ! Abnormality of nervous system physiology
