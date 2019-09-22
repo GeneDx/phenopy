@@ -2,6 +2,7 @@ import itertools
 import sys
 
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 
@@ -225,7 +226,9 @@ class Scorer:
     def best_match_average(self, df):
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
 
-        return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
+        max1 = df.max(axis=1).values
+        max0 = df.max(axis=0).values
+        return np.average(np.concatenate((max1, max0)))
 
     def maximum(self, df):
         """Returns the maximum similarity value between to term lists"""
