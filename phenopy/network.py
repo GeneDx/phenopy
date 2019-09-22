@@ -7,10 +7,21 @@ from phenopy.obo import load as load_obo
 
 def _load_hpo_network(obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file, hpo_network_file=None):
     """
+    :param obo_file: path to obo file.
+    :param terms_to_genes: Dictionary of HPO terms as keys and list of genes as values.
+    :param num_genes_annotated: An integer representing the number of unique genes in the annotation corpus.
+    :param custom_annotations_file: Path to a custom annotations file, if it exists.
+    :param hpo_network_file: Path to the hpop_network_file.
     Load and process phenotypes to genes and obo files if we don't have a processed network already.
     """
     # We instruct the user that they can set hpo_network_file in .phenopy/phenopy.ini
     # The default value is empty string, so check for that first.
+
+    if not isinstance(terms_to_genes, dict):
+        logger.critical(f'terms_to_genes was not a dictionary, please use the terms_to_genes variable returned from '
+                        f'load_p2g')
+        raise ValueError
+
     if hpo_network_file is None:
         hpo_network_file = config.get('hpo', 'hpo_network_file')
 

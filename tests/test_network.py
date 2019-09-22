@@ -23,9 +23,8 @@ class NetworkTestCase(unittest.TestCase):
         os.remove(cls.hpo_network_file)
 
     def test_load_from_hp_obo(self):
-
-        hpo_network = _load_hpo_network(self.obo_file, self.pheno2genes_file,
-                                        self.annotations_count, custom_annotations_file=None,
+        self.hpo_network = _load_hpo_network(self.obo_file, self.terms_to_genes,
+                                        self.num_genes_annotated, custom_annotations_file=None,
                                         hpo_network_file=self.hpo_network_file)
 
         # this is a cleaned version of the network, so it is not the same as test_obo.py
@@ -33,10 +32,15 @@ class NetworkTestCase(unittest.TestCase):
         self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 1.386, 2)
 
     def test_load_custom(self):
-        hpo_network = _load_hpo_network(self.obo_file, self.pheno2genes_file, self.annotations_count,
+        self.hpo_network = _load_hpo_network(self.obo_file, self.terms_to_genes, self.num_genes_annotated,
                                         custom_annotations_file=os.path.join(self.parent_dir,
                                                                              'data/test.score-product.txt'),
                                         hpo_network_file=self.hpo_network_file
                                         )
 
         self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 0.837, 2)
+
+    def test_terms_to_genes(self):
+        with self.assertRaises(ValueError) as se:
+            self.hpo_network_file = _load_hpo_network(self.obo_file, self.pheno2genes_file, self.num_genes_annotated,
+                                                      custom_annotations_file=None, hpo_network_file=None)
