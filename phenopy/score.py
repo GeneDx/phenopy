@@ -41,7 +41,8 @@ class Scorer:
         common_parents = parents[0].intersection(
             parents[1])
         # lca node
-        return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
+        # find the ancestor with the highest IC
+        return max(common_parents, key=lambda n: self.hpo_network.node[n]['ic'])
 
     def generate_alternate_ids(self):
         """Create a key, value store of alternate terms to canonical terms."""
@@ -71,13 +72,10 @@ class Scorer:
             if self.hpo_network.in_edges(term):
                 # children terms generator
                 children = nx.ancestors(self.hpo_network, term)
-                if children:
-                    # append the max IC leaf
-                    mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
-                        p) >= 1 and self.hpo_network.in_degree(p) == 0}))
-                # node is a leaf
-                else:
-                    mil_ic.append(self.hpo_network.node[term]['ic'])
+                # append the max IC leaf
+                mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
+                    p) >= 1 and self.hpo_network.in_degree(p) == 0}))
+            # the node is a leaf
             else:
                 mil_ic.append(self.hpo_network.node[term]['ic'])
 

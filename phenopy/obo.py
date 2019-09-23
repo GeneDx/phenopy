@@ -26,7 +26,7 @@ def load(obo_file, logger=None):
         exit(1)
 
 
-def process(hpo_network, terms_to_genes, annotations_count, custom_annotations_file=None, logger=None):
+def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file=None, logger=None):
     """
     Cleans the HPO network.
 
@@ -34,7 +34,7 @@ def process(hpo_network, terms_to_genes, annotations_count, custom_annotations_f
 
     :param hpo_network: `networkx.MultiDiGraph` to clean.
     :param terms_to_genes: Dictionary mapping HPO terms to genes.
-    :param annotations_count: Total number of terms annotations.
+    :param num_genes_annotated: Number of genes with HPO annotations.
     :param custom_annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
     :return: `networkx.MultiDiGraph`
     """
@@ -82,7 +82,7 @@ def process(hpo_network, terms_to_genes, annotations_count, custom_annotations_f
             node_id,
             hpo_network,
             terms_to_genes,
-            annotations_count,
+            num_genes_annotated,
             custom_annos,
         )
 
