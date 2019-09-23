@@ -1,29 +1,33 @@
 import os
 import unittest
 
+from itertools import product
+from io import StringIO
+from multiprocessing import Manager
 from phenopy.obo import process
 from phenopy.obo import load as load_obo
 from phenopy.p2g import load as load_p2g
 from phenopy.score import Scorer
-from phenopy.util import remove_parents
+from phenopy.util import remove_parents, read_records_file
+from unittest.mock import patch
 
 
 class ScorerTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # parent dir
-        parent_dir = os.path.dirname(os.path.realpath(__file__))
+        cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
 
         # load phenotypes to genes associations
         pheno2genes_file = os.path.join(
-            parent_dir, 'data/phenotype_to_genes.txt')
+            cls.parent_dir, 'data/phenotype_to_genes.txt')
         terms_to_genes, genes_to_terms, annotations_count = load_p2g(
             pheno2genes_file)
 
         # load and process the network
-        obo_file = os.path.join(parent_dir, 'data/hp.obo')
+        obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         hpo_network = load_obo(obo_file)
-        hpo_network = process(hpo_network, terms_to_genes, annotations_count)
+        cls.hpo_network = process(hpo_network, terms_to_genes, annotations_count)
 
         # create instance the scorer class
         cls.scorer = Scorer(hpo_network)
@@ -111,3 +115,39 @@ class ScorerTestCase(unittest.TestCase):
     def test_alt_term(self):
         terms_a = ['HP:0000715', 'HP:0012434']
         self.assertIn('HP:0000708', self.scorer.convert_alternate_ids(terms_a))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_score_pairs(self, mock_out):
+        # multiprocessing objects
+        manager = Manager()
+        lock = manager.Lock()
+
+        # read in records
+        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=False,
+                                    hpo_network=self.hpo_network)
+        # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
+        sample_records = {'213200', '302801'}
+        records = {id_: terms for id_, terms in records.items() if id_ in sample_records}
+        record_pairs = product(records.keys(), repeat=2)
+        results = self.scorer.score_pairs(records, record_pairs, lock, stdout=False)
+        self.assertEqual(len(results), 4)
+        # test the second element '213200' - '302801'
+        self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
+
+        # test the second element '213200' - '302801' using no_parents
+        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=True,
+                                    hpo_network=self.hpo_network)
+        # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
+        sample_records = {'213200', '302801'}
+        records = {id_: terms for id_, terms in records.items() if id_ in sample_records}
+        record_pairs = product(records.keys(), repeat=2)
+        results = self.scorer.score_pairs(records, record_pairs, lock, stdout=False)
+        self.assertEqual(len(results), 4)
+        # test the second element '213200' - '302801'
+        self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
+
+
+        # test the second element '213200' - '302801' using stdout
+        record_pairs = product(records.keys(), repeat=2)
+        self.scorer.score_pairs(records, record_pairs, lock, stdout=True)
+        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.676033523783286'])
