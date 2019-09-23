@@ -54,8 +54,11 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(gamma0, 0)
 
         # term to a parent should be distance 1
-        gamma1 = self.scorer.calculate_gamma(t1, t2, t2)
-        self.assertEqual(gamma1, 1)
+        gamma1a = self.scorer.calculate_gamma(t1, t2, t2)
+        self.assertEqual(gamma1a, 1)
+
+        gamma1b = self.scorer.calculate_gamma(t2, t1, t2)
+        self.assertEqual(gamma1b, 1)
 
         # term to a neighbor should be 2
         gamma2 = self.scorer.calculate_gamma('HP:0000750', 'HP:0012434', t1)
