@@ -72,13 +72,10 @@ class Scorer:
             if self.hpo_network.in_edges(term):
                 # children terms generator
                 children = nx.ancestors(self.hpo_network, term)
-                if children:
-                    # append the max IC leaf
-                    mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
-                        p) >= 1 and self.hpo_network.in_degree(p) == 0}))
-                # node is a leaf
-                else:
-                    mil_ic.append(self.hpo_network.node[term]['ic'])
+                # append the max IC leaf
+                mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
+                    p) >= 1 and self.hpo_network.in_degree(p) == 0}))
+            # the node is a leaf
             else:
                 mil_ic.append(self.hpo_network.node[term]['ic'])
 
