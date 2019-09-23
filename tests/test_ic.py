@@ -7,6 +7,7 @@ from phenopy.ic import calculate_information_content
 from phenopy.obo import process
 from phenopy.obo import load as load_obo
 from phenopy.p2g import load as load_p2g
+from phenopy.util import export_pheno2genes_with_no_parents
 
 
 class ScorerTestCase(unittest.TestCase):
@@ -26,6 +27,11 @@ class ScorerTestCase(unittest.TestCase):
         cls.hpo_network = process(cls.hpo_network, cls.terms_to_genes, cls.num_genes_annotated,
                                   custom_annotations_file=None)
         cls.hpo_id = 'HP:0010863'
+        cls.pheno2genes_output_file = os.path.join(cls.parent_dir, 'data/phenotype_to_genes.noparents.txt')
+
+    def tearDown(cls):
+        if os.path.exists(cls.pheno2genes_output_file):
+            os.remove(cls.pheno2genes_output_file)
 
     def test_ic_p2g(self):
         """Calculate the information content of a phenotype"""
@@ -49,3 +55,7 @@ class ScorerTestCase(unittest.TestCase):
             None,
         )
         self.assertAlmostEqual(inf_ic, -np.log(np.nextafter(0, 1)))
+
+    def test_ic_p2g_no_parents(self):
+        export_pheno2genes_with_no_parents(self.pheno2genes_file, self.pheno2genes_output_file, self.hpo_network)
+        self.assertTrue(os.path.exists(self.pheno2genes_output_file))
