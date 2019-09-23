@@ -2,6 +2,7 @@ import numpy as np
 import os
 import unittest
 
+from phenopy.config import config
 from phenopy.ic import calculate_information_content
 from phenopy.obo import process
 from phenopy.obo import load as load_obo
@@ -19,6 +20,7 @@ class ScorerTestCase(unittest.TestCase):
         cls.terms_to_genes, cls.genes_to_terms, cls.num_genes_annotated = load_p2g(cls.pheno2genes_file)
 
         # load and process the network
+        config.set('hpo', 'data_directory', os.path.join(cls.parent_dir, 'data'))
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         cls.hpo_network = load_obo(cls.obo_file)
         cls.hpo_network = process(cls.hpo_network, cls.terms_to_genes, cls.num_genes_annotated,
