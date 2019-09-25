@@ -25,8 +25,7 @@ def load(obo_file, logger=None):
             sys.stderr.write(str(e))
         exit(1)
 
-
-def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file=None, logger=None):
+def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file=None, ages=None, logger=None):
     """
     Cleans the HPO network.
 
@@ -85,6 +84,16 @@ def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations
             num_genes_annotated,
             custom_annos,
         )
+
+        hpo_network.node[node_id]['weights'] = {
+            'age_dist': None,
+            'age_exists': False,
+            'default_weight': 1.0
+        }
+        if ages is not None:
+            if node_id in ages.index:
+                hpo_network.node[node_id]['weights']['age_dist'] = ages.loc[node_id]['age_dist']
+                hpo_network.node[node_id]['weights']['age_exists'] = True
 
         # annotate with depth value
         # hard-coding origin node for now

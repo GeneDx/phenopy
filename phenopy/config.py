@@ -36,7 +36,6 @@ def download_hpo_files():
                 logger.info('Reason: ', e.code)
                 raise
 
-
         try:
             with open(file_path, 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)

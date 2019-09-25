@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from phenopy.weights import age_to_weights
 
 class Scorer:
     def __init__(self, hpo_network):
@@ -231,3 +232,18 @@ class Scorer:
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
+    def bmwa(self, df, weights_a, weights_b):
+        """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
+
+        max1 = df.max(axis=1).values
+        max0 = df.max(axis=0).values
+        return round(np.average(np.concatenate((max1, max0)), weights=np.concatenate((weights_a, weights_b))), 4)
+
+    def calculate_age_weights(self, terms, age):
+        weights = []
+        for node_id in terms:
+            if self.hpo_network.node[node_id]['weights']['age_exists']:
+                weights.append(age_to_weights(self.hpo_network.node[node_id]['weights']['age_dist'], age))
+            else:
+                weights.append(1.0)
+        return weights

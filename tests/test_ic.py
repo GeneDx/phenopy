@@ -59,3 +59,4 @@ class ScorerTestCase(unittest.TestCase):
     def test_ic_p2g_no_parents(self):
         export_pheno2genes_with_no_parents(self.pheno2genes_file, self.pheno2genes_output_file, self.hpo_network)
         self.assertTrue(os.path.exists(self.pheno2genes_output_file))
+

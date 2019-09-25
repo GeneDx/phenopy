@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import pandas as pd
 import unittest
 
 from itertools import product
@@ -10,6 +12,7 @@ from phenopy.p2g import load as load_p2g
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, read_records_file
 from unittest.mock import patch
+from phenopy.weights import get_truncated_normal, age_to_weights
 
 
 class ScorerTestCase(unittest.TestCase):
@@ -124,6 +127,137 @@ class ScorerTestCase(unittest.TestCase):
 
         # read in records
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=False,
+                                    hpo_network=self.hpo_network)
+        # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
+        sample_records = {'213200', '302801'}
+        records = {id_: terms for id_, terms in records.items() if id_ in sample_records}
+        record_pairs = product(records.keys(), repeat=2)
+        results = self.scorer.score_pairs(records, record_pairs, lock, stdout=False)
+        self.assertEqual(len(results), 4)
+        # test the second element '213200' - '302801'
+        self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
+
+        # test the second element '213200' - '302801' using no_parents
+        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=True,
+                                    hpo_network=self.hpo_network)
+        # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
+        sample_records = {'213200', '302801'}
+        records = {id_: terms for id_, terms in records.items() if id_ in sample_records}
+        record_pairs = product(records.keys(), repeat=2)
+        results = self.scorer.score_pairs(records, record_pairs, lock, stdout=False)
+        self.assertEqual(len(results), 4)
+        # test the second element '213200' - '302801'
+        self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
+
+
+        # test the second element '213200' - '302801' using stdout
+        record_pairs = product(records.keys(), repeat=2)
+        self.scorer.score_pairs(records, record_pairs, lock, stdout=True)
+        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.676033523783286'])
+
+    def test_bmwa(self):
+        # load and process the network
+        obo_file = os.path.join(self.parent_dir, 'data/hp-age.obo')
+        pheno2genes_file = os.path.join(
+            self.parent_dir, 'data/phenotype_to_genes.txt')
+        terms_to_genes, genes_to_terms, annotations_count = load_p2g(
+            pheno2genes_file)
+        hpo_network = load_obo(obo_file)
+        self.hpo_network = process(hpo_network, terms_to_genes, annotations_count)
+
+        # create instance the scorer class
+        self.scorer = Scorer(hpo_network)
+
+        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
+
+        terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
+        weights_a = [0.67, 1., 1., 0.4]
+        weights_b = [1., 1., 1.]
+
+        df = pd.DataFrame(
+            [[4.22595743e-02, 3.92122308e-02, 3.04851573e-04],
+             [1.07473687e-01, 5.05101655e-01, 3.78305515e-04],
+             [3.69780479e-04, 3.78305515e-04, 4.64651944e-01],
+             [4.17139800e-04, 4.12232546e-04, 3.67984322e-04]],
+            index=pd.Index(terms_a, name='a'),
+            columns=pd.MultiIndex.from_arrays([['score'] * len(terms_b), terms_b],
+                                              names=[None, 'b'])
+        )
+
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
+
+        self.assertEqual(score_bmwa, 0.3419)
+
+        # set all weights to 1.0
+        weights_a = [1.] * len(weights_a)
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
+        self.assertEqual(score_bmwa, 0.2985)
+
+    def test_age_weight(self):
+        # load and process the network
+        obo_file = os.path.join(self.parent_dir, 'data/hp-age.obo')
+        pheno2genes_file = os.path.join(
+            self.parent_dir, 'data/phenotype_to_genes.txt')
+        terms_to_genes, genes_to_terms, annotations_count = load_p2g(
+            pheno2genes_file)
+        hpo_network = load_obo(obo_file)
+
+        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
+        terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
+
+        self.assertEqual(age_to_weights(get_truncated_normal(6.0, 1.0, 0.0, 6.0), 9.0), 1.0)
+        self.assertEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 9.0), 1.0)
+        self.assertEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 9.0), 1.0)
+        self.assertAlmostEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 8.0), 0.317, 2)
+
+        ages = pd.DataFrame([
+                {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
+                {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 6.0)},
+                {'hpid': 'HP:0001290', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 6.0)},
+                {'hpid': 'HP:0004322', 'age_dist': get_truncated_normal(10.0, 3.0, 0.0, 6.0)},
+                {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
+                ]).set_index('hpid')
+
+        self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
+
+        # create instance the scorer class
+        self.scorer = Scorer(hpo_network)
+
+        age_a = 9.0
+        age_b = 4.0
+
+        weights_a = self.scorer.calculate_age_weights(terms_a, age_b)
+        weights_b = self.scorer.calculate_age_weights(terms_b, age_a)
+
+        df = pd.DataFrame(
+            [[4.22595743e-02,   3.92122308e-02, 3.04851573e-04],
+             [1.07473687e-01,   5.05101655e-01, 3.78305515e-04],
+             [3.69780479e-04,   3.78305515e-04, 4.64651944e-01],
+             [4.17139800e-04,   4.12232546e-04, 3.67984322e-04]],
+            index=pd.Index(terms_a, name='a'),
+            columns=pd.MultiIndex.from_arrays([['score'] * len(terms_b), terms_b],
+                                              names=[None, 'b'])
+        )
+
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
+
+        self.assertEqual(score_bmwa, 0.361)
+
+        # set all weights to 1.0
+        weights_a = [1.] * len(terms_a)
+        weights_b = [1.] * len(terms_b)
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
+
+        self.assertEqual(score_bmwa, 0.2985)
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_score_pairs_age(self, mock_out):
+        # multiprocessing objects
+        manager = Manager()
+        lock = manager.Lock()
+
+        # read in records
+        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
                                     hpo_network=self.hpo_network)
         # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
         sample_records = {'213200', '302801'}

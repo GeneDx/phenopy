@@ -55,14 +55,28 @@ def read_records_file(records_file, no_parents, hpo_network, logger=None):
         # read records_file
         with open(records_file) as records_fh:
             reader = csv.reader(records_fh, delimiter='\t')
-            records = {}
+            ncol = len(next(reader))
+            records_fh.seek(0)
+            records = []
             for line in reader:
                 if line[0].startswith('#'):
                     continue
+                dict_ = {
+                    'sample': line[0],
+                    'age': None,
+                    'terms': None,
+                }
+                if ncol == 2:
+                    dict_['terms'] = line[1].split('|')
+                elif ncol == 3:
+                    dict_['terms'] = line[2].split('|')
+                    dict_['age'] = line[1]
+
                 if no_parents is True:
-                    records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
+                    dict_['terms'] = remove_parents(dict_['terms'], hpo_network)
                 else:
-                    records[line[0]] = line[1].split('|')
+                    pass
+                records.append(dict_)
         return records
     except (FileNotFoundError, PermissionError) as e:
         logger.critical(e)
