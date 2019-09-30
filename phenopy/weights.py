@@ -45,7 +45,7 @@ def make_age_distributions(phenotype_age_file, logger=None):
         try:
             X = get_truncated_normal(mean=rec['mean'], sd=rec['std'], low=0, upp=rec['mean'])
             distros.append({'hpid': rec['hpid'], 'age_dist': X})
-        except ValueError:
+        except ValueError as e:
             if logger is not None:
                 logger.critical(e)
             else:
