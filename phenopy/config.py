@@ -52,6 +52,9 @@ def download_hpo_files():
     obo_path = config.get('hpo', 'obo_file')
     obo_url = config.get('hpo', 'obo_file_url')
 
+    hpoa_path = config.get('hpo', 'hpoa_file')
+    hpoa_url = config.get('hpo', 'hpoa_file_url')
+
     if not os.path.isfile(phen_to_genes_path):
         logger.info(f'Downloading HPO phenotype to: {phen_to_genes_path}')
         download(phen_to_genes_url, phen_to_genes_path)
@@ -59,6 +62,10 @@ def download_hpo_files():
     if not os.path.isfile(obo_path):
         logger.info(f'Downloading HPO obo file to: {obo_path}')
         download(obo_url, obo_path)
+
+    if not os.path.isfile(hpoa_path):
+        logger.info(f'Downloading phenotype to disease annotations to {hpoa_path}')
+        download(hpoa_url, hpoa_path)
 
 
 # create logger
@@ -111,6 +118,11 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
             'hpo_network_file': os.path.join(
                 data_directory,
                 'hpo_network.pickle',
+            ),
+            'hpoa_file_url': 'http://compbio.charite.de/jenkins/job/hpo.annotations.2018/lastSuccessfulBuild/artifact/misc_2018/phenotype.hpoa',
+            'hpoa_file': os.path.join(
+                data_directory,
+                'phenotype.hpoa',
             ),
         }
 
