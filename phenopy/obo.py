@@ -25,6 +25,7 @@ def load(obo_file, logger=None):
             sys.stderr.write(str(e))
         exit(1)
 
+
 def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file=None, ages=None, logger=None):
     """
     Cleans the HPO network.
@@ -61,7 +62,7 @@ def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations
                 for line in f:
                     if line.startswith('#'):
                         continue
-                    entity_id, hpo_ids_string = line.split('\t')
+                    entity_id, patient_info, hpo_ids_string = line.split('\t')
                     hpo_ids = hpo_ids_string.split('|')
                     for hpo_id in hpo_ids:
                         if hpo_id in custom_annos:

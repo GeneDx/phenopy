@@ -130,9 +130,10 @@ class ScorerTestCase(unittest.TestCase):
                                     hpo_network=self.hpo_network)
         # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
         sample_records = {'213200', '302801'}
-        records = {id_: terms for id_, terms in records.items() if id_ in sample_records}
-        record_pairs = product(records.keys(), repeat=2)
-        results = self.scorer.score_pairs(records, record_pairs, lock, stdout=False)
+
+        records = [x for x in records if x['sample'] in sample_records]
+
+        results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
         # test the second element '213200' - '302801'
         self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
@@ -142,17 +143,16 @@ class ScorerTestCase(unittest.TestCase):
                                     hpo_network=self.hpo_network)
         # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
         sample_records = {'213200', '302801'}
-        records = {id_: terms for id_, terms in records.items() if id_ in sample_records}
-        record_pairs = product(records.keys(), repeat=2)
-        results = self.scorer.score_pairs(records, record_pairs, lock, stdout=False)
+        records = [x for x in records if x['sample'] in sample_records]
+
+        results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
         # test the second element '213200' - '302801'
         self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
 
-
         # test the second element '213200' - '302801' using stdout
-        record_pairs = product(records.keys(), repeat=2)
-        self.scorer.score_pairs(records, record_pairs, lock, stdout=True)
+
+        self.scorer.score_pairs(records, lock, stdout=True)
         self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.676033523783286'])
 
     def test_bmwa(self):
@@ -212,9 +212,9 @@ class ScorerTestCase(unittest.TestCase):
 
         ages = pd.DataFrame([
                 {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
-                {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 6.0)},
-                {'hpid': 'HP:0001290', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 6.0)},
-                {'hpid': 'HP:0004322', 'age_dist': get_truncated_normal(10.0, 3.0, 0.0, 6.0)},
+                {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
+                {'hpid': 'HP:0001290', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
+                {'hpid': 'HP:0004322', 'age_dist': get_truncated_normal(10.0, 3.0, 0.0, 10.0)},
                 {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
                 ]).set_index('hpid')
 
@@ -241,7 +241,7 @@ class ScorerTestCase(unittest.TestCase):
 
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.361)
+        self.assertEqual(score_bmwa, 0.3741)
 
         # set all weights to 1.0
         weights_a = [1.] * len(terms_a)
@@ -250,38 +250,82 @@ class ScorerTestCase(unittest.TestCase):
 
         self.assertEqual(score_bmwa, 0.2985)
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_score_pairs_age(self, mock_out):
+    def test_score_pairs_age(self):
         # multiprocessing objects
         manager = Manager()
         lock = manager.Lock()
+        obo_file = os.path.join(self.parent_dir, 'data/hp-age.obo')
+        pheno2genes_file = os.path.join(
+            self.parent_dir, 'data/phenotype_to_genes-age.txt')
+        terms_to_genes, genes_to_terms, annotations_count = load_p2g(pheno2genes_file)
+        hpo_network = load_obo(obo_file)
 
         # read in records
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
                                     hpo_network=self.hpo_network)
-        # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
-        sample_records = {'213200', '302801'}
-        records = {id_: terms for id_, terms in records.items() if id_ in sample_records}
-        record_pairs = product(records.keys(), repeat=2)
-        results = self.scorer.score_pairs(records, record_pairs, lock, stdout=False)
-        self.assertEqual(len(results), 4)
-        # test the second element '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
+        sample_records = {'118200', '118210'}
 
-        # test the second element '213200' - '302801' using no_parents
-        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=True,
+        ages = pd.DataFrame([
+            {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
+            {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
+            {'hpid': 'HP:0001290', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
+            {'hpid': 'HP:0004322', 'age_dist': get_truncated_normal(10.0, 3.0, 0.0, 10.0)},
+            {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
+        ]).set_index('hpid')
+
+        self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
+
+        # create instance the scorer class
+        self.scorer = Scorer(self.hpo_network)
+
+        records = [x for x in records if x['sample'] in sample_records]
+
+        results = self.scorer.score_pairs(records, lock, weight_method=['age'], stdout=False)
+        self.assertEqual(len(results), 4)
+
+        self.assertAlmostEqual(float(results[1][2]), 0.7844, 1)
+
+        ages = pd.DataFrame([
+            {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
+            {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
+            {'hpid': 'HP:0001290', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
+            {'hpid': 'HP:0004322', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
+            {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
+        ]).set_index('hpid')
+
+        self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
+
+        # create instance the scorer class
+        self.scorer = Scorer(self.hpo_network)
+
+        records = [x for x in records if x['sample'] in sample_records]
+
+        results = self.scorer.score_pairs(records, lock, weight_method=['age'], stdout=False)
+        self.assertEqual(len(results), 4)
+
+        self.assertAlmostEqual(float(results[1][2]), 0.6488, 1)
+
+        # Test identical records for which one age exist and one doesnt, the score should be identical
+        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
                                     hpo_network=self.hpo_network)
-        # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
-        sample_records = {'213200', '302801'}
-        records = {id_: terms for id_, terms in records.items() if id_ in sample_records}
-        record_pairs = product(records.keys(), repeat=2)
-        results = self.scorer.score_pairs(records, record_pairs, lock, stdout=False)
+        sample_records = {'118210', '118211'}
+
+        ages = pd.DataFrame([
+            {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
+            {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
+            {'hpid': 'HP:0001290', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
+            {'hpid': 'HP:0004322', 'age_dist': get_truncated_normal(10.0, 3.0, 0.0, 10.0)},
+            {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
+        ]).set_index('hpid')
+
+        self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
+
+        # create instance the scorer class
+        self.scorer = Scorer(self.hpo_network)
+
+        records = [x for x in records if x['sample'] in sample_records]
+
+        results = self.scorer.score_pairs(records, lock, weight_method=['age'], stdout=False)
         self.assertEqual(len(results), 4)
-        # test the second element '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
 
-
-        # test the second element '213200' - '302801' using stdout
-        record_pairs = product(records.keys(), repeat=2)
-        self.scorer.score_pairs(records, record_pairs, lock, stdout=True)
-        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.676033523783286'])
+        self.assertAlmostEqual(float(results[1][2]), 1.0, 1)

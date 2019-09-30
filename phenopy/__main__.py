@@ -132,24 +132,25 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             logger.info(f'Writing results to file: {output_file}')
 
 
-def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False,
-                  custom_annotations_file=None):
+def score_product(records_file, obo_file=None, pheno2genes_file=None, weight_method=[], pheno_ages_file=None,
+                  threads=1, agg_score='BMA', no_parents=False, custom_annotations_file=None):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
 
-    :param records_file: One record per line, tab delimited. First column record unique identifier, second column
-        pipe separated list of HPO identifier (HP:0000001).
+    :param records_file: One record per line, tab delimited. 1st column record unique identifier, 2nd column contains
+        optional patient age and gender(age=11.0;sex=male). 3d column contains pipe separated list of HPO identifier (HP:0000001).
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
+    :param pheno_ages_file: Phenotypes age distribution file containing phenotype HPO id, mean_age, and std.
     :param threads: Multiprocessing threads to use [default: 1].
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
     :param custom_annotations_file: A custom entity-to-phenotype annotation file in the same format as tests/data/test.score-product.txt
     """
-    if agg_score not in {'BMA', 'maximum', }:
+    if agg_score not in {'BMA', 'maximum', 'BMWA'}:
         logger.critical(
-            'agg_score must be one of {BMA, maximum}.')
+            'agg_score must be one of {BMA, maximum, BMWA}.')
         exit(1)
 
     if obo_file is None:
