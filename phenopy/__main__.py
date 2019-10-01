@@ -11,6 +11,7 @@ from phenopy.network import _load_hpo_network
 from phenopy.p2g import load as load_p2g
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, read_records_file
+from phenopy.weights import make_age_distributions
 
 
 def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None, pheno2genes_file=None, threads=1,
@@ -70,7 +71,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file)
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network)
+    scorer = Scorer(hpo_network, agg_score=agg_score)
 
     # multiprocessing objects
     manager = Manager()
@@ -132,7 +133,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             logger.info(f'Writing results to file: {output_file}')
 
 
-def score_product(records_file, obo_file=None, pheno2genes_file=None, weight_method=[], pheno_ages_file=None,
+def score_product(records_file, obo_file=None, pheno2genes_file=None, pheno_ages_file=None,
                   threads=1, agg_score='BMA', no_parents=False, custom_annotations_file=None):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
@@ -169,6 +170,20 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, weight_met
                 'No HPO pheno2genes_file file provided and no "hpo:pheno2genes_file" found in the configuration file.'
             )
             exit(1)
+    if pheno_ages_file is not None:
+        try:
+            ages = make_age_distributions(pheno_ages_file)
+            logger.info(
+                'Added phenotype age distributions to HPO nodes.'
+            )
+        except Exception as e:
+            logger.warning(e)
+            logger.warning(
+                'Phenotype age file could not be loaded.'
+            )
+            ages = None
+    else:
+        ages = None
 
     # load phenotypes to genes associations
     terms_to_genes, _, num_genes_annotated = load_p2g(
@@ -176,7 +191,7 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, weight_met
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file)
+        obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file, ages=ages)
 
     # try except
     records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
@@ -184,17 +199,14 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, weight_met
     logger.info(f'Scoring product of records from file: {records_file}')
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network)
-
-    # create records product generator
-    records_product = itertools.product(records.keys(), repeat=2)
+    scorer = Scorer(hpo_network, agg_score=agg_score)
 
     # iterate over each cross-product and score the pair of records
     manager = Manager()
     lock = manager.Lock()
     with Pool(threads) as p:
-        p.starmap(scorer.score_pairs, [(records, records_product,
-                                        lock, agg_score, i, threads) for i in range(threads)])
+        p.starmap(scorer.score_pairs, [(records,
+                                        lock, i, threads) for i in range(threads)])
 
 
 def main():

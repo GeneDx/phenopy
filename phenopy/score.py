@@ -9,13 +9,14 @@ from itertools import product
 from phenopy.weights import age_to_weights
 
 class Scorer:
-    def __init__(self, hpo_network):
+    def __init__(self, hpo_network, agg_score='BMA'):
         self.hpo_network = hpo_network
 
         self.scores_cache = {}
 
         self.alt2prim = {}
         self.generate_alternate_ids()
+        self.agg_score = agg_score
 
     def find_lca(self, term_a, term_b):
         """
@@ -154,7 +155,7 @@ class Scorer:
 
         return pair_score
 
-    def score(self, terms_a, terms_b, agg_score='BMA', weights=[]):
+    def score(self, terms_a, terms_b, weights=[]):
         """
         Scores the comparison of terms in list A to terms in list B.
 
@@ -186,16 +187,16 @@ class Scorer:
             ['a', 'b']
         ).unstack()
 
-        if agg_score == 'BMA':
+        if self.agg_score == 'BMA':
             return self.best_match_average(df)
-        elif agg_score == 'maximum':
+        elif self.agg_score == 'maximum':
             return self.maximum(df)
-        elif agg_score == 'BMWA' and len(weights) == 2:
+        elif self.agg_score == 'BMWA' and len(weights) == 2:
             return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
         else:
             return 0.0
 
-    def score_pairs(self, records, lock, weight_method=[], thread=0, number_threads=1, stdout=True):
+    def score_pairs(self, records, lock, thread=0, number_threads=1, stdout=True):
         """
         Score list pair of records.
 
@@ -211,23 +212,24 @@ class Scorer:
         results = []
 
         record_pairs = product([x['sample'] for x in records], repeat=2)
+
         record_terms = {x['sample']: x['terms'] for x in records}
 
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
 
-            if 'age' in weight_method:
+            if self.agg_score == 'BMWA':
 
                 record_age = {x['sample']: x['age'] for x in records}
-               
+
                 weights_a = self.calculate_age_weights(record_terms[record_a], record_age[record_b])
                 weights_b = self.calculate_age_weights(record_terms[record_b], record_age[record_a])
 
                 score = self.score(record_terms[record_a],
-                               record_terms[record_b], weights=[weights_a, weights_b], agg_score='BMWA')
+                               record_terms[record_b], weights=[weights_a, weights_b])
             else:
 
                 score = self.score(record_terms[record_a],
-                                   record_terms[record_b], agg_score='BMA')
+                                   record_terms[record_b])
 
             if stdout:
                 try:

@@ -5,7 +5,8 @@ from phenopy.obo import cache, process, restore
 from phenopy.obo import load as load_obo
 
 
-def _load_hpo_network(obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file, hpo_network_file=None):
+def _load_hpo_network(obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file, hpo_network_file=None,
+                      ages=None):
     """
     :param obo_file: path to obo file.
     :param terms_to_genes: Dictionary of HPO terms as keys and list of genes as values.
@@ -29,7 +30,7 @@ def _load_hpo_network(obo_file, terms_to_genes, num_genes_annotated, custom_anno
         # load and process hpo network
         logger.info(f'Loading HPO OBO file: {obo_file}')
         hpo_network = load_obo(obo_file, logger=logger)
-        hpo_network = process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file,
+        hpo_network = process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file, ages=ages,
                               logger=logger)
 
         # save a cache of the processed network

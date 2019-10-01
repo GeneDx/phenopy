@@ -17,7 +17,7 @@ from phenopy.weights import get_truncated_normal, age_to_weights
 
 class ScorerTestCase(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
+    def setUp(cls):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -102,10 +102,10 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(score0, 0.0)
 
         # test BMA
-        score_bma = self.scorer.score(terms_a, terms_b, agg_score='BMA')
+        score_bma = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_bma, 0.1462, places=4)
-
-        score_max = self.scorer.score(terms_a, terms_b, agg_score='maximum')
+        self.scorer.agg_score = 'maximum'
+        score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.25, places=4)
 
     def test_no_parents(self):
@@ -276,11 +276,11 @@ class ScorerTestCase(unittest.TestCase):
         self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
 
         # create instance the scorer class
-        self.scorer = Scorer(self.hpo_network)
+        self.scorer = Scorer(self.hpo_network, agg_score='BMWA')
 
         records = [x for x in records if x['sample'] in sample_records]
 
-        results = self.scorer.score_pairs(records, lock, weight_method=['age'], stdout=False)
+        results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), 0.7844, 1)
@@ -296,16 +296,16 @@ class ScorerTestCase(unittest.TestCase):
         self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
 
         # create instance the scorer class
-        self.scorer = Scorer(self.hpo_network)
+        self.scorer = Scorer(self.hpo_network, agg_score='BMWA')
 
         records = [x for x in records if x['sample'] in sample_records]
 
-        results = self.scorer.score_pairs(records, lock, weight_method=['age'], stdout=False)
+        results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), 0.6488, 1)
 
-        # Test identical records for which one age exist and one doesnt, the score should be identical
+        # Test identical records for which one age exist and one doesn't, the score should be identical
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
                                     hpo_network=self.hpo_network)
         sample_records = {'118210', '118211'}
@@ -321,11 +321,11 @@ class ScorerTestCase(unittest.TestCase):
         self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
 
         # create instance the scorer class
-        self.scorer = Scorer(self.hpo_network)
+        self.scorer = Scorer(self.hpo_network, agg_score='BMWA')
 
         records = [x for x in records if x['sample'] in sample_records]
 
-        results = self.scorer.score_pairs(records, lock, weight_method=['age'], stdout=False)
+        results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), 1.0, 1)
