@@ -272,7 +272,9 @@ class Scorer:
 
         weights = []
         for node_id in terms:
-            if self.hpo_network.node[node_id]['weights']['age_exists']:
+            if node_id not in self.hpo_network.node:
+                weights.append(1.0)
+            elif self.hpo_network.node[node_id]['weights']['age_exists']:
                 weights.append(age_to_weights(self.hpo_network.node[node_id]['weights']['age_dist'], age))
             else:
                 weights.append(1.0)
