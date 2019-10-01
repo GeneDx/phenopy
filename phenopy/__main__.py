@@ -8,22 +8,22 @@ from configparser import NoOptionError, NoSectionError
 from multiprocessing import Manager, Pool
 from phenopy.config import config, logger
 from phenopy.network import _load_hpo_network
-from phenopy.p2g import load as load_p2g
+from phenopy.d2p import load as load_d2p
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, read_records_file
 
 
-def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None, pheno2genes_file=None, threads=1,
+def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None, disease_to_phenotype_file=None, threads=1,
           agg_score='BMA', no_parents=False, custom_annotations_file=None, output_file=None):
     """
-    Scores a case HPO terms against all genes associated HPO.
+    Scores a case HPO terms against all diseases associated HPO.
 
     :param query_hpo_file: File with case HPO terms, one per line.
     :param records_file: One record per line, tab delimited. First column record unique identifier, second column
         pipe separated list of HPO identifier (HP:0000001).
     :param query_name: Unique identifier for the query file.
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
-    :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
+    :param disease_to_phenotype_file: Disease to phenotype annoations from http://compbio.charite.de/jenkins/job/hpo.annotations.2018/
     :param threads: Number of parallel process to use.
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
@@ -45,12 +45,12 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
                 'No HPO OBO file provided and no "hpo:obo_file" found in the configuration file.')
             exit(1)
 
-    if pheno2genes_file is None:
+    if disease_to_phenotype_file is None:
         try:
-            pheno2genes_file = config.get('hpo', 'pheno2genes_file')
+            disease_to_phenotype_file = config.get('hpo', 'hpoa_file')
         except (NoSectionError, NoOptionError):
             logger.critical(
-                'No HPO pheno2genes_file file provided and no "hpo:pheno2genes_file" found in the configuration file.'
+                'No HPO disease_to_phenotype_file file provided and no "hpo:disease_to_phenotype_file" found in the configuration file.'
             )
             exit(1)
 
@@ -61,13 +61,12 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         logger.critical(e)
         exit(1)
 
-    # load phenotypes to genes associations
-    terms_to_genes, genes_to_terms, num_genes_annotated = load_p2g(
-        pheno2genes_file, logger=logger)
+    # load phenotypes to diseases associations
+    disease_to_phenotypes, phenotype_to_diseases = load_d2p(disease_to_phenotype_file, logger=logger)
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file)
+        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file)
 
     # create instance the scorer class
     scorer = Scorer(hpo_network)
@@ -80,7 +79,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         case_hpo = remove_parents(case_hpo, hpo_network)
 
     if records_file:
-        # score and output case hpo terms against all genes associated set of hpo terms
+        # score and output case hpo terms against all diseases associated set of hpo terms
         logger.info(
             f'Scoring HPO terms from file: {query_hpo_file} against entities in: {records_file}')
 
@@ -106,41 +105,41 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             logger.info(f'Writing results to file: {output_file}')
 
     else:
-        # score and output case hpo terms against all genes associated set of hpo terms
+        # score and output case hpo terms against all disease associated set of hpo terms
         logger.info(f'Scoring case HPO terms from file: {query_hpo_file}')
 
-        # add the case terms to the genes_to_terms dict
-        genes_to_terms[query_name] = case_hpo
+        # add the case terms to the disease_to_phenotypes dict
+        disease_to_phenotypes[query_name] = case_hpo
         if not output_file:
-            sys.stdout.write('\t'.join(['#query', 'gene', 'score']))
+            sys.stdout.write('\t'.join(['#query', 'omim_id', 'score']))
             sys.stdout.write('\n')
             # iterate over each cross-product and score the pair of records
             with Pool(threads) as p:
-                p.starmap(scorer.score_pairs, [(genes_to_terms, [
-                          (query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads) for i in range(threads)])
+                p.starmap(scorer.score_pairs, [(disease_to_phenotypes, [
+                          (query_name, disease) for disease in disease_to_phenotypes], lock, agg_score, i, threads) for i in range(threads)])
         else:
 
             with Pool(threads) as p:
-                scored_results = p.starmap(scorer.score_pairs, [(genes_to_terms,
-                                     [(query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads, False)
+                scored_results = p.starmap(scorer.score_pairs, [(disease_to_phenotypes,
+                                     [(query_name, disease) for disease in disease_to_phenotypes], lock, agg_score, i, threads, False)
                                                                 for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
-            scored_results_df = pd.DataFrame(data=scored_results, columns='#query,gene,score'.split(','))
+            scored_results_df = pd.DataFrame(data=scored_results, columns='#query, omim_id, score'.split(','))
             scored_results_df = scored_results_df.sort_values(by='score', ascending=False)
             scored_results_df.to_csv(output_file, sep='\t', index=False)
             logger.info(f'Scoring completed')
             logger.info(f'Writing results to file: {output_file}')
 
 
-def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1, agg_score='BMA', no_parents=False,
+def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, threads=1, agg_score='BMA', no_parents=False,
                   custom_annotations_file=None):
     """
-    Scores the cartesian product of HPO terms from a list of unique records (cases, genes, diseases, etc).
+    Scores the cartesian product of HPO terms from a list of unique records (cases, diseases, diseases, etc).
 
     :param records_file: One record per line, tab delimited. First column record unique identifier, second column
         pipe separated list of HPO identifier (HP:0000001).
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
-    :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
+    :param disease_to_phenotype_file: Disease to phenotype annoations from http://compbio.charite.de/jenkins/job/hpo.annotations.2018/
     :param threads: Multiprocessing threads to use [default: 1].
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
@@ -160,22 +159,21 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, threads=1,
                 'No HPO OBO file provided and no "hpo:obo_file" found in the configuration file.')
             exit(1)
 
-    if pheno2genes_file is None:
+    if disease_to_phenotype_file is None:
         try:
-            pheno2genes_file = config.get('hpo', 'pheno2genes_file')
+            disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
         except (NoSectionError, NoOptionError):
             logger.critical(
-                'No HPO pheno2genes_file file provided and no "hpo:pheno2genes_file" found in the configuration file.'
+                'No HPO phenotype.hpoa file provided and no "hpo:disease_to_phenotype_file" found in the configuration file.'
             )
             exit(1)
 
-    # load phenotypes to genes associations
-    terms_to_genes, _, num_genes_annotated = load_p2g(
-        pheno2genes_file, logger=logger)
+    # load phenotype to diseases associations
+    disease_to_phenotypes, phenotype_to_diseases = load_d2p(disease_to_phenotype_file, logger=logger)
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file)
+        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file)
 
     # try except
     records = read_records_file(records_file, no_parents, hpo_network, logger=logger)

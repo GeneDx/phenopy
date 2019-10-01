@@ -7,7 +7,7 @@ import shutil
 from phenopy import __project__, __version__
 
 
-def download_hpo_files():
+def download_resource_files():
     """
     Check if HPO files exist, if not download them
     :return: None
@@ -35,7 +35,6 @@ def download_hpo_files():
                 logger.info('The server could not fulfill the request')
                 logger.info('Reason: ', e.code)
                 raise
-
 
         try:
             with open(file_path, 'wb') as out_file:
@@ -142,5 +141,5 @@ config.read(config_file)
 logger.info(f'Using configuration file: {config_file}')
 
 logger.info('Checking if HPO files exist')
-download_hpo_files()
+download_resource_files()
 
