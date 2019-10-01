@@ -47,7 +47,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
 
     if disease_to_phenotype_file is None:
         try:
-            disease_to_phenotype_file = config.get('hpo', 'hpoa_file')
+            disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
         except (NoSectionError, NoOptionError):
             logger.critical(
                 'No HPO disease_to_phenotype_file file provided and no "hpo:disease_to_phenotype_file" found in the configuration file.'
