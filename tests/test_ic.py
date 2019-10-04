@@ -6,7 +6,7 @@ from phenopy.config import config
 from phenopy.ic import calculate_information_content
 from phenopy.obo import process
 from phenopy.obo import load as load_obo
-from phenopy.p2g import load as load_p2g
+from phenopy.d2p import load as load_d2p
 from phenopy.util import export_pheno2genes_with_no_parents
 
 
@@ -17,21 +17,22 @@ class ScorerTestCase(unittest.TestCase):
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
 
         # load phenotypes to genes associations
-        cls.pheno2genes_file = os.path.join(cls.parent_dir, 'data/phenotype_to_genes.txt')
-        cls.terms_to_genes, cls.genes_to_terms, cls.num_genes_annotated = load_p2g(cls.pheno2genes_file)
+        cls.disease_to_phenotype_file = os.path.join(cls.parent_dir, 'data/phenotype.hpoa')
+        cls.phenotype_to_diseases, cls.disease_to_phenotypes = load_d2p(cls.disease_to_phenotype_file)
 
         # load and process the network
         config.set('hpo', 'data_directory', os.path.join(cls.parent_dir, 'data'))
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         cls.hpo_network = load_obo(cls.obo_file)
-        cls.hpo_network = process(cls.hpo_network, cls.terms_to_genes, cls.num_genes_annotated,
+        cls.num_diseases_annotated = len(cls.disease_to_phenotypes)
+        cls.hpo_network = process(cls.hpo_network, cls.phenotype_to_diseases, cls.num_diseases_annotated,
                                   custom_annotations_file=None)
         cls.hpo_id = 'HP:0010863'
-        cls.pheno2genes_output_file = os.path.join(cls.parent_dir, 'data/phenotype_to_genes.noparents.txt')
+        cls.disease_to_phenotype_output_file = os.path.join(cls.parent_dir, 'data/phenotype.noparents.hpoa')
 
     def tearDown(cls):
-        if os.path.exists(cls.pheno2genes_output_file):
-            os.remove(cls.pheno2genes_output_file)
+        if os.path.exists(cls.disease_to_phenotype_output_file):
+            os.remove(cls.disease_to_phenotype_output_file)
 
     def test_ic_p2g(self):
         """Calculate the information content of a phenotype"""
@@ -41,7 +42,7 @@ class ScorerTestCase(unittest.TestCase):
         """Calculate the information content of a phenotype when multiple annotations are present"""
         custom_annotation_file = os.path.join(self.parent_dir, 'data/test.score-product.txt')
         hpo_network = load_obo(self.obo_file)
-        hpo_network = process(hpo_network, self.terms_to_genes, self.num_genes_annotated,
+        hpo_network = process(hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated,
                               custom_annotations_file=custom_annotation_file)
 
         self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 7.09, 1)
@@ -50,12 +51,12 @@ class ScorerTestCase(unittest.TestCase):
         inf_ic = calculate_information_content(
             self.hpo_id,
             self.hpo_network,
-            self.terms_to_genes,
+            self.phenotype_to_diseases,
             1e310,
             None,
         )
         self.assertAlmostEqual(inf_ic, -np.log(np.nextafter(0, 1)))
 
     def test_ic_p2g_no_parents(self):
-        export_pheno2genes_with_no_parents(self.pheno2genes_file, self.pheno2genes_output_file, self.hpo_network)
-        self.assertTrue(os.path.exists(self.pheno2genes_output_file))
+        export_pheno2genes_with_no_parents(self.disease_to_phenotype_file, self.disease_to_phenotype_output_file, self.hpo_network)
+        self.assertTrue(os.path.exists(self.disease_to_phenotype_output_file))
