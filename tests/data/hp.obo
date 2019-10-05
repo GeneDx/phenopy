@@ -216,6 +216,56 @@ created_by: peter
 creation_date: 2014-04-03T12:16:19Z
 
 [Term]
+id: HP:0001263
+name: Global developmental delay
+alt_id: HP:0000754
+alt_id: HP:0001255
+alt_id: HP:0001277
+alt_id: HP:0001292
+alt_id: HP:0002433
+alt_id: HP:0002473
+alt_id: HP:0002532
+alt_id: HP:0006793
+alt_id: HP:0006867
+alt_id: HP:0006885
+alt_id: HP:0006935
+alt_id: HP:0007005
+alt_id: HP:0007094
+alt_id: HP:0007106
+alt_id: HP:0007174
+alt_id: HP:0007224
+alt_id: HP:0007228
+alt_id: HP:0007342
+def: "A delay in the achievement of motor or mental milestones in the domains of development of a child, including motor skills, speech and language, cognitive skills, and social and emotional skills. This term should only be used to describe children younger than five years of age." [DDD:hvfirth, HPO:sdoelken]
+comment: Developmental retardation is any significant lag in development in the any or all of the physical, cognitive, behavioral, emotional, or social spheres. Note that the term intellectual disability (mental retardation) refers to not merely a delay in development but rather a permanent limitation. Note that the term 'psychomotor retardation' is also used in some contexts to refer to a slowing of thought and physical movements as a result of major depression or intoxication.
+synonym: "Cognitive delay" RELATED []
+synonym: "Delayed cognitive development" EXACT []
+synonym: "Delayed development" EXACT []
+synonym: "Delayed developmental milestones" EXACT []
+synonym: "Delayed intellectual development" EXACT []
+synonym: "Delayed milestones" EXACT []
+synonym: "Delayed psychomotor development" EXACT []
+synonym: "Developmental delay" EXACT []
+synonym: "Developmental delay in early childhood" EXACT []
+synonym: "Developmental delay, global" EXACT []
+synonym: "Developmental retardation" EXACT []
+synonym: "Lack of psychomotor development" EXACT []
+synonym: "Mental and motor retardation" RELATED []
+synonym: "Motor and developmental delay" EXACT []
+synonym: "Psychomotor delay" EXACT []
+synonym: "Psychomotor development deficiency" EXACT []
+synonym: "Psychomotor development failure" EXACT []
+synonym: "Psychomotor developmental delay" EXACT []
+synonym: "Retarded development" EXACT []
+synonym: "Retarded mental development" EXACT []
+synonym: "Retarded psychomotor development" EXACT []
+xref: SNOMEDCT_US:224958001
+xref: UMLS:C0557874
+xref: UMLS:C1864897
+xref: UMLS:C4020875
+is_a: HP:0012758 ! Neurodevelopmental delay
+
+[Term]
 id: HP:0012434
 name: Delayed social development
 def: "A failure to meet one or more age-related milestones of social behavior." [HPO:probinson]
@@ -283,3 +333,159 @@ xref: SNOMEDCT_US:277843001
 xref: UMLS:C0004941
 xref: UMLS:C0233514
 is_a: HP:0012638 ! Abnormality of nervous system physiology
+
+[Term]
+id: HP:0001290
+name: Generalized hypotonia
+def: "Generalized muscular hypotonia (abnormally low muscle tone)." [HPO:curators]
+synonym: "Decreased muscle tone" EXACT layperson []
+synonym: "Generalized muscular hypotonia" EXACT []
+synonym: "Hypotonia" BROAD [HPO:skoehler]
+synonym: "Hypotonia, generalized" EXACT []
+synonym: "Low muscle tone" EXACT layperson []
+xref: UMLS:C1858120
+is_a: HP:0001252 ! Muscular hypotonia
+
+[Term]
+id: HP:0001252
+name: Muscular hypotonia
+alt_id: HP:0001318
+def: "Muscular hypotonia is an abnormally low muscle tone (the amount of tension or resistance to movement in a muscle), often involving reduced muscle strength. Hypotonia is characterized by a diminished resistance to passive stretching." [HPO:curators]
+synonym: "Low or weak muscle tone" EXACT layperson [ORCID:0000-0002-6548-5200]
+synonym: "Muscle hypotonia" EXACT []
+xref: MSH:D009123
+xref: SNOMEDCT_US:398151007
+xref: SNOMEDCT_US:398152000
+xref: UMLS:C0026827
+is_a: HP:0003808 ! Abnormal muscle tone
+
+[Term]
+id: HP:0003808
+name: Abnormal muscle tone
+synonym: "Abnormal muscle tone" EXACT layperson []
+xref: UMLS:C0852413
+is_a: HP:0011804 ! Abnormal muscle physiology
+
+[Term]
+id: HP:0011804
+name: Abnormal muscle physiology
+def: "A functional abnormality of a skeletal muscle." [HPO:probinson]
+synonym: "Abnormality of muscle physiology" EXACT []
+synonym: "Issue with muscle function" EXACT layperson []
+xref: UMLS:C4023182
+is_a: HP:0003011 ! Abnormality of the musculature
+created_by: peter
+creation_date: 2012-04-25T02:00:15Z
+
+[Term]
+id: HP:0003011
+name: Abnormality of the musculature
+alt_id: HP:0003197
+alt_id: HP:0003708
+alt_id: HP:0040290
+def: "Abnormality originating in one or more muscles, i.e., of the set of muscles of body." [HPO:probinson]
+synonym: "Muscular abnormality" EXACT layperson []
+xref: UMLS:C4021745
+is_a: HP:0000118 ! Phenotypic abnormality
+
+[Term]
+id: HP:0001251
+name: Ataxia
+alt_id: HP:0001253
+alt_id: HP:0002513
+alt_id: HP:0007050
+alt_id: HP:0007157
+def: "Cerebellar ataxia refers to ataxia due to dysfunction of the cerebellum. This causes a variety of elementary neurological deficits including asynergy (lack of coordination between muscles, limbs and joints), dysmetria (lack of ability to judge distances that can lead to under- oder overshoot in grasping movements), and dysdiadochokinesia (inability to perform rapid movements requiring antagonizing muscle groups to be switched on and off repeatedly)." [HPO:probinson]
+comment: Ataxia can be differentiated into dyssynergy, asynergy, dysmetria (hypometria, hypermetria), dysdiadochokinesis, gait ataxia, truncal ataxia, limb ataxia, and dysarthria). Note: This term does not include sensory ataxia.
+synonym: "Cerebellar ataxia" EXACT []
+xref: MSH:D002524
+xref: SNOMEDCT_US:85102008
+xref: UMLS:C0007758
+is_a: HP:0011443 ! Abnormality of Coordination
+
+[Term]
+id: HP:0011443
+name: Abnormality of coordination
+synonym: "Abnormality of coordination" EXACT layperson []
+synonym: "Coordination issue" EXACT layperson []
+xref: UMLS:C4023353
+is_a: HP:0011442 ! Abnormality of central motor function
+created_by: peter
+creation_date: 2012-03-18T02:40:46Z
+
+[Term]
+id: HP:0011442
+name: Abnormality of central motor function
+def: "An anomaly of the control or production of movement in the central nervous system." [HPO:probinson]
+xref: UMLS:C4023354
+is_a: HP:0012638 ! Abnormality of nervous system physiology
+created_by: peter
+creation_date: 2012-03-18T02:29:04Z
+
+[Term]
+id: HP:0004322
+name: Short stature
+alt_id: HP:0001509
+alt_id: HP:0003501
+alt_id: HP:0003507
+alt_id: HP:0003512
+alt_id: HP:0003518
+alt_id: HP:0003519
+alt_id: HP:0008871
+alt_id: HP:0008882
+alt_id: HP:0008888
+alt_id: HP:0008913
+def: "A height below that which is expected according to age and gender norms. Although there is no universally accepted definition of short stature, many refer to \"short stature\" as height more than 2 standard deviations below the mean for age and gender (or below the 3rd percentile for age and gender dependent norms)." [HPO:curators]
+synonym: "Decreased body height" EXACT layperson []
+synonym: "Height less than 3rd percentile" EXACT []
+synonym: "Short stature" EXACT layperson []
+synonym: "Small stature" EXACT layperson []
+synonym: "Stature below 3rd percentile" EXACT []
+xref: SNOMEDCT_US:237836003
+xref: UMLS:C0349588
+is_a: HP:0001510 ! Growth delay
+created_by: peter
+creation_date: 2008-02-27T03:19:00Z
+
+[Term]
+id: HP:0001510
+name: Growth delay
+alt_id: HP:0001434
+alt_id: HP:0001512
+alt_id: HP:0001514
+alt_id: HP:0001517
+alt_id: HP:0001532
+alt_id: HP:0008847
+alt_id: HP:0008870
+alt_id: HP:0008886
+alt_id: HP:0008893
+alt_id: HP:0008926
+def: "A deficiency or slowing down of growth pre- and postnatally." [HPO:probinson]
+comment: Poor or abnormally slow gains in weight or height in a child.
+synonym: "Delayed growth" EXACT layperson []
+synonym: "Growth deficiency" EXACT layperson []
+synonym: "Growth delay" EXACT layperson []
+synonym: "Growth failure" EXACT layperson []
+synonym: "Growth retardation" EXACT layperson []
+synonym: "Poor growth" EXACT layperson []
+synonym: "Retarded growth" EXACT layperson []
+synonym: "Very poor growth" RELATED layperson [HPO:skoehler]
+xref: SNOMEDCT_US:276617005
+xref: SNOMEDCT_US:444896005
+xref: SNOMEDCT_US:59576002
+xref: UMLS:C0151686
+xref: UMLS:C0456070
+xref: UMLS:C0878787
+xref: UMLS:C1837385
+xref: UMLS:C3552463
+is_a: HP:0001507 ! Growth abnormality
+
+[Term]
+id: HP:0001507
+name: Growth abnormality
+alt_id: HP:0008904
+synonym: "Abnormal growth" EXACT layperson []
+synonym: "Growth abnormality" EXACT layperson []
+synonym: "Growth issue" EXACT layperson []
+xref: UMLS:C0262361
+is_a: HP:0000118 ! Phenotypic abnormality

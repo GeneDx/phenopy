@@ -103,7 +103,7 @@ class ScorerTestCase(unittest.TestCase):
 
         # test BMA
         score_bma = self.scorer.score(terms_a, terms_b)
-        self.assertAlmostEqual(score_bma, 0.1462, places=4)
+        self.assertAlmostEqual(score_bma, 0.1505, places=4)
         self.scorer.agg_score = 'maximum'
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.25, places=4)
@@ -136,7 +136,7 @@ class ScorerTestCase(unittest.TestCase):
         results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
         # test the second element '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
+        self.assertAlmostEqual(float(results[1][2]), 0.4181281031156854, 2)
 
         # test the second element '213200' - '302801' using no_parents
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=True,
@@ -148,16 +148,17 @@ class ScorerTestCase(unittest.TestCase):
         results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
         # test the second element '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.68, 2)
+        self.assertAlmostEqual(float(results[1][2]), 0.415, 2)
 
         # test the second element '213200' - '302801' using stdout
 
         self.scorer.score_pairs(records, lock, stdout=True)
-        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.676033523783286'])
+        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.4181281031156854'])
 
     def test_bmwa(self):
+        # test best match weighted average
         # load and process the network
-        obo_file = os.path.join(self.parent_dir, 'data/hp-age.obo')
+        obo_file = os.path.join(self.parent_dir, 'data/hp.obo')
         pheno2genes_file = os.path.join(
             self.parent_dir, 'data/phenotype_to_genes.txt')
         terms_to_genes, genes_to_terms, annotations_count = load_p2g(
@@ -193,9 +194,47 @@ class ScorerTestCase(unittest.TestCase):
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
         self.assertEqual(score_bmwa, 0.2985)
 
+        # Test weight adjustment masking
+        # make pairwise scores matrix
+
+        # Patient A age = 9.0 years
+        # Patient B age = 4.0 years
+
+        terms_a = ['HP:0001251', 'HP:0001249', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, ID, DD, HYP, SS
+        terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
+
+        df = pd.DataFrame(
+            [[4.22595743e-02, 3.92122308e-02, 3.04851573e-04],
+             [1.07473687e-01, 5.05101655e-01, 3.78305515e-04],
+             [1.07473687e-01, 5.05101655e-01, 3.78305515e-04],
+             [3.69780479e-04, 3.78305515e-04, 4.64651944e-01],
+             [4.17139800e-04, 4.12232546e-04, 3.67984322e-04]],
+            index=pd.Index(terms_a, name='a'),
+            columns=pd.MultiIndex.from_arrays([['score'] * len(terms_b), terms_b],
+                                              names=[None, 'b'])
+        )
+
+        # calculate weights based on patients age
+
+        weights_a = [0.67, .4, 1., 1., 0.4]  # patient_b is too young to have ataxia, ID and short stature
+        weights_b = [1., 1., 1.]
+
+        # compute pairwise best match weighted average
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b, min_score_mask=None)
+
+        self.assertEqual(score_bmwa, 0.352)
+
+        # because both patients were described to have ID, but only patient a has ataxia and ss
+        # we mask good phenotype matches from being weighted down by default
+        # we expect to get a better similarity score
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
+
+        self.assertEqual(score_bmwa, 0.365)
+
     def test_age_weight(self):
+        # Test age based weight distribution and bmwa calculation
         # load and process the network
-        obo_file = os.path.join(self.parent_dir, 'data/hp-age.obo')
+        obo_file = os.path.join(self.parent_dir, 'data/hp.obo')
         pheno2genes_file = os.path.join(
             self.parent_dir, 'data/phenotype_to_genes.txt')
         terms_to_genes, genes_to_terms, annotations_count = load_p2g(
@@ -205,11 +244,7 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
         terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
 
-        self.assertEqual(age_to_weights(get_truncated_normal(6.0, 1.0, 0.0, 6.0), 9.0), 1.0)
-        self.assertEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 9.0), 1.0)
-        self.assertEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 9.0), 1.0)
-        self.assertAlmostEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 8.0), 0.317, 2)
-
+        # model age using truncated normal
         ages = pd.DataFrame([
                 {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
                 {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
@@ -226,9 +261,11 @@ class ScorerTestCase(unittest.TestCase):
         age_a = 9.0
         age_b = 4.0
 
+        # calculate weights based on patients age
         weights_a = self.scorer.calculate_age_weights(terms_a, age_b)
         weights_b = self.scorer.calculate_age_weights(terms_b, age_a)
 
+        # make pairwise scores matrix
         df = pd.DataFrame(
             [[4.22595743e-02,   3.92122308e-02, 3.04851573e-04],
              [1.07473687e-01,   5.05101655e-01, 3.78305515e-04],
@@ -238,12 +275,12 @@ class ScorerTestCase(unittest.TestCase):
             columns=pd.MultiIndex.from_arrays([['score'] * len(terms_b), terms_b],
                                               names=[None, 'b'])
         )
-
+        # compute pairwise best match weighted average
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
         self.assertEqual(score_bmwa, 0.3741)
 
-        # set all weights to 1.0
+        # set all weights to 1.0, result should be the same as BMA without weights
         weights_a = [1.] * len(terms_a)
         weights_b = [1.] * len(terms_b)
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
@@ -251,20 +288,20 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(score_bmwa, 0.2985)
 
     def test_score_pairs_age(self):
+        # Test reading in records files and calculating pairwise scores
         # multiprocessing objects
         manager = Manager()
         lock = manager.Lock()
-        obo_file = os.path.join(self.parent_dir, 'data/hp-age.obo')
+        obo_file = os.path.join(self.parent_dir, 'data/hp.obo')
         pheno2genes_file = os.path.join(
-            self.parent_dir, 'data/phenotype_to_genes-age.txt')
+            self.parent_dir, 'data/phenotype_to_genes.txt')
         terms_to_genes, genes_to_terms, annotations_count = load_p2g(pheno2genes_file)
         hpo_network = load_obo(obo_file)
 
         # read in records
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
                                     hpo_network=self.hpo_network)
-        sample_records = {'118200', '118210'}
-
+        # model age using truncated normal
         ages = pd.DataFrame([
             {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
             {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
@@ -278,45 +315,19 @@ class ScorerTestCase(unittest.TestCase):
         # create instance the scorer class
         self.scorer = Scorer(self.hpo_network, agg_score='BMWA')
 
+        # select which patients to test in pairwise bmwa
+        sample_records = {'118200', '118210'}
         records = [x for x in records if x['sample'] in sample_records]
 
         results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
 
-        self.assertAlmostEqual(float(results[1][2]), 0.7844, 1)
+        self.assertAlmostEqual(float(results[1][2]), 0.6452, 1)
 
-        ages = pd.DataFrame([
-            {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
-            {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
-            {'hpid': 'HP:0001290', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
-            {'hpid': 'HP:0004322', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
-            {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(0.1, 3.0, 0.0, 0.1)},
-        ]).set_index('hpid')
-
-        self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
-
-        # create instance the scorer class
-        self.scorer = Scorer(self.hpo_network, agg_score='BMWA')
-
-        records = [x for x in records if x['sample'] in sample_records]
-
-        results = self.scorer.score_pairs(records, lock, stdout=False)
-        self.assertEqual(len(results), 4)
-
-        self.assertAlmostEqual(float(results[1][2]), 0.6488, 1)
-
-        # Test identical records for which one age exist and one doesn't, the score should be identical
+        # Test identical records for which one age exist and one doesn't
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
                                     hpo_network=self.hpo_network)
         sample_records = {'118210', '118211'}
-
-        ages = pd.DataFrame([
-            {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
-            {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
-            {'hpid': 'HP:0001290', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
-            {'hpid': 'HP:0004322', 'age_dist': get_truncated_normal(10.0, 3.0, 0.0, 10.0)},
-            {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
-        ]).set_index('hpid')
 
         self.hpo_network = process(hpo_network, terms_to_genes, annotations_count, ages=ages)
 
@@ -329,3 +340,4 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), 1.0, 1)
+

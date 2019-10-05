@@ -224,12 +224,10 @@ class Scorer:
                 weights_a = self.calculate_age_weights(record_terms[record_a], record_age[record_b])
                 weights_b = self.calculate_age_weights(record_terms[record_b], record_age[record_a])
 
-                score = self.score(record_terms[record_a],
-                               record_terms[record_b], weights=[weights_a, weights_b])
+                score = self.score(record_terms[record_a], record_terms[record_b], weights=[weights_a, weights_b])
             else:
 
-                score = self.score(record_terms[record_a],
-                                   record_terms[record_b])
+                score = self.score(record_terms[record_a], record_terms[record_b])
 
             if stdout:
                 try:
@@ -246,21 +244,29 @@ class Scorer:
 
     def best_match_average(self, df):
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
-
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
-        return np.average(np.concatenate((max1, max0)))
+        return np.average(np.append(max1, max0))
 
     def maximum(self, df):
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
-    def bmwa(self, df, weights_a, weights_b):
+    def bmwa(self, df, weights_a, weights_b, min_score_mask=0.05):
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
-
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
-        return round(np.average(np.concatenate((max1, max0)), weights=np.concatenate((weights_a, weights_b))), 4)
+
+        scores = np.append(max1, max0)
+        weights = np.array(np.append(weights_a, weights_b))
+
+        # mask good matches from weighting
+        # mask threshold based on >75% of pairwise scores of all hpo terms
+        # TODO: expose min_score cutoff value to be set in config
+        if min_score_mask is not None:
+            masked_weights = np.where(scores > min_score_mask, 1.0, weights)
+            weights = masked_weights
+        return round(np.average(scores, weights=weights), 4)
 
     def calculate_age_weights(self, terms, age):
         """
@@ -269,7 +275,6 @@ class Scorer:
         :param age: numeric age of patient
         :return: list of weights in same order as terms
         """
-
         weights = []
         for node_id in terms:
             if node_id not in self.hpo_network.node:
