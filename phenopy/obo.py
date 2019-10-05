@@ -36,6 +36,8 @@ def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations
     :param terms_to_genes: Dictionary mapping HPO terms to genes.
     :param num_genes_annotated: Number of genes with HPO annotations.
     :param custom_annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
+    :param ages: age distributions object
+    :param logger: Python `logging` logger instance.
     :return: `networkx.MultiDiGraph`
     """
 
@@ -85,7 +87,7 @@ def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations
             num_genes_annotated,
             custom_annos,
         )
-
+        # annotate with phenotype age distribution
         hpo_network.node[node_id]['weights'] = {
             'age_dist': None,
             'age_exists': False,

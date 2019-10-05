@@ -136,7 +136,7 @@ class ScorerTestCase(unittest.TestCase):
         results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
         # test the second element '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.4181281031156854, 2)
+        self.assertAlmostEqual(float(results[1][2]), 0.41118365867124096, 4)
 
         # test the second element '213200' - '302801' using no_parents
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=True,
@@ -153,7 +153,7 @@ class ScorerTestCase(unittest.TestCase):
         # test the second element '213200' - '302801' using stdout
 
         self.scorer.score_pairs(records, lock, stdout=True)
-        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.4181281031156854'])
+        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.41118365867124096'])
 
     def test_bmwa(self):
         # test best match weighted average

@@ -142,10 +142,10 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, pheno_ages
         optional patient age and gender(age=11.0;sex=male). 3d column contains pipe separated list of HPO identifier (HP:0000001).
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param pheno2genes_file: Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
-    :param pheno_ages_file: Phenotypes age distribution file containing phenotype HPO id, mean_age, and std.
+    :param pheno_ages_file: Phenotypes age summary stats file containing phenotype HPO id, mean_age, and std.
     :param threads: Multiprocessing threads to use [default: 1].
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
-        Must be one of {'BMA', 'maximum'}
+        Must be one of {'BMA', 'maximum', 'BMWA'}. If BMWA is passed phenotype ages file is expected the first time its run.
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
     :param custom_annotations_file: A custom entity-to-phenotype annotation file in the same format as tests/data/test.score-product.txt
     """
