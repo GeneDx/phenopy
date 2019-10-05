@@ -136,7 +136,7 @@ class ScorerTestCase(unittest.TestCase):
         results = self.scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
         # test the second element '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.41118365867124096, 4)
+        self.assertAlmostEqual(float(results[1][2]), 0.41118365867124096, 2)
 
         # test the second element '213200' - '302801' using no_parents
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=True,
