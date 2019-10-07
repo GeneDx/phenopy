@@ -30,8 +30,8 @@ class NetworkTestCase(unittest.TestCase):
                                         hpo_network_file=self.hpo_network_file)
 
         # this is a cleaned version of the network, so it is not the same as test_obo.py
-        self.assertEqual(len(self.hpo_network), 16)
-        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 6.12, 2)
+        self.assertEqual(len(self.hpo_network), 28)
+        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 6.2022, 2)
 
     def test_load_custom(self):
         self.hpo_network = _load_hpo_network(self.obo_file, self.terms_to_genes, self.num_genes_annotated,
@@ -40,7 +40,7 @@ class NetworkTestCase(unittest.TestCase):
                                         hpo_network_file=self.hpo_network_file
                                         )
 
-        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 7.09, 2)
+        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 7.1752, 2)
 
     def test_restore(self):
         hpo_network1 = _load_hpo_network(self.obo_file, self.terms_to_genes, self.num_genes_annotated,

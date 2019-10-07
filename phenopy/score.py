@@ -5,15 +5,18 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from itertools import product
+from phenopy.weights import age_to_weights
 
 class Scorer:
-    def __init__(self, hpo_network):
+    def __init__(self, hpo_network, agg_score='BMA'):
         self.hpo_network = hpo_network
 
         self.scores_cache = {}
 
         self.alt2prim = {}
         self.generate_alternate_ids()
+        self.agg_score = agg_score
 
     def find_lca(self, term_a, term_b):
         """
@@ -42,6 +45,8 @@ class Scorer:
             parents[1])
         # lca node
         # find the ancestor with the highest IC
+        # TODO:(fixme) instead of picking the most informative ic, find a better way picking b/w nodes
+        #  with same ic than using max (ic)
         return max(common_parents, key=lambda n: self.hpo_network.node[n]['ic'])
 
     def generate_alternate_ids(self):
@@ -152,14 +157,15 @@ class Scorer:
 
         return pair_score
 
-    def score(self, terms_a, terms_b, agg_score='BMA'):
+    def score(self, terms_a, terms_b, weights=[]):
         """
         Scores the comparison of terms in list A to terms in list B.
 
         :param terms_a: List of HPO terms A.
         :param terms_b: List of HPO terms B.
         :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
-            Must be one of {'BMA', }
+            Must be one of {'BMA', 'BMWA'}
+        :param weights: List (length=2) of weights, one for each dimension of score matrix.
         :return: `float` (comparison score)
         """
         # convert alternate HPO ids to canonical ones
@@ -183,19 +189,22 @@ class Scorer:
             ['a', 'b']
         ).unstack()
 
-        if agg_score == 'BMA':
+        if self.agg_score == 'BMA':
             return self.best_match_average(df)
-        elif agg_score == 'maximum':
+        elif self.agg_score == 'maximum':
             return self.maximum(df)
+        elif self.agg_score == 'BMWA' and len(weights) == 2:
+            return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
         else:
             return 0.0
 
-    def score_pairs(self, records, record_pairs, lock, agg_score='BMA', thread=0, number_threads=1, stdout=True):
+    def score_pairs(self, records, lock, thread=0, number_threads=1, stdout=True):
         """
         Score list pair of records.
 
         :param records: Records dictionary.
         :param record_pairs: List of record pairs to score.
+        :param weight_method: (age) List of methods by which to adjust score.
         :param thread: Thread index for multiprocessing.
         :param number_threads: Total number of threads for multiprocessing.
         :param stdout:(True,False) write results to standard out
@@ -203,9 +212,24 @@ class Scorer:
         """
         # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         results = []
+
+        record_pairs = product([x['sample'] for x in records], repeat=2)
+
+        record_terms = {x['sample']: x['terms'] for x in records}
+
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
-            score = self.score(records[record_a],
-                               records[record_b], agg_score=agg_score)
+
+            if self.agg_score == 'BMWA':
+
+                record_age = {x['sample']: x['age'] for x in records}
+
+                weights_a = self.calculate_age_weights(record_terms[record_a], record_age[record_b])
+                weights_b = self.calculate_age_weights(record_terms[record_b], record_age[record_a])
+
+                score = self.score(record_terms[record_a], record_terms[record_b], weights=[weights_a, weights_b])
+            else:
+
+                score = self.score(record_terms[record_a], record_terms[record_b])
 
             if stdout:
                 try:
@@ -222,12 +246,48 @@ class Scorer:
 
     def best_match_average(self, df):
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
-
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
-        return np.average(np.concatenate((max1, max0)))
+        return np.average(np.append(max1, max0))
 
     def maximum(self, df):
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
+    def bmwa(self, df, weights_a, weights_b, min_score_mask=0.05):
+        """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
+        max1 = df.max(axis=1).values
+        max0 = df.max(axis=0).values
+
+        scores = np.append(max1, max0)
+        weights = np.array(np.append(weights_a, weights_b))
+
+        # mask good matches from weighting
+        # mask threshold based on >75% of pairwise scores of all hpo terms
+        # TODO: expose min_score cutoff value to be set in config
+        if min_score_mask is not None:
+            masked_weights = np.where(scores > min_score_mask, 1.0, weights)
+            weights = masked_weights
+
+        # if weights add up to zero, calculate unweighted average
+        if np.sum(weights) == 0.0:
+            weights = np.ones(len(weights))
+
+        return round(np.average(scores, weights=weights), 4)
+
+    def calculate_age_weights(self, terms, age):
+        """
+        Calculates an age-based weight vector given an iterable of terms.
+        :param terms: iterable of hpo terms
+        :param age: numeric age of patient
+        :return: list of weights in same order as terms
+        """
+        weights = []
+        for node_id in terms:
+            if node_id not in self.hpo_network.node:
+                weights.append(1.0)
+            elif self.hpo_network.node[node_id]['weights']['age_exists']:
+                weights.append(age_to_weights(self.hpo_network.node[node_id]['weights']['age_dist'], age))
+            else:
+                weights.append(1.0)
+        return weights

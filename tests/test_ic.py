@@ -35,7 +35,7 @@ class ScorerTestCase(unittest.TestCase):
 
     def test_ic_p2g(self):
         """Calculate the information content of a phenotype"""
-        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 6.12, 1)
+        self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 6.20, 1)
 
     def test_ic_custom(self):
         """Calculate the information content of a phenotype when multiple annotations are present"""
@@ -44,7 +44,7 @@ class ScorerTestCase(unittest.TestCase):
         hpo_network = process(hpo_network, self.terms_to_genes, self.num_genes_annotated,
                               custom_annotations_file=custom_annotation_file)
 
-        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 7.09, 1)
+        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 7.17, 1)
 
     def test_inf_ic(self):
         inf_ic = calculate_information_content(
@@ -59,3 +59,4 @@ class ScorerTestCase(unittest.TestCase):
     def test_ic_p2g_no_parents(self):
         export_pheno2genes_with_no_parents(self.pheno2genes_file, self.pheno2genes_output_file, self.hpo_network)
         self.assertTrue(os.path.exists(self.pheno2genes_output_file))
+

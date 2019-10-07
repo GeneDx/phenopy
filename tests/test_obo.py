@@ -13,5 +13,5 @@ class OboTestCase(unittest.TestCase):
         self.assertEqual(syserr.code, 1)
 
         hpo_network = load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/hp.obo'))
-        self.assertEqual(len(hpo_network), 16)
+        self.assertEqual(len(hpo_network), 28)
         self.assertEqual(hpo_network.node['HP:0012434']['name'], 'Delayed social development')

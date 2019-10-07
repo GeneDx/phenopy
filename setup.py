@@ -28,5 +28,6 @@ setup(
         'numpy',
         'obonet',
         'pandas',
+        'scipy',
     ]
 )
