@@ -45,6 +45,8 @@ class Scorer:
             parents[1])
         # lca node
         # find the ancestor with the highest IC
+        # TODO:(fixme) instead of picking the most informative ic, find a better way picking b/w nodes
+        #  with same ic than using max (ic)
         return max(common_parents, key=lambda n: self.hpo_network.node[n]['ic'])
 
     def generate_alternate_ids(self):
@@ -266,6 +268,11 @@ class Scorer:
         if min_score_mask is not None:
             masked_weights = np.where(scores > min_score_mask, 1.0, weights)
             weights = masked_weights
+
+        # if weights add up to zero, calculate unweighted average
+        if np.sum(weights) == 0.0:
+            weights = np.ones(len(weights))
+
         return round(np.average(scores, weights=weights), 4)
 
     def calculate_age_weights(self, terms, age):
