@@ -2,6 +2,7 @@ import pandas as pd
 
 import os
 import unittest
+from phenopy.config import logger
 
 from phenopy.weights import get_truncated_normal, age_to_weights, make_age_distributions
 
@@ -21,6 +22,12 @@ class UtilTestCase(unittest.TestCase):
         syserr = se.exception
         self.assertEqual(syserr.code, 1)
 
+        with self.assertRaises(SystemExit) as se:
+            make_age_distributions('notafilepath/notafile', logger=logger)
+
+        syserr = se.exception
+        self.assertEqual(syserr.code, 1)
+
         ages_truth = pd.DataFrame([
             {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
             {'hpid': 'HP:0001263', 'age_dist': get_truncated_normal(1.0, 1.0, 0.0, 1.0)},
@@ -35,6 +42,11 @@ class UtilTestCase(unittest.TestCase):
 
         for hpid in ages_truth.index:
             self.assertAlmostEqual(ages_truth.loc[hpid]['age_dist'].mean(), df.loc[hpid]['age_dist'].mean(), 1)
+
+    def test_get_truncated_normal(self):
+        self.assertAlmostEqual(get_truncated_normal(6.0, 1.0, 0.0, 6.0).mean(), 5.20, 2)
+        self.assertAlmostEqual(get_truncated_normal(6.0, 1.0, 0.0, 6.0).cdf(3.0), 0.0026, 2)
+        self.assertAlmostEqual(get_truncated_normal(6.0, 1.0, 0.0, 6.0).cdf(12.0), 1.0, 2)
 
 
 

@@ -26,8 +26,6 @@ def age_to_weights(age_dist, age):
 
     if age is None:
         return 1.0
-    elif age > age_dist.interval(0.99)[1]:
-        return 1.0
     else:
         return age_dist.cdf(age)
 

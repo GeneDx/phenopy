@@ -113,6 +113,11 @@ class ScorerTestCase(unittest.TestCase):
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.25, places=4)
 
+        self.scorer.agg_score = 'not_a_method'
+        score_max = self.scorer.score(terms_a, terms_b)
+        self.assertAlmostEqual(score_max, 0.0, places=4)
+
+
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
         terms_b = ['HP:0001249', 'HP:0012758']
@@ -279,6 +284,17 @@ class ScorerTestCase(unittest.TestCase):
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
         self.assertEqual(score_bmwa, 0.2985)
+
+        # test term not in network
+        terms_a = ['HP:Not_a_term']
+        weights_a = self.scorer.calculate_age_weights(terms_a, age_b)
+        self.assertEqual(weights_a, [1.0])
+
+        # term in network no age
+
+        terms_a = ['HP:0000001']
+        weights_a = self.scorer.calculate_age_weights(terms_a, age_b)
+        self.assertEqual(weights_a, [1.0])
 
     def test_score_pairs_age(self):
         # Test reading in records files and calculating pairwise scores
