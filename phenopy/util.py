@@ -108,7 +108,7 @@ def read_records_file(records_file, no_parents=False, hpo_network=None, logger=N
                     'terms': parse(line[2], what='HPO')
                 }
 
-                if no_parents is True and hpo_network:
+                if no_parents is True and hpo_network is not None:
                     dict_['terms'] = remove_parents(dict_['terms'], hpo_network)
                 else:
                     pass

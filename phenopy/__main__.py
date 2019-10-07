@@ -176,12 +176,12 @@ def score_product(records_file, obo_file=None, pheno2genes_file=None, pheno_ages
             logger.info(
                 'Added phenotype age distributions to HPO nodes.'
             )
-        except Exception as e:
-            logger.warning(e)
-            logger.warning(
-                'Phenotype age file could not be loaded.'
+        except (FileNotFoundError, PermissionError) as e:
+            logger.critical(e)
+            logger.critical(
+                'Specified phenotype ages file could not be loaded or does not exist'
             )
-            ages = None
+            exit(1)
     else:
         ages = None
 
