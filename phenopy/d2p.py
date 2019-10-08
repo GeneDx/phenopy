@@ -43,5 +43,5 @@ def load(phenotype_annotations_file, logger=None):
         if logger is not None:
             logger.critical(hpoa_file_error_msg)
         else:
-            sys.stdout(hpoa_file_error_msg)
+            sys.stderr.write(hpoa_file_error_msg)
         exit(1)
