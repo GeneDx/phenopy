@@ -85,7 +85,8 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         logger.info(
             f'Scoring HPO terms from file: {query_hpo_file} against entities in: {records_file}')
 
-        records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
+        records_list = read_records_file(records_file, no_parents, hpo_network, logger=logger)
+        records = {item['sample']:item['terms'] for item in records_list}
 
         # include the case-to-iteslf
         records[query_name] = case_hpo
@@ -93,12 +94,12 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             sys.stdout.write('\t'.join(['#query', 'entity_id', 'score']))
             sys.stdout.write('\n')
             with Pool(threads) as p:
-                p.starmap(scorer.score_pairs, [(records, [
-                          (query_name, record) for record in records], lock, agg_score, i, threads) for i in range(threads)])
+                p.starmap(scorer.score_records, [(records, [
+                          (query_name, record) for record in records], lock, i, threads) for i in range(threads)])
         else:
             with Pool(threads) as p:
-                scored_results = p.starmap(scorer.score_pairs, [(records, [(query_name, record) for record in records],
-                                                                 lock, agg_score, i, threads, False) for i in range(threads)])
+                scored_results = p.starmap(scorer.score_records, [(records, [(query_name, record) for record in records],
+                                                                 lock, i, threads, False) for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
             scored_results_df = pd.DataFrame(data=scored_results, columns='#query,entity_id,score'.split(','))
             scored_results_df = scored_results_df.sort_values(by='score', ascending=False)
@@ -117,13 +118,13 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             sys.stdout.write('\n')
             # iterate over each cross-product and score the pair of records
             with Pool(threads) as p:
-                p.starmap(scorer.score_pairs, [(genes_to_terms, [
-                          (query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads) for i in range(threads)])
+                p.starmap(scorer.score_records, [(genes_to_terms, [
+                          (query_name, gene) for gene in genes_to_terms], lock,  i, threads) for i in range(threads)])
         else:
 
             with Pool(threads) as p:
-                scored_results = p.starmap(scorer.score_pairs, [(genes_to_terms,
-                                     [(query_name, gene) for gene in genes_to_terms], lock, agg_score, i, threads, False)
+                scored_results = p.starmap(scorer.score_records, [(genes_to_terms,
+                                     [(query_name, gene) for gene in genes_to_terms], lock,  i, threads, False)
                                                                 for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
             scored_results_df = pd.DataFrame(data=scored_results, columns='#query,gene,score'.split(','))
