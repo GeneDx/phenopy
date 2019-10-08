@@ -45,9 +45,8 @@ class Scorer:
             parents[1])
         # lca node
         # find the ancestor with the highest IC
-        # TODO:(fixme) instead of picking the most informative ic, find a better way picking b/w nodes
-        #  with same ic than using max (ic)
-        return max(common_parents, key=lambda n: self.hpo_network.node[n]['ic'])
+        # break ties by choosing the node with the greatest depth
+        return max(common_parents, key=lambda n: (self.hpo_network.node[n]['ic'], self.hpo_network.node[n]['depth']))
 
     def generate_alternate_ids(self):
         """Create a key, value store of alternate terms to canonical terms."""
