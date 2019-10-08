@@ -163,9 +163,7 @@ class ScorerTestCase(unittest.TestCase):
         # test the second element '213200' - '302801' using stdout
 
         self.scorer.score_pairs(records, lock, stdout=True)
-        #TODO:(fixme) instead of picking the most ifnormative ic, find a better way picking b/w nodes with same ic than
-        # using max (ic)
-        #self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.4181281031156854'])
+        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.4181281031156854'])
 
     def test_bmwa(self):
         # test best match weighted average
