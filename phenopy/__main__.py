@@ -11,6 +11,7 @@ from phenopy.network import _load_hpo_network
 from phenopy.d2p import load as load_d2p
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, read_records_file
+from phenopy.weights import make_age_distributions
 
 
 def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None, disease_to_phenotype_file=None, threads=1,
@@ -69,7 +70,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file)
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network)
+    scorer = Scorer(hpo_network, agg_score=agg_score)
 
     # multiprocessing objects
     manager = Manager()
@@ -83,7 +84,8 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         logger.info(
             f'Scoring HPO terms from file: {query_hpo_file} against entities in: {records_file}')
 
-        records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
+        records_list = read_records_file(records_file, no_parents, hpo_network, logger=logger)
+        records = {item['sample']:item['terms'] for item in records_list}
 
         # include the case-to-iteslf
         records[query_name] = case_hpo
@@ -91,12 +93,12 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             sys.stdout.write('\t'.join(['#query', 'entity_id', 'score']))
             sys.stdout.write('\n')
             with Pool(threads) as p:
-                p.starmap(scorer.score_pairs, [(records, [
-                          (query_name, record) for record in records], lock, agg_score, i, threads) for i in range(threads)])
+                p.starmap(scorer.score_records, [(records, [
+                          (query_name, record) for record in records], lock, i, threads) for i in range(threads)])
         else:
             with Pool(threads) as p:
-                scored_results = p.starmap(scorer.score_pairs, [(records, [(query_name, record) for record in records],
-                                                                 lock, agg_score, i, threads, False) for i in range(threads)])
+                scored_results = p.starmap(scorer.score_records, [(records, [(query_name, record) for record in records],
+                                                                 lock, i, threads, False) for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
             scored_results_df = pd.DataFrame(data=scored_results, columns='#query,entity_id,score'.split(','))
             scored_results_df = scored_results_df.sort_values(by='score', ascending=False)
@@ -115,13 +117,13 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             sys.stdout.write('\n')
             # iterate over each cross-product and score the pair of records
             with Pool(threads) as p:
-                p.starmap(scorer.score_pairs, [(disease_to_phenotypes, [
-                          (query_name, disease) for disease in disease_to_phenotypes], lock, agg_score, i, threads) for i in range(threads)])
+                p.starmap(scorer.score_records, [(genes_to_terms, [
+                          (query_name, gene) for gene in genes_to_terms], lock,  i, threads) for i in range(threads)])
         else:
 
             with Pool(threads) as p:
-                scored_results = p.starmap(scorer.score_pairs, [(disease_to_phenotypes,
-                                     [(query_name, disease) for disease in disease_to_phenotypes], lock, agg_score, i, threads, False)
+                scored_results = p.starmap(scorer.score_records, [(genes_to_terms,
+                                     [(query_name, gene) for gene in genes_to_terms], lock,  i, threads, False)
                                                                 for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
             scored_results_df = pd.DataFrame(data=scored_results, columns='#query, omim_id, score'.split(','))
@@ -130,25 +132,25 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             logger.info(f'Scoring completed')
             logger.info(f'Writing results to file: {output_file}')
 
-
-def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, threads=1, agg_score='BMA', no_parents=False,
-                  custom_annotations_file=None):
+def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, pheno_ages_file=None,
+                  threads=1, agg_score='BMA', no_parents=False, custom_annotations_file=None):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, diseases, diseases, etc).
 
-    :param records_file: One record per line, tab delimited. First column record unique identifier, second column
-        pipe separated list of HPO identifier (HP:0000001).
+    :param records_file: One record per line, tab delimited. 1st column record unique identifier, 2nd column contains
+        optional patient age and gender(age=11.0;sex=male). 3d column contains pipe separated list of HPO identifier (HP:0000001).
     :param obo_file: OBO file from https://hpo.jax.org/app/download/ontology.
     :param disease_to_phenotype_file: Disease to phenotype annoations from http://compbio.charite.de/jenkins/job/hpo.annotations.2018/
+    :param pheno_ages_file: Phenotypes age summary stats file containing phenotype HPO id, mean_age, and std.
     :param threads: Multiprocessing threads to use [default: 1].
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
-        Must be one of {'BMA', 'maximum'}
+        Must be one of {'BMA', 'maximum', 'BMWA'}. If BMWA is passed phenotype ages file is expected the first time its run.
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
     :param custom_annotations_file: A custom entity-to-phenotype annotation file in the same format as tests/data/test.score-product.txt
     """
-    if agg_score not in {'BMA', 'maximum', }:
+    if agg_score not in {'BMA', 'maximum', 'BMWA'}:
         logger.critical(
-            'agg_score must be one of {BMA, maximum}.')
+            'agg_score must be one of {BMA, maximum, BMWA}.')
         exit(1)
 
     if obo_file is None:
@@ -167,13 +169,27 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, t
                 'No HPO phenotype.hpoa file provided and no "hpo:disease_to_phenotype_file" found in the configuration file.'
             )
             exit(1)
+    if pheno_ages_file is not None:
+        try:
+            ages = make_age_distributions(pheno_ages_file)
+            logger.info(
+                'Added phenotype age distributions to HPO nodes.'
+            )
+        except (FileNotFoundError, PermissionError) as e:
+            logger.critical(e)
+            logger.critical(
+                'Specified phenotype ages file could not be loaded or does not exist'
+            )
+            exit(1)
+    else:
+        ages = None
 
     # load phenotype to diseases associations
     disease_to_phenotypes, phenotype_to_diseases = load_d2p(disease_to_phenotype_file, logger=logger)
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file)
+        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file, ages=ages)
 
     # try except
     records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
@@ -181,17 +197,14 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, t
     logger.info(f'Scoring product of records from file: {records_file}')
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network)
-
-    # create records product generator
-    records_product = itertools.product(records.keys(), repeat=2)
+    scorer = Scorer(hpo_network, agg_score=agg_score)
 
     # iterate over each cross-product and score the pair of records
     manager = Manager()
     lock = manager.Lock()
     with Pool(threads) as p:
-        p.starmap(scorer.score_pairs, [(records, records_product,
-                                        lock, agg_score, i, threads) for i in range(threads)])
+        p.starmap(scorer.score_pairs, [(records,
+                                        lock, i, threads) for i in range(threads)])
 
 
 def main():

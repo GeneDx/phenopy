@@ -50,23 +50,76 @@ def export_pheno2genes_with_no_parents(pheno2genes_file, pheno2genes_no_parents_
         exit(1)
 
 
-def read_records_file(records_file, no_parents, hpo_network, logger=None):
+def parse(string, what='HPO'):
+    """
+    Parse patient parameters in the records file
+    :param string: string to parse
+    :param what: (HP,age,sex) terms to parse
+    :return: parsed object, int for age, string for gender, list for terms
+    """
+    string = string.strip()
+    if string == '.':
+        return None
+    if what == 'HPO':
+        result = [x for x in string.split('|') if x.startswith('HP:')]
+        return result
+    elif f'{what}=' in string:
+        result = [x.split(f'{what}=')[1] for x in string.split(';') if what in x]
+        if result:
+            result = result[0]
+            if what == 'age':
+                try:
+                    result = round(float(result), 1)
+                except ValueError:
+                    result = None
+
+            if what == 'sex':
+                if result.lower().startswith('f'):
+                    result = 'Female'
+                elif result.lower().startswith('m'):
+                    result = 'Male'
+                else:
+                    result = None
+            return result
+        else:
+            return None
+
+
+def read_records_file(records_file, no_parents=False, hpo_network=None, logger=None):
+    """
+    Parse input file for patient descriptions into an array of dictionaries
+    :param records_file: path to the records file to parse
+    :param no_parents: remove parent nodes
+    :param hpo_network: hpo network to use in removing parents
+    :param logger: logger object to use in reporting errors
+    :return: list of dictionaries
+    """
     try:
-        # read records_file
         with open(records_file) as records_fh:
             reader = csv.reader(records_fh, delimiter='\t')
-            records = {}
+            records = []
             for line in reader:
                 if line[0].startswith('#'):
                     continue
-                if no_parents is True:
-                    records[line[0]] = remove_parents(line[1].split('|'), hpo_network)
+                dict_ = {
+                    'sample': line[0],
+                    'age': parse(line[1], what='age'),
+                    'gender': parse(line[1], what='sex'),
+                    'terms': parse(line[2], what='HPO')
+                }
+
+                if no_parents is True and hpo_network is not None:
+                    dict_['terms'] = remove_parents(dict_['terms'], hpo_network)
                 else:
-                    records[line[0]] = line[1].split('|')
+                    pass
+                records.append(dict_)
         return records
     except (FileNotFoundError, PermissionError) as e:
-        logger.critical(e)
-        raise e
+        if logger is not None:
+            logger.critical(e)
+        else:
+            sys.stderr.write(str(e))
+        exit(1)
 
 
 def remove_parents(termlist, hpo_network):

@@ -30,6 +30,9 @@ def calculate_information_content(hpo_id, hpo_network, phenotype_to_diseases, nu
         # alphaIC / (alphaIC / betaIC), would be 0.0 / (0.0 / 0.0)
         if np.isinf(information_content):
             return -np.log(np.nextafter(0, 1))
+        if information_content == 0.0:
+            return np.nextafter(0, 1)
+
         return information_content
 
     annotations_list = [phenotype_to_diseases]

@@ -26,7 +26,7 @@ def load(obo_file, logger=None):
         exit(1)
 
 
-def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_annotations_file=None, logger=None):
+def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_annotations_file=None, ages=None, logger=None):
     """
     Cleans the HPO network.
 
@@ -36,6 +36,8 @@ def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_a
     :param phenotype_to_diseases: Dictionary mapping HPO terms to diseases.
     :param num_diseases_annotated: Number of diseases with HPO annotations.
     :param custom_annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
+    :param ages: age distributions object
+    :param logger: Python `logging` logger instance.
     :return: `networkx.MultiDiGraph`
     """
 
@@ -62,7 +64,7 @@ def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_a
                 for line in f:
                     if line.startswith('#'):
                         continue
-                    entity_id, hpo_ids_string = line.split('\t')
+                    entity_id, patient_info, hpo_ids_string = line.split('\t')
                     hpo_ids = hpo_ids_string.split('|')
                     for hpo_id in hpo_ids:
                         if hpo_id in custom_annos:
@@ -85,6 +87,16 @@ def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_a
             num_diseases_annotated,
             custom_annos,
         )
+        # annotate with phenotype age distribution
+        hpo_network.node[node_id]['weights'] = {
+            'age_dist': None,
+            'age_exists': False,
+            'default_weight': 1.0
+        }
+        if ages is not None:
+            if node_id in ages.index:
+                hpo_network.node[node_id]['weights']['age_dist'] = ages.loc[node_id]['age_dist']
+                hpo_network.node[node_id]['weights']['age_exists'] = True
 
         # annotate with depth value
         # hard-coding origin node for now
