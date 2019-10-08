@@ -19,7 +19,7 @@ def _load_hpo_network(obo_file, phenotype_to_diseases, num_diseases_annotated, c
 
     if not isinstance(phenotype_to_diseases, dict):
         logger.critical(f'phenotype_to_diseases was not a dictionary, please use the phenotype_to_diseases variable returned from '
-                        f'load_p2g')
+                        f'load_d2p')
         raise ValueError
 
     if hpo_network_file is None:
