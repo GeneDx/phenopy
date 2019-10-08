@@ -244,6 +244,35 @@ class Scorer:
 
         return results
 
+    def score_records(self, records, record_pairs, lock, thread=0, number_threads=1, stdout=True):
+        """
+        Score list pair of records.
+        :param records: Records dictionary.
+        :param record_pairs: List of record pairs to score.
+        :param thread: Thread index for multiprocessing.
+        :param number_threads: Total number of threads for multiprocessing.
+        :param stdout:(True,False) write results to standard out
+        :return: `list` of `tuples`
+        """
+        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
+        results = []
+        for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
+            score = self.score(records[record_a],
+                               records[record_b])
+
+            if stdout:
+                try:
+                    lock.acquire()
+                    sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
+                    sys.stdout.write('\n')
+                finally:
+                    sys.stdout.flush()
+                    lock.release()
+            else:
+                results.append((record_a, record_b, str(score)))
+
+        return results
+
     def best_match_average(self, df):
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
