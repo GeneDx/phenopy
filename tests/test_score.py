@@ -7,7 +7,7 @@ from io import StringIO
 from multiprocessing import Manager
 from phenopy.obo import process
 from phenopy.obo import load as load_obo
-from phenopy.p2g import load as load_p2g
+from phenopy.d2p import load as load_d2p
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, read_records_file
 from unittest.mock import patch
@@ -19,25 +19,25 @@ class ScorerTestCase(unittest.TestCase):
     def setUp(cls):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
-
         cls.hpo_network_file = os.path.join(cls.parent_dir, 'data/hpo_network.pickle')
 
         # load phenotypes to genes associations
-        pheno2genes_file = os.path.join(
-            cls.parent_dir, 'data/phenotype_to_genes.txt')
-        cls.terms_to_genes, cls.genes_to_terms, cls.annotations_count = load_p2g(
-            pheno2genes_file)
+        phenotype_hpoa_file = os.path.join(
+            cls.parent_dir, 'data/phenotype.hpoa')
+        cls.disease_to_phenotypes, cls.phenotype_to_diseases = load_d2p(
+            phenotype_hpoa_file)
+        cls.num_diseases_annotated = len(cls.disease_to_phenotypes)
 
         # load and process the network
         obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         hpo_network = load_obo(obo_file)
-        cls.hpo_network = process(hpo_network, cls.terms_to_genes, cls.annotations_count)
+        cls.hpo_network = process(hpo_network, cls.phenotype_to_diseases, len(cls.disease_to_phenotypes))
 
         # create instance the scorer class
         cls.scorer = Scorer(hpo_network)
 
     def tearDown(cls):
-        if os.path.exists((cls.hpo_network_file)):
+        if os.path.exists(cls.hpo_network_file):
             os.remove(cls.hpo_network_file)
 
     def test_find_lca(self):
@@ -80,7 +80,7 @@ class ScorerTestCase(unittest.TestCase):
         t1 = 'HP:0001344'
         t2 = 'HP:0012759'
         beta = self.scorer.calculate_beta(t1, t2)
-        self.assertAlmostEqual(beta, 3.5, places=2)
+        self.assertAlmostEqual(beta, 3.51, places=2)
 
     def test_score_hpo_pair_hrss(self):
         t1 = 'HP:0011351'
@@ -108,7 +108,7 @@ class ScorerTestCase(unittest.TestCase):
 
         # test BMA
         score_bma = self.scorer.score(terms_a, terms_b)
-        self.assertAlmostEqual(score_bma, 0.1505, places=4)
+        self.assertAlmostEqual(score_bma, 0.207, places=2)
         self.scorer.agg_score = 'maximum'
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.25, places=4)
@@ -116,7 +116,6 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.agg_score = 'not_a_method'
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.0, places=4)
-
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -163,7 +162,7 @@ class ScorerTestCase(unittest.TestCase):
         # test the second element '213200' - '302801' using stdout
 
         self.scorer.score_pairs(records, lock, stdout=True)
-        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.4181281031156854'])
+        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.4133409630336761'])
 
     def test_bmwa(self):
         # test best match weighted average
@@ -252,7 +251,7 @@ class ScorerTestCase(unittest.TestCase):
                 {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
                 ]).set_index('hpid')
 
-        self.hpo_network = process(self.hpo_network, self.terms_to_genes, self.annotations_count, ages=ages)
+        self.hpo_network = process(self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated, ages=ages)
 
         age_a = 9.0
         age_b = 4.0
@@ -312,7 +311,7 @@ class ScorerTestCase(unittest.TestCase):
             {'hpid': 'HP:0001249', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
         ]).set_index('hpid')
 
-        self.hpo_network = process(self.hpo_network, self.terms_to_genes, self.annotations_count, ages=ages)
+        self.hpo_network = process(self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated, ages=ages)
 
         # create instance the scorer class
         scorer = Scorer(self.hpo_network, agg_score='BMWA')
