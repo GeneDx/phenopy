@@ -117,13 +117,13 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             sys.stdout.write('\n')
             # iterate over each cross-product and score the pair of records
             with Pool(threads) as p:
-                p.starmap(scorer.score_records, [(genes_to_terms, [
-                          (query_name, gene) for gene in genes_to_terms], lock,  i, threads) for i in range(threads)])
+                p.starmap(scorer.score_records, [(disease_to_phenotypes, [
+                          (query_name, gene) for gene in disease_to_phenotypes], lock,  i, threads) for i in range(threads)])
         else:
 
             with Pool(threads) as p:
-                scored_results = p.starmap(scorer.score_records, [(genes_to_terms,
-                                     [(query_name, gene) for gene in genes_to_terms], lock,  i, threads, False)
+                scored_results = p.starmap(scorer.score_records, [(disease_to_phenotypes,
+                                     [(query_name, gene) for gene in disease_to_phenotypes], lock,  i, threads, False)
                                                                 for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
             scored_results_df = pd.DataFrame(data=scored_results, columns='#query, omim_id, score'.split(','))
@@ -131,6 +131,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             scored_results_df.to_csv(output_file, sep='\t', index=False)
             logger.info(f'Scoring completed')
             logger.info(f'Writing results to file: {output_file}')
+
 
 def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, pheno_ages_file=None,
                   threads=1, agg_score='BMA', no_parents=False, custom_annotations_file=None):
