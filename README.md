@@ -7,7 +7,7 @@
 lightweight but highly optimized command line tool and library to efficiently perform semantic similarity scoring on
 generic entities with phenotype annotations from the [Human Phenotype Ontology (HPO)](https://hpo.jax.org/app/).
 
-![Phenotype Similarity Clustering](https://raw.githubusercontent.com/GeneDx/phenopy/master/notebooks/output/cluster_three_diseases.png)
+![Phenotype Similarity Clustering](https://raw.githubusercontent.com/GeneDx/phenopy/develop/notebooks/output/cluster_three_diseases.png)
 
 ## Installation
 Install using pip:
@@ -48,7 +48,7 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     Output:
     ```
     #query	omim_id	score
-    SAMPLE	210100	3.172551296022093e-05
+    SAMPLE	210100	0.003.172551296022093e-05
     SAMPLE	163600	0.04450039556373293
     SAMPLE	615763	0.05497737732718229
     ...
@@ -60,14 +60,15 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     ```
     Output:
     ```
-    #query	entity_id	score
-    SAMPLE	118200	0.0584
-    SAMPLE	118210	0.057
-    SAMPLE	118220	0.0563
+    #query  omim_id score
+    SAMPLE  210100  3e-05
+    SAMPLE  163600  0.0445
+    SAMPLE  615763  0.05498
     ...
     ```
 
 3. Score pairwise similarity of entities defined in the `--records-file`.
+
     ```bash
     phenopy score-product tests/data/test.score-product.txt --threads 4
     ```
@@ -78,6 +79,32 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     118200	300905	0.2647
     ...
     ```
+4. Score age-adjusted pairwise similarity of entities defined in the `--records-file`.
+    using phenotype mean age and standard deviation defined in the `--pheno_ages_file`.
+    select best-match weighted average as the scoring aggregation method `--agg_score BMWA`.  
+
+    ```bash
+    phenopy score-product tests/data/test.score-product-age.txt --pheno_ages_file tests/data/phenotype_age.tsv --agg_score BMWA --threads 4
+    ```
+    Output:
+    ```
+    118200  118200  0.2288
+    118210  118210  0.2038
+    118211  118211  0.2038
+    118200  118210  0.1636
+    ...
+    ```
+    
+    The phenotype age file contains hpo-id, mean, sd as tab separated text as follows
+    
+    | HP:0001251 | 6.0  | 3.0 |
+    |------------|------|-----|
+    | HP:0001263 | 1.0  | 1.0 |
+    | HP:0001290 | 1.0  | 1.0 |
+    | HP:0004322 | 10.0 | 3.0 |
+    | HP:0001249 | 6.0  | 3.0 |
+
+    
 
 ## Parameters
 For a full list of command arguments use `phenopy [subcommand] --help`:

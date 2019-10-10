@@ -189,11 +189,11 @@ class Scorer:
         ).unstack()
 
         if self.agg_score == 'BMA':
-            return round(self.best_match_average(df), 5)
+            return self.best_match_average(df)
         elif self.agg_score == 'maximum':
-            return round(self.maximum(df), 5)
+            return self.maximum(df)
         elif self.agg_score == 'BMWA' and len(weights) == 2:
-            return round(self.bmwa(df, weights_a=weights[0], weights_b=weights[1]), 5)
+            return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
         else:
             return 0.0
 
@@ -276,7 +276,7 @@ class Scorer:
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
-        return np.average(np.append(max1, max0))
+        return np.average(np.append(max1, max0)).round(4)
 
     def maximum(self, df):
         """Returns the maximum similarity value between to term lists"""
@@ -301,7 +301,7 @@ class Scorer:
         if np.sum(weights) == 0.0:
             weights = np.ones(len(weights))
 
-        return round(np.average(scores, weights=weights), 4)
+        return np.average(scores, weights=weights).round(4)
 
     def calculate_age_weights(self, terms, age):
         """
