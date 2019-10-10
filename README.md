@@ -40,17 +40,17 @@ you run phenopy for the first time.
 `phenopy` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or
 disease, but could be any concept that warrants annotation of phenotype terms.
 
-1. Score similarity of an entity defined by the HPO terms from an input file against all the genes in
-`.phenopy/data/phenotype_to_genes.txt`. We provide a test input file in the repo.
+1. Score similarity of an entity defined by the HPO terms from an input file against all the OMIM diseases in
+`.phenopy/data/phenotype.hpoa`. We provide a test input file in the repo.
     ```bash
     phenopy score tests/data/test.score.txt
     ```
     Output:
     ```
-    #query	gene	score
-    SAMPLE	NCBI:10000[AKT3]	0.0252
-    SAMPLE	NCBI:10002[NR2E3]	0.0148
-    SAMPLE	NCBI:100033413[SNORD116-1]	0.0283
+    #query	omim_id	score
+    SAMPLE	210100	3.172551296022093e-05
+    SAMPLE	163600	0.04450039556373293
+    SAMPLE	615763	0.05497737732718229
     ...
     ```
 
@@ -92,20 +92,18 @@ Output:
         Unique identifier for the query file.
     --obo_file=OBO_FILE
         OBO file from https://hpo.jax.org/app/download/ontology.
-    --pheno2genes_file=PHENO2GENES_FILE
-        Phenotypes to genes from https://hpo.jax.org/app/download/annotation.
+    --disease_to_phenotype_file=DISEASE_TO_PHENOTYPE_FILE
+        Disease to phenotype annoations from http://compbio.charite.de/jenkins/job/hpo.annotations.2018/
     --threads=THREADS
         Number of parallel process to use.
     --agg_score=AGG_SCORE
         The aggregation method to use for summarizing the similarity matrix between two term sets Must be one of {'BMA', 'maximum'}
     --no_parents=NO_PARENTS
         If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
-    --hpo_network_file=HPO_NETWORK_FILE
-        If provided, phenopy will try to load a cached hpo_network obejct from file.
     --custom_annotations_file=CUSTOM_ANNOTATIONS_FILE
-        A comma-separated list of custom annotation files in the same format as tests/data/test.score-product.txt
+        A custom entity-to-phenotype annotation file in the same format as tests/data/test.score-product.txt
     --output_file=OUTPUT_FILE
-        filepath where to store the results.  
+        filepath where to store the results.
 ```
 ## Library Usage
 The `phenopy` library can be used as a `Python` module, allowing more control for advanced users.   
@@ -131,20 +129,20 @@ Output:
 0.0005
 ```
 
-Another example is to use the library to prune parent phenotypes from the `phenotype_to_genes.txt`
+Another example is to use the library to prune parent phenotypes from the `phenotype.hpoa`
 ```python
 import os
 from phenopy import config
 from phenopy.obo import restore
-from phenopy.util import export_pheno2genes_with_no_parents
+from phenopy.util import export_phenotype_hpoa_with_no_parents
 
 
 network_file = os.path.join(config.data_directory, 'hpo_network.pickle')
-phenotype_to_genes_file = os.path.join(config.data_directory, 'phenotype_to_genes.txt')
-phenotype_to_genes_no_parents_file = os.path.join(config.data_directory, 'phenotype_to_genes_no_parents.txt')
+disease_to_phenotype_file = os.path.join(config.data_directory, 'phenotype.hpoa.txt')
+disease_to_phenotype_no_parents_file = os.path.join(config.data_directory, 'phenotype.noparents.hpoa')
 
 hpo = restore(network_file)
-export_pheno2genes_with_no_parents(phenotype_to_genes_file, phenotype_to_genes_no_parents_file, hpo)
+export_phenotype_hpoa_with_no_parents(disease_to_phenotype_file, disease_to_phenotype_no_parents_file, hpo)
 ```
 
 ### Config

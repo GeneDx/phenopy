@@ -189,11 +189,11 @@ class Scorer:
         ).unstack()
 
         if self.agg_score == 'BMA':
-            return self.best_match_average(df)
+            return round(self.best_match_average(df), 5)
         elif self.agg_score == 'maximum':
-            return self.maximum(df)
+            return round(self.maximum(df), 5)
         elif self.agg_score == 'BMWA' and len(weights) == 2:
-            return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
+            return round(self.bmwa(df, weights_a=weights[0], weights_b=weights[1]), 5)
         else:
             return 0.0
 

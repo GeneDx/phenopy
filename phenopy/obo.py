@@ -26,15 +26,15 @@ def load(obo_file, logger=None):
         exit(1)
 
 
-def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file=None, ages=None, logger=None):
+def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_annotations_file=None, ages=None, logger=None):
     """
     Cleans the HPO network.
 
     Removes non-phenotype branches of the network, and merges all synonyms into one tag.
 
     :param hpo_network: `networkx.MultiDiGraph` to clean.
-    :param terms_to_genes: Dictionary mapping HPO terms to genes.
-    :param num_genes_annotated: Number of genes with HPO annotations.
+    :param phenotype_to_diseases: Dictionary mapping HPO terms to diseases.
+    :param num_diseases_annotated: Number of diseases with HPO annotations.
     :param custom_annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
     :param ages: age distributions object
     :param logger: Python `logging` logger instance.
@@ -83,8 +83,8 @@ def process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations
         hpo_network.node[node_id]['ic'] = calculate_information_content(
             node_id,
             hpo_network,
-            terms_to_genes,
-            num_genes_annotated,
+            phenotype_to_diseases,
+            num_diseases_annotated,
             custom_annos,
         )
         # annotate with phenotype age distribution

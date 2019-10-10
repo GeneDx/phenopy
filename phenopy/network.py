@@ -5,22 +5,21 @@ from phenopy.obo import cache, process, restore
 from phenopy.obo import load as load_obo
 
 
-def _load_hpo_network(obo_file, terms_to_genes, num_genes_annotated, custom_annotations_file, hpo_network_file=None,
-                      ages=None):
+def _load_hpo_network(obo_file, phenotype_to_diseases, num_diseases_annotated, custom_annotations_file, hpo_network_file=None, ages=None):
     """
     :param obo_file: path to obo file.
-    :param terms_to_genes: Dictionary of HPO terms as keys and list of genes as values.
-    :param num_genes_annotated: An integer representing the number of unique genes in the annotation corpus.
+    :param phenotype_to_diseases: Dictionary of HPO terms as keys and list of diseases as values.
+    :param num_diseases_annotated: An integer representing the number of unique diseases in the annotation corpus.
     :param custom_annotations_file: Path to a custom annotations file, if it exists.
     :param hpo_network_file: Path to the hpop_network_file.
-    Load and process phenotypes to genes and obo files if we don't have a processed network already.
+    Load and process phenotypes to diseases and obo files if we don't have a processed network already.
     """
     # We instruct the user that they can set hpo_network_file in .phenopy/phenopy.ini
     # The default value is empty string, so check for that first.
 
-    if not isinstance(terms_to_genes, dict):
-        logger.critical(f'terms_to_genes was not a dictionary, please use the terms_to_genes variable returned from '
-                        f'load_p2g')
+    if not isinstance(phenotype_to_diseases, dict):
+        logger.critical(f'phenotype_to_diseases was not a dictionary, please use the phenotype_to_diseases variable returned from '
+                        f'load_d2p')
         raise ValueError
 
     if hpo_network_file is None:
@@ -30,8 +29,8 @@ def _load_hpo_network(obo_file, terms_to_genes, num_genes_annotated, custom_anno
         # load and process hpo network
         logger.info(f'Loading HPO OBO file: {obo_file}')
         hpo_network = load_obo(obo_file, logger=logger)
-        hpo_network = process(hpo_network, terms_to_genes, num_genes_annotated, custom_annotations_file, ages=ages,
-                              logger=logger)
+        hpo_network = process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_annotations_file,
+                              ages=ages, logger=logger)
 
         # save a cache of the processed network
         cache(hpo_network, hpo_network_file)

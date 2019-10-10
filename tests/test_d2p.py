@@ -1,9 +1,9 @@
 import unittest
 
-from phenopy.p2g import load
+from phenopy.d2p import load
 
 
-class P2GTestCase(unittest.TestCase):
+class DPGTestCase(unittest.TestCase):
     def test_load(self):
         with self.assertRaises(SystemExit) as se:
             load('notafilepath/notafile')
