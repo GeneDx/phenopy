@@ -97,8 +97,9 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     
     The phenotype age file contains hpo-id, mean, sd as tab separated text as follows
     
-    | HP:0001251 | 6.0  | 3.0 |
+    |  |  | |
     |------------|------|-----|
+    | HP:0001251 | 6.0  | 3.0 |
     | HP:0001263 | 1.0  | 1.0 |
     | HP:0001290 | 1.0  | 1.0 |
     | HP:0004322 | 10.0 | 3.0 |
