@@ -162,7 +162,7 @@ class ScorerTestCase(unittest.TestCase):
         # test the second element '213200' - '302801' using stdout
 
         self.scorer.score_pairs(records, lock, stdout=True)
-        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.4133409630336761'])
+        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.41334'])
 
     def test_bmwa(self):
         # test best match weighted average
