@@ -184,52 +184,49 @@ class Scorer:
         hrss = [dict(zip(['term1', 'term2', 'hrss', 'alpha', 'beta', 'gamma'],
                          [pair[0], pair[1]]+self.score_hpo_pair_hrss(pair))) for pair in term_pairs]
 
-        df = pd.DataFrame(
-            [(x['term1'], x['term2'], x['hrss']) for x in hrss],
-            columns=['a', 'b', 'score']
-
-        ).set_index(
-            ['a', 'b']
-        ).unstack()
+        df_score = pd.DataFrame([(x['term1'], x['term2'], x['hrss']) for x in hrss],
+                          columns=['a', 'b', 'score']).set_index(['a', 'b']).unstack()
 
         if self.compelete_output is True:
+            df_alpha = pd.DataFrame([(x['term1'], x['term2'], x['alpha']) for x in hrss],
+                                    columns=['a', 'b', 'alpha']).set_index(['a', 'b']).unstack()
+            df_beta = pd.DataFrame([(x['term1'], x['term2'], x['beta']) for x in hrss],
+                                    columns=['a', 'b', 'alpha']).set_index(['a', 'b']).unstack()
+            df_gamma = pd.DataFrame([(x['term1'], x['term2'], x['gamma']) for x in hrss],
+                                    columns=['a', 'b', 'alpha']).set_index(['a', 'b']).unstack()
 
-            df_alpha = pd.DataFrame(
-                [(x['term1'], x['term2'], x['alpha']) for x in hrss],
-                columns=['a', 'b', 'alpha']
-            ).set_index(
-                ['a', 'b']
-            ).unstack()
+            if self.agg_score == 'BMA':
+                    bma_score = self.best_match_average(df_score)
+                    bma_alpha = self.best_match_average(df_alpha)
+                    bma_beta = self.best_match_average(df_beta)
+                    bma_gamma = self.best_match_average(df_gamma)
+                    return bma_score, bma_alpha, bma_beta, bma_gamma
 
-            df_beta = pd.DataFrame(
-                [(x['term1'], x['term2'], x['beta']) for x in hrss],
-                columns=['a', 'b', 'beta']
-            ).set_index(
-                ['a', 'b']
-            ).unstack()
+            elif self.agg_score == 'maximum':
+                return self.maximum(df_score)
 
-            df_gamma = pd.DataFrame(
-                [(x['term1'], x['term2'], x['gamma']) for x in hrss],
-                columns=['a', 'b', 'gamma']
-            ).set_index(
-                ['a', 'b']
-            ).unstack()
+            elif self.agg_score == 'BMWA':
+                bmwa_score, override_weights = self.bmwa(df_score, weights_a=weights[0], weights_b=weights[1])
+                bmwa_alpha, override_weights = self.bmwa(df_alpha, override_weights=override_weights)
+                bmwa_beta, override_weights = self.bmwa(df_beta, override_weights=override_weights)
+                bmwa_gamma, override_weights = self.bmwa(df_gamma, override_weights=override_weights)
 
-        if self.agg_score == 'BMA':
-            if self.compelete_output is True:
-                bma_score = self.best_match_average(df)
-                bma_alpha = self.best_match_average(df_alpha)
-                bma_beta = self.best_match_average(df_beta)
-                bma_gamma = self.best_match_average(df_gamma)
-                return bma_score, bma_alpha, bma_beta, bma_gamma
+                return bmwa_score, bmwa_alpha, bmwa_beta, bmwa_gamma
             else:
-                return self.best_match_average(df)
-        elif self.agg_score == 'maximum':
-            return self.maximum(df)
-        elif self.agg_score == 'BMWA' and len(weights) == 2:
-            return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
+                return 0.0
         else:
-            return 0.0
+
+            if self.agg_score == 'BMA':
+                return self.best_match_average(df_score)
+
+            elif self.agg_score == 'maximum':
+                return self.maximum(df_score)
+
+            elif self.agg_score == 'BMWA':
+                bmwa_score = self.bmwa(df_score, weights_a=weights[0], weights_b=weights[1])
+                return bmwa_score
+            else:
+                return 0.0
 
     def score_pairs(self, records, lock, thread=0, number_threads=1, stdout=True):
         """
@@ -334,26 +331,33 @@ class Scorer:
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
-    def bmwa(self, df, weights_a, weights_b, min_score_mask=0.05):
+    def bmwa(self, df, weights_a=None, weights_b=None, min_score_mask=0.05, override_weights=None):
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
 
         scores = np.append(max1, max0)
-        weights = np.array(np.append(weights_a, weights_b))
+        if override_weights is not None and len(scores) == len(override_weights):
+            weights = override_weights
+        else:
+            weights = np.array(np.append(weights_a, weights_b))
 
-        # mask good matches from weighting
-        # mask threshold based on >75% of pairwise scores of all hpo terms
-        # TODO: expose min_score cutoff value to be set in config
-        if min_score_mask is not None:
-            masked_weights = np.where(scores > min_score_mask, 1.0, weights)
-            weights = masked_weights
+            # mask good matches from weighting
+            # mask threshold based on >75% of pairwise scores of all hpo terms
+            # TODO: expose min_score cutoff value to be set in config
+            if min_score_mask is not None:
+                # replace weights of hrss scores > min_score_mask with 1.0
+                masked_weights = np.where(scores > min_score_mask, 1.0, weights)
+                weights = masked_weights
 
         # if weights add up to zero, calculate unweighted average
         if np.sum(weights) == 0.0:
             weights = np.ones(len(weights))
 
-        return np.average(scores, weights=weights).round(4)
+        if self.compelete_output is False:
+            return np.average(scores, weights=weights).round(4)
+        else:
+            return np.average(scores, weights=weights).round(4), weights
 
     def calculate_age_weights(self, terms, age):
         """
