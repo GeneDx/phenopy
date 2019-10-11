@@ -1,5 +1,4 @@
 import fire
-import itertools
 import sys
 
 import pandas as pd
@@ -15,7 +14,7 @@ from phenopy.weights import make_age_distributions
 
 
 def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None, disease_to_phenotype_file=None, threads=1,
-          agg_score='BMA', no_parents=False, custom_annotations_file=None, output_file=None):
+          agg_score='BMA', no_parents=False, complete_output=False, custom_annotations_file=None, output_file=None):
     """
     Scores a case HPO terms against all diseases associated HPO.
 
@@ -29,6 +28,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
     :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
         Must be one of {'BMA', 'maximum'}
     :param no_parents: If provided, scoring is done by only using the most informative nodes. All parent nodes are removed.
+    :param complete_output: (True, False)
     :param custom_annotations_file: A custom entity-to-phenotype annotation file in the same format as tests/data/test.score-product.txt
     :param output_file: filepath where to store the results.
     """
@@ -70,7 +70,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file)
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network, agg_score=agg_score)
+    scorer = Scorer(hpo_network, agg_score=agg_score, complete_output=complete_output)
 
     # multiprocessing objects
     manager = Manager()
@@ -134,7 +134,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
 
 
 def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, pheno_ages_file=None,
-                  threads=1, agg_score='BMA', no_parents=False, custom_annotations_file=None):
+                  threads=1, agg_score='BMA', complete_output=False, no_parents=False, custom_annotations_file=None):
     """
     Scores the cartesian product of HPO terms from a list of unique records (cases, diseases, diseases, etc).
 
@@ -151,7 +151,7 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
     """
     if agg_score not in {'BMA', 'maximum', 'BMWA'}:
         logger.critical(
-            'agg_score must be one of {BMA, maximum, BMWA}.')
+            'agg_score must be one of {BMA, maximum, BMWA }.')
         exit(1)
 
     if obo_file is None:
@@ -198,7 +198,7 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
     logger.info(f'Scoring product of records from file: {records_file}')
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network, agg_score=agg_score)
+    scorer = Scorer(hpo_network, agg_score=agg_score, complete_output=complete_output)
 
     # iterate over each cross-product and score the pair of records
     manager = Manager()

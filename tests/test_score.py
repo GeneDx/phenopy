@@ -82,21 +82,30 @@ class ScorerTestCase(unittest.TestCase):
         beta = self.scorer.calculate_beta(t1, t2)
         self.assertAlmostEqual(beta, 3.51, places=2)
 
-    def test_score_hpo_pair_hrss(self):
+    def test_score_hpo_pair_hrss_atomized(self):
         t1 = 'HP:0011351'
         t2 = 'HP:0012434'
 
         # score two terms
-        score = self.scorer.score_hpo_pair_hrss((t1, t2))
-        self.assertAlmostEqual(score, 0.2, places=2)
+        scores = self.scorer.score_hpo_pair_hrss((t1, t2))
+        self.assertAlmostEqual(scores[0], 0.2,  places=2)
+        self.assertAlmostEqual(scores[1], 1.07, places=2)
+        self.assertAlmostEqual(scores[2], 0.0,  places=2)
+        self.assertAlmostEqual(scores[3], 4.0,  places=2)
 
         # test that the cache is working
-        score = self.scorer.score_hpo_pair_hrss((t1, t2))
-        self.assertAlmostEqual(score, 0.2, places=2)
+        scores = self.scorer.score_hpo_pair_hrss((t1, t2))
+        self.assertAlmostEqual(scores[0], 0.2,  places=2)
+        self.assertAlmostEqual(scores[1], 1.07, places=2)
+        self.assertAlmostEqual(scores[2], 0.0,  places=2)
+        self.assertAlmostEqual(scores[3], 4.0,  places=2)
 
         # and test that the cache is working for inverse comparisons
-        score = self.scorer.score_hpo_pair_hrss((t2, t1))
-        self.assertAlmostEqual(score, 0.2, places=2)
+        scores = self.scorer.score_hpo_pair_hrss((t2, t1))
+        self.assertAlmostEqual(scores[0], 0.2,  places=2)
+        self.assertAlmostEqual(scores[1], 1.07, places=2)
+        self.assertAlmostEqual(scores[2], 0.0,  places=2)
+        self.assertAlmostEqual(scores[3], 4.0,  places=2)
 
     def test_score(self):
         terms_a = ['HP:0012433', 'HP:0012434']

@@ -9,7 +9,7 @@ from itertools import product
 from phenopy.weights import age_to_weights
 
 class Scorer:
-    def __init__(self, hpo_network, agg_score='BMA'):
+    def __init__(self, hpo_network, agg_score='BMA', complete_output=False):
         self.hpo_network = hpo_network
 
         self.scores_cache = {}
@@ -17,6 +17,9 @@ class Scorer:
         self.alt2prim = {}
         self.generate_alternate_ids()
         self.agg_score = agg_score
+        self.compelete_output = complete_output
+
+
 
     def find_lca(self, term_a, term_b):
         """
@@ -124,7 +127,7 @@ class Scorer:
         Scores the comparison of a pair of terms, using Hybrid Relative Specificity Similarity (HRSS) algorithm.
 
         :param terms: HPO terms A and B.
-        :return: `float` (term pair comparison score)
+        :return: dictionary of scores
         """
         term_a, term_b = terms
 
@@ -150,11 +153,10 @@ class Scorer:
         ic = (alpha_ic / float(alpha_ic + beta_ic))
         pair_score = (1.0 / float(1.0 + gamma)) * ic
 
-
         # cache this pair score
-        self.scores_cache[f'{term_a}-{term_b}'] = pair_score
+        self.scores_cache[f'{term_a}-{term_b}'] = [pair_score, alpha_ic, beta_ic, gamma]
 
-        return pair_score
+        return [pair_score, alpha_ic, beta_ic, gamma]
 
     def score(self, terms_a, terms_b, weights=[]):
         """
@@ -162,10 +164,8 @@ class Scorer:
 
         :param terms_a: List of HPO terms A.
         :param terms_b: List of HPO terms B.
-        :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
-            Must be one of {'BMA', 'BMWA'}
         :param weights: List (length=2) of weights, one for each dimension of score matrix.
-        :return: `float` (comparison score)
+        :return: `float` (comparison score), if atomize is True return `list` of score, alpha, beta, gamma
         """
         # convert alternate HPO ids to canonical ones
         terms_a = set(self.convert_alternate_ids(terms_a))
@@ -180,16 +180,50 @@ class Scorer:
             return 0.0
 
         term_pairs = itertools.product(terms_a, terms_b)
+
+        hrss = [dict(zip(['term1', 'term2', 'hrss', 'alpha', 'beta', 'gamma'],
+                         [pair[0], pair[1]]+self.score_hpo_pair_hrss(pair))) for pair in term_pairs]
+
         df = pd.DataFrame(
-            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair))
-             for pair in term_pairs],
+            [(x['term1'], x['term2'], x['hrss']) for x in hrss],
             columns=['a', 'b', 'score']
+
         ).set_index(
             ['a', 'b']
         ).unstack()
 
+        if self.compelete_output is True:
+
+            df_alpha = pd.DataFrame(
+                [(x['term1'], x['term2'], x['alpha']) for x in hrss],
+                columns=['a', 'b', 'alpha']
+            ).set_index(
+                ['a', 'b']
+            ).unstack()
+
+            df_beta = pd.DataFrame(
+                [(x['term1'], x['term2'], x['beta']) for x in hrss],
+                columns=['a', 'b', 'beta']
+            ).set_index(
+                ['a', 'b']
+            ).unstack()
+
+            df_gamma = pd.DataFrame(
+                [(x['term1'], x['term2'], x['gamma']) for x in hrss],
+                columns=['a', 'b', 'gamma']
+            ).set_index(
+                ['a', 'b']
+            ).unstack()
+
         if self.agg_score == 'BMA':
-            return self.best_match_average(df)
+            if self.compelete_output is True:
+                bma_score = self.best_match_average(df)
+                bma_alpha = self.best_match_average(df_alpha)
+                bma_beta = self.best_match_average(df_beta)
+                bma_gamma = self.best_match_average(df_gamma)
+                return bma_score, bma_alpha, bma_beta, bma_gamma
+            else:
+                return self.best_match_average(df)
         elif self.agg_score == 'maximum':
             return self.maximum(df)
         elif self.agg_score == 'BMWA' and len(weights) == 2:
@@ -231,13 +265,22 @@ class Scorer:
                 score = self.score(record_terms[record_a], record_terms[record_b])
 
             if stdout:
-                try:
-                    lock.acquire()
-                    sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
-                    sys.stdout.write('\n')
-                finally:
-                    sys.stdout.flush()
-                    lock.release()
+                if self.compelete_output is True:
+                    try:
+                        lock.acquire()
+                        sys.stdout.write('\t'.join([record_a, record_b] + [str(x) for x in score]))
+                        sys.stdout.write('\n')
+                    finally:
+                        sys.stdout.flush()
+                        lock.release()
+                else:
+                    try:
+                        lock.acquire()
+                        sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
+                        sys.stdout.write('\n')
+                    finally:
+                        sys.stdout.flush()
+                        lock.release()
             else:
                 results.append((record_a, record_b, str(score)))
 
@@ -260,13 +303,22 @@ class Scorer:
                                records[record_b])
 
             if stdout:
-                try:
-                    lock.acquire()
-                    sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
-                    sys.stdout.write('\n')
-                finally:
-                    sys.stdout.flush()
-                    lock.release()
+                if self.compelete_output is True:
+                    try:
+                        lock.acquire()
+                        sys.stdout.write('\t'.join([record_a, record_b] + [str(x) for x in score]))
+                        sys.stdout.write('\n')
+                    finally:
+                        sys.stdout.flush()
+                        lock.release()
+                else:
+                    try:
+                        lock.acquire()
+                        sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
+                        sys.stdout.write('\n')
+                    finally:
+                        sys.stdout.flush()
+                        lock.release()
             else:
                 results.append((record_a, record_b, str(score)))
 
