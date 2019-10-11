@@ -177,7 +177,10 @@ class Scorer:
 
         # if either set is empty return 0.0
         if not terms_a or not terms_b:
-            return 0.0
+            if self.compelete_output is True:
+                return 0.0, 0.0, 0.0, 0.0
+            else:
+                return 0.0
 
         term_pairs = itertools.product(terms_a, terms_b)
 

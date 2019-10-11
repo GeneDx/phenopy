@@ -82,7 +82,7 @@ class ScorerTestCase(unittest.TestCase):
         beta = self.scorer.calculate_beta(t1, t2)
         self.assertAlmostEqual(beta, 3.51, places=2)
 
-    def test_score_hpo_pair_hrss_atomized(self):
+    def test_score_hpo_pair_hrss_complete_ouput(self):
         t1 = 'HP:0011351'
         t2 = 'HP:0012434'
 
@@ -108,6 +108,44 @@ class ScorerTestCase(unittest.TestCase):
         self.assertAlmostEqual(scores[3], 4.0,  places=2)
 
     def test_score(self):
+        terms_a = ['HP:0012433', 'HP:0012434']
+        terms_b = ['HP:0001249', 'HP:0012758']
+
+        # if no terms in one set, return 0.0
+        score0 = self.scorer.score([], terms_b)
+        self.assertEqual(score0, 0.0)
+
+        # test BMA
+        score_bma = self.scorer.score(terms_a, terms_b)
+        self.assertAlmostEqual(score_bma, 0.207, places=2)
+        self.scorer.agg_score = 'maximum'
+        score_max = self.scorer.score(terms_a, terms_b)
+        self.assertAlmostEqual(score_max, 0.25, places=4)
+
+        self.scorer.agg_score = 'not_a_method'
+        score_max = self.scorer.score(terms_a, terms_b)
+        self.assertAlmostEqual(score_max, 0.0, places=4)
+
+        # test complete output
+        self.scorer = Scorer(self.hpo_network, agg_score='BMA', complete_output=True)
+
+        # if no terms in one set, return 0.0
+        score0 = self.scorer.score([], terms_b)
+        self.assertEqual(score0, (0.0, 0.0, 0.0, 0.0))
+
+        # test BMA
+        score_bma = self.scorer.score(terms_a, terms_b)
+        self.assertEqual(score_bma, (0.2079, 0.5618, 2.2524, 3.75))
+
+        self.scorer.agg_score = 'maximum'
+        score_max = self.scorer.score(terms_a, terms_b)
+        self.assertEqual(score_max, 0.25)
+
+        self.scorer.agg_score = 'not_a_method'
+        score_max = self.scorer.score(terms_a, terms_b)
+        self.assertEqual(score_max, 0.0)
+
+    def test_score_records(self):
         terms_a = ['HP:0012433', 'HP:0012434']
         terms_b = ['HP:0001249', 'HP:0012758']
 
@@ -202,6 +240,11 @@ class ScorerTestCase(unittest.TestCase):
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
         self.assertEqual(score_bmwa, 0.2985)
 
+        # set all weights to 1.0 using override weights
+        override_weights = np.ones(len(weights_a))
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b, override_weights=override_weights)
+        self.assertEqual(score_bmwa, 0.2985)
+
         # set all weights to 0.0, result should be the same as all weights being 1.0
         weights_a = np.zeros(len(weights_a))
         weights_b = np.zeros(len(weights_b))
@@ -244,6 +287,13 @@ class ScorerTestCase(unittest.TestCase):
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
         self.assertEqual(score_bmwa, 0.365)
+
+        # test complete output / compute pairwise best match weighted average
+
+        self.scorer = Scorer(self.hpo_network, agg_score='BMWA', complete_output=True)
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b, min_score_mask=None)
+
+        self.assertEqual(len(score_bmwa), 2)
 
     def test_age_weight(self):
         # Test age based weight distribution and bmwa calculation
