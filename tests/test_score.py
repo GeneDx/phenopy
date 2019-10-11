@@ -24,7 +24,7 @@ class ScorerTestCase(unittest.TestCase):
         # load phenotypes to genes associations
         phenotype_hpoa_file = os.path.join(
             cls.parent_dir, 'data/phenotype.hpoa')
-        cls.disease_to_phenotypes, cls.phenotype_to_diseases = load_d2p(
+        cls.disease_to_phenotypes, cls.phenotype_to_diseases, cls.phenotype_disease_frequencies = load_d2p(
             phenotype_hpoa_file)
         cls.num_diseases_annotated = len(cls.disease_to_phenotypes)
 
@@ -116,6 +116,17 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.agg_score = 'not_a_method'
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.0, places=4)
+
+    def test_score_records(self):
+        manager = Manager()
+        lock = manager.Lock()
+
+
+        self.scorer.score_records(self.disease_to_phenotypes, record_pairs, lock, thread=0, number_threads=1, stdout=True, use_disease_weights=None)
+
+
+
+
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -336,4 +347,3 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), 1.0, 1)
-

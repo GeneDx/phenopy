@@ -8,6 +8,7 @@ import pandas as pd
 from itertools import product
 from phenopy.weights import age_to_weights
 
+
 class Scorer:
     def __init__(self, hpo_network, agg_score='BMA'):
         self.hpo_network = hpo_network
@@ -192,8 +193,13 @@ class Scorer:
             return self.best_match_average(df)
         elif self.agg_score == 'maximum':
             return self.maximum(df)
-        elif self.agg_score == 'BMWA' and len(weights) == 2:
-            return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
+        elif self.agg_score == 'BMWA':
+            # age weights scoring for scrore product
+            if len(weights) == 2:
+                return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
+            # disease weights scoring for score
+            if len(weights) == 1:
+                return self.bmwa(df, weights_a=None, weights_b=weights[0])
         else:
             return 0.0
 
@@ -202,8 +208,6 @@ class Scorer:
         Score list pair of records.
 
         :param records: Records dictionary.
-        :param record_pairs: List of record pairs to score.
-        :param weight_method: (age) List of methods by which to adjust score.
         :param thread: Thread index for multiprocessing.
         :param number_threads: Total number of threads for multiprocessing.
         :param stdout:(True,False) write results to standard out
@@ -243,7 +247,7 @@ class Scorer:
 
         return results
 
-    def score_records(self, records, record_pairs, lock, thread=0, number_threads=1, stdout=True):
+    def score_records(self, records, record_pairs, lock, thread=0, number_threads=1, stdout=True, use_disease_weights=None):
         """
         Score list pair of records.
         :param records: Records dictionary.
@@ -256,8 +260,11 @@ class Scorer:
         # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         results = []
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
-            score = self.score(records[record_a],
-                               records[record_b])
+            if use_disease_weights is True:
+                # disease_id is record_b
+                score = self.score(records[record_a], records[record_b], weights=[self.get_disease_weights(records[record_b], record_b)])
+            else:
+                score = self.score(records[record_a], records[record_b])
 
             if stdout:
                 try:
@@ -278,6 +285,7 @@ class Scorer:
         max0 = df.max(axis=0).values
         return np.average(np.append(max1, max0)).round(4)
 
+
     def maximum(self, df):
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
@@ -286,6 +294,11 @@ class Scorer:
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
+        # for disease weights, weights_a will be None
+        print(max0.shape, max1.shape)
+        if weights_a is None:
+            weights_a = np.ones(len(max1))
+        print(len(weights_a), len(weights_b))
 
         scores = np.append(max1, max0)
         weights = np.array(np.append(weights_a, weights_b))
@@ -318,4 +331,20 @@ class Scorer:
                 weights.append(age_to_weights(self.hpo_network.node[node_id]['weights']['age_dist'], age))
             else:
                 weights.append(1.0)
+        return weights
+
+    def get_disease_weights(self, terms, disease_id):
+        """Lookup the """
+        weights = []
+        for node_id in terms:
+            # should never return 0.5, disease_ids
+            #if node_id in self.hpo_network.nodes:
+            try:
+                weights.append(self.hpo_network.node[node_id]['weights']['disease_frequency'][disease_id])
+            except KeyError:
+                weights.append(0.5)
+
+        if any([freq is None for freq in weights]):
+            sys.exit(1)
+
         return weights

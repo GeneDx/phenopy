@@ -33,9 +33,9 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
     :param output_file: filepath where to store the results.
     """
 
-    if agg_score not in {'BMA', 'maximum', }:
+    if agg_score not in {'BMA', 'maximum', 'BMWA'}:
         logger.critical(
-            'agg_score must be one of {BMA, maximum}.')
+            'agg_score must be one of {BMA, maximum, BMWA}.')
         exit(1)
 
     if obo_file is None:
@@ -63,11 +63,11 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         exit(1)
 
     # load phenotypes to diseases associations
-    disease_to_phenotypes, phenotype_to_diseases = load_d2p(disease_to_phenotype_file, logger=logger)
+    disease_to_phenotypes, phenotype_to_diseases, phenotype_disease_frequencies = load_d2p(disease_to_phenotype_file, logger=logger)
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file)
+        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file, phenotype_disease_frequencies=phenotype_disease_frequencies)
 
     # create instance the scorer class
     scorer = Scorer(hpo_network, agg_score=agg_score)
@@ -94,11 +94,11 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             sys.stdout.write('\n')
             with Pool(threads) as p:
                 p.starmap(scorer.score_records, [(records, [
-                          (query_name, record) for record in records], lock, i, threads) for i in range(threads)])
+                          (query_name, record) for record in records], lock, i, threads, True, False) for i in range(threads)])
         else:
             with Pool(threads) as p:
                 scored_results = p.starmap(scorer.score_records, [(records, [(query_name, record) for record in records],
-                                                                 lock, i, threads, False) for i in range(threads)])
+                                                                 lock, i, threads, False, False) for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
             scored_results_df = pd.DataFrame(data=scored_results, columns='#query,entity_id,score'.split(','))
             scored_results_df = scored_results_df.sort_values(by='score', ascending=False)
@@ -118,12 +118,12 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             # iterate over each cross-product and score the pair of records
             with Pool(threads) as p:
                 p.starmap(scorer.score_records, [(disease_to_phenotypes, [
-                          (query_name, gene) for gene in disease_to_phenotypes], lock,  i, threads) for i in range(threads)])
+                          (query_name, disease_id) for disease_id in disease_to_phenotypes], lock,  i, threads, True, True) for i in range(threads)])
         else:
 
             with Pool(threads) as p:
                 scored_results = p.starmap(scorer.score_records, [(disease_to_phenotypes,
-                                     [(query_name, gene) for gene in disease_to_phenotypes], lock,  i, threads, False)
+                                     [(query_name, disease_id) for disease_id in disease_to_phenotypes], lock,  i, threads, False, True)
                                                                 for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
             scored_results_df = pd.DataFrame(data=scored_results, columns='#query, omim_id, score'.split(','))
@@ -186,11 +186,11 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
         ages = None
 
     # load phenotype to diseases associations
-    disease_to_phenotypes, phenotype_to_diseases = load_d2p(disease_to_phenotype_file, logger=logger)
+    disease_to_phenotypes, phenotype_to_diseases, phenotype_disease_frequencies = load_d2p(disease_to_phenotype_file, logger=logger)
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file, ages=ages)
+        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file, ages=ages, phenotype_disease_frequencies=phenotype_disease_frequencies)
 
     # try except
     records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
