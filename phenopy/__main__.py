@@ -67,7 +67,8 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
 
     # load hpo network
     hpo_network = _load_hpo_network(
-        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file, phenotype_disease_frequencies=phenotype_disease_frequencies)
+        obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file,
+        phenotype_disease_frequencies=phenotype_disease_frequencies)
 
     # create instance the scorer class
     scorer = Scorer(hpo_network, agg_score=agg_score)

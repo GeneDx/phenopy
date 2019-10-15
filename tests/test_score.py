@@ -20,6 +20,7 @@ class ScorerTestCase(unittest.TestCase):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
         cls.hpo_network_file = os.path.join(cls.parent_dir, 'data/hpo_network.pickle')
+        cls.records_file = os.path.join(cls.parent_dir, 'data/test.score-product.txt')
 
         # load phenotypes to genes associations
         phenotype_hpoa_file = os.path.join(
@@ -138,6 +139,10 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.score_records(records, [(query_name, record) for record in records], lock,
                                   thread=0, number_threads=1, stdout=True, use_disease_weights=True)
         self.assertEqual(['SAMPLE', 'SAMPLE', '0.2945'], mock_out.getvalue().split('\n')[-2].split())
+
+        results = self.scorer.score_records(records, [(query_name, record) for record in records], lock,
+                                  thread=0, number_threads=1, stdout=False, use_disease_weights=True)
+        self.assertAlmostEqual(float(results[-1][2]), 0.2945, 2)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
