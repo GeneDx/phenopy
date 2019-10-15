@@ -85,9 +85,16 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             f'Scoring HPO terms from file: {query_hpo_file} against entities in: {records_file}')
 
         records_list = read_records_file(records_file, no_parents, hpo_network, logger=logger)
-        records = {item['sample']:item['terms'] for item in records_list}
+        records = {item['sample']: item['terms'] for item in records_list}
+
+        # convert and filter records terms
+        for record_id, phenotypes in records.items():
+            records[record_id] = set(scorer.convert_alternate_ids(phenotypes))
+            records[record_id] = scorer.filter_hpo_ids(phenotypes)
 
         # include the case-to-iteslf
+        case_hpo = scorer.convert_alternate_ids(case_hpo)
+        case_hpo = scorer.filter_hpo_ids(case_hpo)
         records[query_name] = case_hpo
         if not output_file:
             sys.stdout.write('\t'.join(['#query', 'entity_id', 'score']))
@@ -110,8 +117,18 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
         # score and output case hpo terms against all disease associated set of hpo terms
         logger.info(f'Scoring case HPO terms from file: {query_hpo_file}')
 
+        # convert and filter disease to phenotypes records terms
+        for record_id, phenotypes in disease_to_phenotypes.items():
+            disease_to_phenotypes[record_id] = set(scorer.convert_alternate_ids(phenotypes))
+            disease_to_phenotypes[record_id] = scorer.filter_hpo_ids(phenotypes)
+
         # add the case terms to the disease_to_phenotypes dict
+        case_hpo = scorer.convert_alternate_ids(case_hpo)
+        case_hpo = scorer.filter_hpo_ids(case_hpo)
         disease_to_phenotypes[query_name] = case_hpo
+        # arbitrarily set the query sample as a custom disease and set weights to 1.0 for self-self scoring.
+        for hpo_id in case_hpo:
+            hpo_network.node[hpo_id]['weights']['disease_frequency'][query_name] = 1.0
         if not output_file:
             sys.stdout.write('\t'.join(['#query', 'omim_id', 'score']))
             sys.stdout.write('\n')

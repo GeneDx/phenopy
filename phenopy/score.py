@@ -64,6 +64,10 @@ class Scorer:
         """return a list of terms with list of alternate HPO ids converted to canonical ones."""
         return [self.alt2prim[t] if t in self.alt2prim else t for t in termlist]
 
+    def filter_hpo_ids(self, termlist):
+        """retrun a list of terms that are present in the hpo_network object"""
+        return set([t for t in termlist if t in self.hpo_network.nodes()])
+
     def calculate_beta(self, term_a, term_b):
         """calculates the beta term in HRSS equation
 
@@ -295,10 +299,8 @@ class Scorer:
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
         # for disease weights, weights_a will be None
-        print(max0.shape, max1.shape)
         if weights_a is None:
             weights_a = np.ones(len(max1))
-        print(len(weights_a), len(weights_b))
 
         scores = np.append(max1, max0)
         weights = np.array(np.append(weights_a, weights_b))
@@ -334,15 +336,10 @@ class Scorer:
         return weights
 
     def get_disease_weights(self, terms, disease_id):
-        """Lookup the """
+        """Lookup the disease weights for the input terms to the disease_id"""
         weights = []
         for node_id in terms:
-            # should never return 0.5, disease_ids
-            #if node_id in self.hpo_network.nodes:
-            try:
-                weights.append(self.hpo_network.node[node_id]['weights']['disease_frequency'][disease_id])
-            except KeyError:
-                weights.append(0.5)
+            weights.append(self.hpo_network.node[node_id]['weights']['disease_frequency'][disease_id])
 
         if any([freq is None for freq in weights]):
             sys.exit(1)
