@@ -38,16 +38,30 @@ def load(phenotype_annotations_file, logger=None):
                     continue
 
                 # annotate the frequency of the phenotype to disease
+                # assign a new dictionary for a phenotype term when one doesn't exist yet
                 if term_id not in phenotype_disease_frequencies:
-                    phenotype_disease_frequencies[term_id] = {disease_accession: frequency_converter(row['Frequency'])}
+                    phenotype_disease_frequencies[term_id] = {disease_accession:
+                                                                  [frequency_converter(row['Frequency'])]}
                 else:
-                    phenotype_disease_frequencies[term_id].update({disease_accession: frequency_converter(row['Frequency'])})
+                    # if the phenotype key already exists, check if the disease accession also already exists.
+                    # there can be multiple reported disease phenotype frequencies in the .hpoa file.
+                    if disease_accession in phenotype_disease_frequencies[term_id]:
+                        phenotype_disease_frequencies[term_id][disease_accession].append(
+                            frequency_converter(row['Frequency']))
+                    else:
+                        phenotype_disease_frequencies[term_id][disease_accession] = \
+                            [frequency_converter(row['Frequency'])]
 
                 # add the phenotype to the disease in the disease_to_phenotypes dictionary
                 if disease_accession not in disease_to_phenotypes:
                     disease_to_phenotypes[disease_accession] = [term_id]
                 else:
                     disease_to_phenotypes[disease_accession].append(term_id)
+
+            for phenotype, diseases in phenotype_disease_frequencies.items():
+                for disease in diseases:
+                    phenotype_disease_frequencies[phenotype][disease] = \
+                        np.mean(phenotype_disease_frequencies[phenotype][disease])
 
         phenotype_to_diseases = dict()
         for disease_accession, phenotype_ids in disease_to_phenotypes.items():
