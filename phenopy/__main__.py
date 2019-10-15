@@ -174,7 +174,7 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
         try:
             ages = make_age_distributions(pheno_ages_file)
             logger.info(
-                'Added phenotype age distributions to HPO nodes.'
+                'Added custom phenotype age distributions to HPO nodes.'
             )
         except (FileNotFoundError, PermissionError) as e:
             logger.critical(e)
@@ -182,6 +182,19 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
                 'Specified phenotype ages file could not be loaded or does not exist'
             )
             exit(1)
+    elif agg_score == 'BMWA':
+        try:
+            ages = make_age_distributions(config.get('age', 'open_access_phenotype_age'))
+            logger.info(
+                'Added default phenotype age distributions to HPO nodes.'
+            )
+        except (FileNotFoundError, PermissionError) as e:
+            logger.critical(e)
+            logger.critical(
+                'Default phenotype ages file could not be loaded or does not exist'
+            )
+            exit(1)
+
     else:
         ages = None
 
