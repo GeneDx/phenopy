@@ -31,7 +31,8 @@ class ScorerTestCase(unittest.TestCase):
         # load and process the network
         obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         hpo_network = load_obo(obo_file)
-        cls.hpo_network = process(hpo_network, cls.phenotype_to_diseases, len(cls.disease_to_phenotypes))
+        cls.hpo_network = process(hpo_network, cls.phenotype_to_diseases, len(cls.disease_to_phenotypes),
+                                  phenotype_disease_frequencies=cls.phenotype_disease_frequencies)
 
         # create instance the scorer class
         cls.scorer = Scorer(hpo_network)
@@ -117,16 +118,26 @@ class ScorerTestCase(unittest.TestCase):
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.0, places=4)
 
-    def test_score_records(self):
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_score_records(self, mock_out):
         manager = Manager()
         lock = manager.Lock()
-
-
-        self.scorer.score_records(self.disease_to_phenotypes, record_pairs, lock, thread=0, number_threads=1, stdout=True, use_disease_weights=None)
-
-
-
-
+        query_name = 'SAMPLE'
+        query_terms = [
+            'HP:0000750',
+            'HP:0010863',
+        ]
+        records = self.disease_to_phenotypes
+        records[query_name] = query_terms
+        #
+        for hpo_id in query_terms:
+            self.hpo_network.node[hpo_id]['weights']['disease_frequency'][query_name] = 1.0
+        for record_id, phenotypes in records.items():
+            records[record_id] = set(self.scorer.convert_alternate_ids(phenotypes))
+            records[record_id] = self.scorer.filter_hpo_ids(phenotypes)
+        self.scorer.score_records(records, [(query_name, record) for record in records], lock,
+                                  thread=0, number_threads=1, stdout=True, use_disease_weights=True)
+        self.assertEqual(['SAMPLE', 'SAMPLE', '0.2945'], mock_out.getvalue().split('\n')[-2].split())
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
