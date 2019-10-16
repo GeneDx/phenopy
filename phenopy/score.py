@@ -203,7 +203,7 @@ class Scorer:
                 return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
             # disease weights scoring for score
             if len(weights) == 1:
-                return self.bmwa(df, weights_a=None, weights_b=weights[0])
+                return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights[0], min_score_mask=None)
         else:
             return 0.0
 
@@ -298,9 +298,6 @@ class Scorer:
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
-        # for disease weights, weights_a will be None
-        if weights_a is None:
-            weights_a = np.ones(len(max1))
 
         scores = np.append(max1, max0)
         weights = np.array(np.append(weights_a, weights_b))

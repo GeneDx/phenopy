@@ -119,6 +119,28 @@ class ScorerTestCase(unittest.TestCase):
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.0, places=4)
 
+        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
+        terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
+        weights_a = [0.67, 1., 1., 0.4]
+        weights_b = [1., 1., 0.5]
+
+        scorer = self.scorer
+        scorer.agg_score = 'BMWA'
+
+        terms_a = scorer.convert_alternate_ids(terms_a)
+        terms_b = scorer.convert_alternate_ids(terms_b)
+
+        terms_a = scorer.filter_hpo_ids(terms_a)
+        terms_b = scorer.filter_hpo_ids(terms_b)
+
+        # test with two weights
+        score_bwma_both_weights = scorer.score(terms_a, terms_b, [weights_a, weights_b])
+        self.assertEqual(score_bwma_both_weights, 0.6488)
+
+        # test with one weight array
+        score_bwma_one_weights = scorer.score(terms_a, terms_b, [weights_b])
+        self.assertEqual(score_bwma_one_weights, 0.6218)
+
     @patch('sys.stdout', new_callable=StringIO)
     def test_score_records(self, mock_out):
         manager = Manager()
