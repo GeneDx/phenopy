@@ -144,7 +144,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
                                      [(query_name, disease_id) for disease_id in disease_to_phenotypes], lock,  i, threads, False, True)
                                                                 for i in range(threads)])
             scored_results = [item for sublist in scored_results for item in sublist]
-            scored_results_df = pd.DataFrame(data=scored_results, columns='#query, omim_id, score'.split(','))
+            scored_results_df = pd.DataFrame(data=scored_results, columns='#query,omim_id,score'.split(','))
             scored_results_df = scored_results_df.sort_values(by='score', ascending=False)
             scored_results_df.to_csv(output_file, sep='\t', index=False)
             logger.info(f'Scoring completed')
