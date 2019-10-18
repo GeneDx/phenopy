@@ -34,7 +34,7 @@ class ScorerTestCase(unittest.TestCase):
         cls.hpo_network = process(hpo_network, cls.phenotype_to_diseases, len(cls.disease_to_phenotypes))
 
         # create instance the scorer class
-        cls.scorer = Scorer(hpo_network)
+        cls.scorer = Scorer(hpo_network, min_score_mask=None)
 
     def tearDown(cls):
         if os.path.exists(cls.hpo_network_file):
@@ -113,9 +113,21 @@ class ScorerTestCase(unittest.TestCase):
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.25, places=4)
 
+        # test wrong method
         self.scorer.agg_score = 'not_a_method'
-        score_max = self.scorer.score(terms_a, terms_b)
-        self.assertAlmostEqual(score_max, 0.0, places=4)
+        score_not_method = self.scorer.score(terms_a, terms_b)
+        self.assertAlmostEqual(score_not_method, 0.0, places=4)
+
+        # test BMWA with age weights
+        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322', 'HP:0012433'] # ATAX, DD,  HYP, SS, AbnSocBeh
+        terms_b = ['HP:0001249', 'HP:0001263', 'HP:0001290']  # ID,  DD, HYP
+        weights_a = [0.67, 1., 1., 0.4, 0.4]
+        weights_b = [1., 1., 1.]
+        weights = [weights_a, weights_b]
+        self.scorer.agg_score = 'BMWA'
+        self.scorer.min_score_mask = 0.05
+        score_bmwa = self.scorer.score(terms_a, terms_b, weights=weights)
+        self.assertAlmostEqual(score_bmwa, 0.5927, places=4)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -196,7 +208,8 @@ class ScorerTestCase(unittest.TestCase):
         # set all weights to 0.0, result should be the same as all weights being 1.0
         weights_a = np.zeros(len(weights_a))
         weights_b = np.zeros(len(weights_b))
-        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b, min_score_mask=None)
+        self.min_score_mask = None
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
         self.assertEqual(score_bmwa, 0.2985)
 
         # Test weight adjustment masking
@@ -225,13 +238,15 @@ class ScorerTestCase(unittest.TestCase):
         weights_b = [1., 1., 1.]
 
         # compute pairwise best match weighted average
-        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b, min_score_mask=None)
+        self.scorer.min_score_mask = None
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
         self.assertEqual(score_bmwa, 0.352)
 
         # because both patients were described to have ID, but only patient a has ataxia and ss
         # we mask good phenotype matches from being weighted down by default
         # we expect to get a better similarity score
+        self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
         self.assertEqual(score_bmwa, 0.365)
@@ -314,16 +329,35 @@ class ScorerTestCase(unittest.TestCase):
         self.hpo_network = process(self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated, ages=ages)
 
         # create instance the scorer class
-        scorer = Scorer(self.hpo_network, agg_score='BMWA')
+        scorer = Scorer(self.hpo_network, agg_score='BMWA', min_score_mask=None)
 
         # select which patients to test in pairwise bmwa
+        sample_records = {'118200', '118210'}
+        records = [x for x in records if x['sample'] in sample_records]
+        # sort terms in records
+        sorted_records = []
+        for record in records:
+            record['terms'] = sorted(record['terms'])
+            sorted_records.append(record)
+
+        results = scorer.score_pairs(sorted_records, lock, stdout=False)
+        self.assertEqual(len(results), 4)
+
+        # the right answer =
+        answer = np.average([0.166, 1.0, 1.0, 0.125, 0.25, 1.0, 1.0], weights=[0.481, 1.0, 1.0, 0.0446, 1.0, 1.0, 1.0])
+
+        self.assertAlmostEqual(float(results[1][2]), answer, 4)
+
+        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
+                                    hpo_network=self.hpo_network)
+        # select  patients as before but without pre-sorting hpids
         sample_records = {'118200', '118210'}
         records = [x for x in records if x['sample'] in sample_records]
 
         results = scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
 
-        self.assertAlmostEqual(float(results[1][2]), 0.6452, 1)
+        self.assertAlmostEqual(float(results[1][2]), answer, 4)
 
         # Test identical records for which one age exist and one doesn't
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,

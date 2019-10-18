@@ -16,19 +16,19 @@ class UtilTestCase(unittest.TestCase):
                 'sample': '118200',
                 'age': 9.0,
                 'gender': 'Female',
-                'terms': 'HP:0001251|HP:0001263|HP:0001290|HP:0004322'.split('|')
+                'terms': 'HP:0001263|HP:0001251|HP:0001290|HP:0004322'.split('|')
              },
             {
                 'sample': '118210',
                 'age': 4.0,
                 'gender': None,
-                'terms': 'HP:0001263|HP:0001249|HP:0001290'.split('|')
+                'terms': 'HP:0001249|HP:0001263|HP:0001290'.split('|')
             },
             {
                 'sample': '118211',
                 'age': None,
                 'gender': None,
-                'terms': 'HP:0001263|HP:0001249|HP:0001290'.split('|')
+                'terms': 'HP:0001249|HP:0001263|HP:0001290'.split('|')
             }
         ]
         records_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/test.score-product-age.txt')
