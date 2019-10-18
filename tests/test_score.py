@@ -20,18 +20,20 @@ class ScorerTestCase(unittest.TestCase):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
         cls.hpo_network_file = os.path.join(cls.parent_dir, 'data/hpo_network.pickle')
+        cls.records_file = os.path.join(cls.parent_dir, 'data/test.score-product.txt')
 
         # load phenotypes to genes associations
         phenotype_hpoa_file = os.path.join(
             cls.parent_dir, 'data/phenotype.hpoa')
-        cls.disease_to_phenotypes, cls.phenotype_to_diseases = load_d2p(
+        cls.disease_to_phenotypes, cls.phenotype_to_diseases, cls.phenotype_disease_frequencies = load_d2p(
             phenotype_hpoa_file)
         cls.num_diseases_annotated = len(cls.disease_to_phenotypes)
 
         # load and process the network
         obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         hpo_network = load_obo(obo_file)
-        cls.hpo_network = process(hpo_network, cls.phenotype_to_diseases, len(cls.disease_to_phenotypes))
+        cls.hpo_network = process(hpo_network, cls.phenotype_to_diseases, len(cls.disease_to_phenotypes),
+                                  phenotype_disease_frequencies=cls.phenotype_disease_frequencies)
 
         # create instance the scorer class
         cls.scorer = Scorer(hpo_network)
@@ -116,6 +118,53 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.agg_score = 'not_a_method'
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.0, places=4)
+
+        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
+        terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
+        weights_a = [0.67, 1., 1., 0.4]
+        weights_b = [1., 1., 0.5]
+
+        scorer = self.scorer
+        scorer.agg_score = 'BMWA'
+
+        terms_a = scorer.convert_alternate_ids(terms_a)
+        terms_b = scorer.convert_alternate_ids(terms_b)
+
+        terms_a = scorer.filter_and_sort_hpo_ids(terms_a)
+        terms_b = scorer.filter_and_sort_hpo_ids(terms_b)
+
+        # test with two weights
+        score_bwma_both_weights = scorer.score(terms_a, terms_b, [weights_a, weights_b])
+        self.assertEqual(score_bwma_both_weights, 0.6488)
+
+        # test with one weight array
+        score_bwma_one_weights = scorer.score(terms_a, terms_b, [weights_b])
+        self.assertEqual(score_bwma_one_weights, 0.6218)
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_score_records(self, mock_out):
+        manager = Manager()
+        lock = manager.Lock()
+        query_name = 'SAMPLE'
+        query_terms = [
+            'HP:0000750',
+            'HP:0010863',
+        ]
+        records = self.disease_to_phenotypes
+        records[query_name] = query_terms
+        #
+        for hpo_id in query_terms:
+            self.hpo_network.node[hpo_id]['weights']['disease_frequency'][query_name] = 1.0
+        for record_id, phenotypes in records.items():
+            records[record_id] = set(self.scorer.convert_alternate_ids(phenotypes))
+            records[record_id] = self.scorer.filter_and_sort_hpo_ids(phenotypes)
+        self.scorer.score_records(records, [(query_name, record) for record in records], lock,
+                                  thread=0, number_threads=1, stdout=True, use_disease_weights=True)
+        self.assertEqual(['SAMPLE', 'SAMPLE', '0.2945'], mock_out.getvalue().split('\n')[-2].split())
+
+        results = self.scorer.score_records(records, [(query_name, record) for record in records], lock,
+                                  thread=0, number_threads=1, stdout=False, use_disease_weights=True)
+        self.assertAlmostEqual(float(results[-1][2]), 0.2945, 2)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -336,4 +385,3 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), 1.0, 1)
-
