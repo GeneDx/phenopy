@@ -80,22 +80,28 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
     if no_parents is True:
         case_hpo = remove_parents(case_hpo, hpo_network)
 
+    # convert and filter disease to phenotypes records terms
+    for record_id, phenotypes in disease_to_phenotypes.items():
+        disease_to_phenotypes[record_id] = scorer.convert_alternate_ids(phenotypes)
+        disease_to_phenotypes[record_id] = scorer.filter_and_sort_hpo_ids(phenotypes)
+
+    # convert and filter the query hpo ids
+    case_hpo = scorer.convert_alternate_ids(case_hpo)
+    case_hpo = scorer.filter_and_sort_hpo_ids(case_hpo)
+
     if records_file:
         # score and output case hpo terms against all diseases associated set of hpo terms
         logger.info(
             f'Scoring HPO terms from file: {query_hpo_file} against entities in: {records_file}')
 
+        # build the records dictionary
         records_list = read_records_file(records_file, no_parents, hpo_network, logger=logger)
         records = {item['sample']: item['terms'] for item in records_list}
-
-        # convert and filter records terms
+        # clean the records dictionary
         for record_id, phenotypes in records.items():
-            records[record_id] = set(scorer.convert_alternate_ids(phenotypes))
-            records[record_id] = scorer.filter_hpo_ids(phenotypes)
+            records[record_id] = scorer.convert_alternate_ids(phenotypes)
+            records[record_id] = scorer.filter_and_sort_hpo_ids(phenotypes)
 
-        # include the case-to-iteslf
-        case_hpo = scorer.convert_alternate_ids(case_hpo)
-        case_hpo = scorer.filter_hpo_ids(case_hpo)
         records[query_name] = case_hpo
         if not output_file:
             sys.stdout.write('\t'.join(['#query', 'entity_id', 'score']))
@@ -117,15 +123,7 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
     else:
         # score and output case hpo terms against all disease associated set of hpo terms
         logger.info(f'Scoring case HPO terms from file: {query_hpo_file}')
-
-        # convert and filter disease to phenotypes records terms
-        for record_id, phenotypes in disease_to_phenotypes.items():
-            disease_to_phenotypes[record_id] = set(scorer.convert_alternate_ids(phenotypes))
-            disease_to_phenotypes[record_id] = scorer.filter_hpo_ids(phenotypes)
-
-        # add the case terms to the disease_to_phenotypes dict
-        case_hpo = scorer.convert_alternate_ids(case_hpo)
-        case_hpo = scorer.filter_hpo_ids(case_hpo)
+        # include the case - to - iteslf
         disease_to_phenotypes[query_name] = case_hpo
         # arbitrarily set the query sample as a custom disease and set weights to 1.0 for self-self scoring.
         for hpo_id in case_hpo:
@@ -211,18 +209,25 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
         obo_file, phenotype_to_diseases, len(disease_to_phenotypes), custom_annotations_file, ages=ages, phenotype_disease_frequencies=phenotype_disease_frequencies)
 
     # try except
-    records = read_records_file(records_file, no_parents, hpo_network, logger=logger)
+    records_list = read_records_file(records_file, no_parents, hpo_network, logger=logger)
 
     logger.info(f'Scoring product of records from file: {records_file}')
 
     # create instance the scorer class
     scorer = Scorer(hpo_network, agg_score=agg_score)
 
+    # # clean HPO ids: convert from alternate primary then filter and sort
+    # records = {item['sample']: item['terms'] for item in records}
+    # # clean the records dictionary
+    # for record_id, phenotypes in records.items():
+    #     records[record_id] = scorer.convert_alternate_ids(phenotypes)
+    #     records[record_id] = scorer.filter_and_sort_hpo_ids(phenotypes)
+
     # iterate over each cross-product and score the pair of records
     manager = Manager()
     lock = manager.Lock()
     with Pool(threads) as p:
-        p.starmap(scorer.score_pairs, [(records,
+        p.starmap(scorer.score_pairs, [(records_list,
                                         lock, i, threads) for i in range(threads)])
 
 

@@ -64,9 +64,10 @@ class Scorer:
         """return a list of terms with list of alternate HPO ids converted to canonical ones."""
         return [self.alt2prim[t] if t in self.alt2prim else t for t in termlist]
 
-    def filter_hpo_ids(self, termlist):
-        """retrun a list of terms that are present in the hpo_network object"""
-        return set([t for t in termlist if t in self.hpo_network.nodes()])
+    def filter_and_sort_hpo_ids(self, termlist):
+        """return a sorted list of unique terms that are present in the hpo_network object"""
+        # adding sorted keeps term lists consistent with the output of itertools product
+        return sorted(list(set([t for t in termlist if t in self.hpo_network.nodes()])))
 
     def calculate_beta(self, term_a, term_b):
         """calculates the beta term in HRSS equation
@@ -81,9 +82,11 @@ class Scorer:
             if self.hpo_network.in_edges(term):
                 # children terms generator
                 children = nx.ancestors(self.hpo_network, term)
-                # append the max IC leaf
-                mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
-                    p) >= 1 and self.hpo_network.in_degree(p) == 0}))
+                # append the max IC leaf (choose the one with the max depth)
+                leaves = {p for p in children if self.hpo_network.out_degree(
+                    p) >= 1 and self.hpo_network.in_degree(p) == 0}
+                mil = max(leaves, key=lambda n: (self.hpo_network.node[n]['ic'], self.hpo_network.node[n]['depth']))
+                mil_ic.append(self.hpo_network.node[mil]['ic'])
             # the node is a leaf
             else:
                 mil_ic.append(self.hpo_network.node[term]['ic'])
@@ -155,7 +158,6 @@ class Scorer:
         ic = (alpha_ic / float(alpha_ic + beta_ic))
         pair_score = (1.0 / float(1.0 + gamma)) * ic
 
-
         # cache this pair score
         self.scores_cache[f'{term_a}-{term_b}'] = pair_score
 
@@ -172,13 +174,6 @@ class Scorer:
         :param weights: List (length=2) of weights, one for each dimension of score matrix.
         :return: `float` (comparison score)
         """
-        # convert alternate HPO ids to canonical ones
-        terms_a = set(self.convert_alternate_ids(terms_a))
-        terms_b = set(self.convert_alternate_ids(terms_b))
-
-        # filter out hpo terms not in the network and unique them
-        terms_a = list(filter(lambda x: x in self.hpo_network.node, terms_a))
-        terms_b = list(filter(lambda x: x in self.hpo_network.node, terms_b))
 
         # if either set is empty return 0.0
         if not terms_a or not terms_b:
@@ -202,8 +197,11 @@ class Scorer:
             if len(weights) == 2:
                 return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
             # disease weights scoring for score
-            if len(weights) == 1:
+            elif len(weights) == 1:
                 return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights[0], min_score_mask=None)
+            else:
+                sys.stderr('weights cannot be an empty list or have more than two elements.')
+                sys.exit(1)
         else:
             return 0.0
 
@@ -211,7 +209,7 @@ class Scorer:
         """
         Score list pair of records.
 
-        :param records: Records dictionary.
+        :param records: list of dictionaries.
         :param thread: Thread index for multiprocessing.
         :param number_threads: Total number of threads for multiprocessing.
         :param stdout:(True,False) write results to standard out
@@ -223,6 +221,10 @@ class Scorer:
         record_pairs = product([x['sample'] for x in records], repeat=2)
 
         record_terms = {x['sample']: x['terms'] for x in records}
+        # clean the records dictionary
+        for record_id, phenotypes in record_terms.items():
+            record_terms[record_id] = self.convert_alternate_ids(phenotypes)
+            record_terms[record_id] = self.filter_and_sort_hpo_ids(phenotypes)
 
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
 
@@ -334,11 +336,4 @@ class Scorer:
 
     def get_disease_weights(self, terms, disease_id):
         """Lookup the disease weights for the input terms to the disease_id"""
-        weights = []
-        for node_id in terms:
-            weights.append(self.hpo_network.node[node_id]['weights']['disease_frequency'][disease_id])
-
-        if any([freq is None for freq in weights]):
-            sys.exit(1)
-
-        return weights
+        return [self.hpo_network.node[node_id]['weights']['disease_frequency'][disease_id] for node_id in terms]

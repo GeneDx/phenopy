@@ -130,8 +130,8 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = scorer.convert_alternate_ids(terms_a)
         terms_b = scorer.convert_alternate_ids(terms_b)
 
-        terms_a = scorer.filter_hpo_ids(terms_a)
-        terms_b = scorer.filter_hpo_ids(terms_b)
+        terms_a = scorer.filter_and_sort_hpo_ids(terms_a)
+        terms_b = scorer.filter_and_sort_hpo_ids(terms_b)
 
         # test with two weights
         score_bwma_both_weights = scorer.score(terms_a, terms_b, [weights_a, weights_b])
@@ -157,7 +157,7 @@ class ScorerTestCase(unittest.TestCase):
             self.hpo_network.node[hpo_id]['weights']['disease_frequency'][query_name] = 1.0
         for record_id, phenotypes in records.items():
             records[record_id] = set(self.scorer.convert_alternate_ids(phenotypes))
-            records[record_id] = self.scorer.filter_hpo_ids(phenotypes)
+            records[record_id] = self.scorer.filter_and_sort_hpo_ids(phenotypes)
         self.scorer.score_records(records, [(query_name, record) for record in records], lock,
                                   thread=0, number_threads=1, stdout=True, use_disease_weights=True)
         self.assertEqual(['SAMPLE', 'SAMPLE', '0.2945'], mock_out.getvalue().split('\n')[-2].split())
