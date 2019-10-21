@@ -10,7 +10,7 @@ from phenopy.weights import age_to_weights
 
 
 class Scorer:
-    def __init__(self, hpo_network, agg_score='BMA'):
+    def __init__(self, hpo_network, agg_score='BMA', min_score_mask=0.05):
         self.hpo_network = hpo_network
 
         self.scores_cache = {}
@@ -18,6 +18,7 @@ class Scorer:
         self.alt2prim = {}
         self.generate_alternate_ids()
         self.agg_score = agg_score
+        self.min_score_mask = min_score_mask
 
     def find_lca(self, term_a, term_b):
         """
@@ -198,9 +199,9 @@ class Scorer:
                 return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
             # disease weights scoring for score
             elif len(weights) == 1:
-                return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights[0], min_score_mask=None)
+                return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights[0])
             else:
-                sys.stderr('weights cannot be an empty list or have more than two elements.')
+                sys.stderr.write('weights cannot be an empty list or have more than two elements.')
                 sys.exit(1)
         else:
             return 0.0
@@ -296,7 +297,7 @@ class Scorer:
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
-    def bmwa(self, df, weights_a, weights_b, min_score_mask=0.05):
+    def bmwa(self, df, weights_a, weights_b):
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
@@ -307,8 +308,8 @@ class Scorer:
         # mask good matches from weighting
         # mask threshold based on >75% of pairwise scores of all hpo terms
         # TODO: expose min_score cutoff value to be set in config
-        if min_score_mask is not None:
-            masked_weights = np.where(scores > min_score_mask, 1.0, weights)
+        if self.min_score_mask is not None:
+            masked_weights = np.where(scores > self.min_score_mask, 1.0, weights)
             weights = masked_weights
 
         # if weights add up to zero, calculate unweighted average

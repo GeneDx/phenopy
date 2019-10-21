@@ -123,6 +123,10 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
     else:
         # score and output case hpo terms against all disease associated set of hpo terms
         logger.info(f'Scoring case HPO terms from file: {query_hpo_file}')
+
+        # set min_score_mask
+        scorer.min_score_mask = None
+
         # include the case - to - iteslf
         disease_to_phenotypes[query_name] = case_hpo
         # arbitrarily set the query sample as a custom disease and set weights to 1.0 for self-self scoring.
