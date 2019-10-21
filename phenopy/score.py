@@ -199,7 +199,7 @@ class Scorer:
                 return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
             # disease weights scoring for score
             elif len(weights) == 1:
-                return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights[0], min_score_mask=None)
+                return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights[0])
             else:
                 sys.stderr('weights cannot be an empty list or have more than two elements.')
                 sys.exit(1)
