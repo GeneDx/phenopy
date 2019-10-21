@@ -150,6 +150,7 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(score_bwma_both_weights, 0.6488)
 
         # test with one weight array
+        scorer.min_score_mask = None
         score_bwma_one_weights = scorer.score(terms_a, terms_b, [weights_b])
         self.assertEqual(score_bwma_one_weights, 0.6218)
 
