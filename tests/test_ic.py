@@ -19,7 +19,7 @@ class ICTestCase(unittest.TestCase):
 
         # load phenotypes to genes associations
         cls.disease_to_phenotype_file = os.path.join(cls.parent_dir, 'data/phenotype.hpoa')
-        cls.disease_to_phenotypes, cls.phenotype_to_diseases = load_d2p(cls.disease_to_phenotype_file)
+        cls.disease_to_phenotypes, cls.phenotype_to_diseases, cls.phenotype_disease_frequencies = load_d2p(cls.disease_to_phenotype_file)
 
         # load and process the network
         config.set('hpo', 'data_directory', os.path.join(cls.parent_dir, 'data'))

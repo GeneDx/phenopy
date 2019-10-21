@@ -29,5 +29,6 @@ setup(
         'obonet',
         'pandas',
         'scipy',
+
     ]
 )

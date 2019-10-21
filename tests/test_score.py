@@ -20,21 +20,23 @@ class ScorerTestCase(unittest.TestCase):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
         cls.hpo_network_file = os.path.join(cls.parent_dir, 'data/hpo_network.pickle')
+        cls.records_file = os.path.join(cls.parent_dir, 'data/test.score-product.txt')
 
         # load phenotypes to genes associations
         phenotype_hpoa_file = os.path.join(
             cls.parent_dir, 'data/phenotype.hpoa')
-        cls.disease_to_phenotypes, cls.phenotype_to_diseases = load_d2p(
+        cls.disease_to_phenotypes, cls.phenotype_to_diseases, cls.phenotype_disease_frequencies = load_d2p(
             phenotype_hpoa_file)
         cls.num_diseases_annotated = len(cls.disease_to_phenotypes)
 
         # load and process the network
         obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         hpo_network = load_obo(obo_file)
-        cls.hpo_network = process(hpo_network, cls.phenotype_to_diseases, len(cls.disease_to_phenotypes))
+        cls.hpo_network = process(hpo_network, cls.phenotype_to_diseases, len(cls.disease_to_phenotypes),
+                                  phenotype_disease_frequencies=cls.phenotype_disease_frequencies)
 
         # create instance the scorer class
-        cls.scorer = Scorer(hpo_network)
+        cls.scorer = Scorer(hpo_network, min_score_mask=None)
 
     def tearDown(cls):
         if os.path.exists(cls.hpo_network_file):
@@ -113,9 +115,79 @@ class ScorerTestCase(unittest.TestCase):
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.25, places=4)
 
+        # test wrong method
         self.scorer.agg_score = 'not_a_method'
-        score_max = self.scorer.score(terms_a, terms_b)
-        self.assertAlmostEqual(score_max, 0.0, places=4)
+        score_not_method = self.scorer.score(terms_a, terms_b)
+        self.assertAlmostEqual(score_not_method, 0.0, places=4)
+
+        # test BMWA with age weights
+        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322', 'HP:0012433'] # ATAX, DD,  HYP, SS, AbnSocBeh
+        terms_b = ['HP:0001249', 'HP:0001263', 'HP:0001290']  # ID,  DD, HYP
+        weights_a = [0.67, 1., 1., 0.4, 0.4]
+        weights_b = [1., 1., 1.]
+        weights = [weights_a, weights_b]
+        self.scorer.agg_score = 'BMWA'
+        self.scorer.min_score_mask = 0.05
+        score_bmwa = self.scorer.score(terms_a, terms_b, weights=weights)
+        self.assertAlmostEqual(score_bmwa, 0.5927, places=4)
+
+        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
+        terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
+        weights_a = [0.67, 1., 1., 0.4]
+        weights_b = [1., 1., 0.5]
+
+        scorer = self.scorer
+        scorer.agg_score = 'BMWA'
+
+        terms_a = scorer.convert_alternate_ids(terms_a)
+        terms_b = scorer.convert_alternate_ids(terms_b)
+
+        terms_a = scorer.filter_and_sort_hpo_ids(terms_a)
+        terms_b = scorer.filter_and_sort_hpo_ids(terms_b)
+
+        # test with two weights
+        score_bwma_both_weights = scorer.score(terms_a, terms_b, [weights_a, weights_b])
+        self.assertEqual(score_bwma_both_weights, 0.6488)
+
+        # test with one weight array
+        scorer.min_score_mask = None
+        score_bwma_one_weights = scorer.score(terms_a, terms_b, [weights_b])
+        self.assertEqual(score_bwma_one_weights, 0.6218)
+
+        # make sure phenopy exits if length of weights is not 1 or 2.
+        with self.assertRaises(SystemExit):
+            score_bwma_zero_weights = scorer.score(terms_a, terms_b, [])
+        with self.assertRaises(SystemExit):
+            score_bwma_three_weights = scorer.score(terms_a, terms_b, [[0.1], [0.2], [0.3]])
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_score_records(self, mock_out):
+        manager = Manager()
+        lock = manager.Lock()
+        query_name = 'SAMPLE'
+        query_terms = [
+            'HP:0000750',
+            'HP:0010863',
+        ]
+        records = self.disease_to_phenotypes
+        records[query_name] = query_terms
+        #
+        for hpo_id in query_terms:
+            self.hpo_network.node[hpo_id]['weights']['disease_frequency'][query_name] = 1.0
+        for record_id, phenotypes in records.items():
+            records[record_id] = set(self.scorer.convert_alternate_ids(phenotypes))
+            records[record_id] = self.scorer.filter_and_sort_hpo_ids(phenotypes)
+        self.scorer.score_records(records, [(query_name, record) for record in records], lock,
+                                  thread=0, number_threads=1, stdout=True, use_disease_weights=True)
+        self.assertEqual(['SAMPLE', 'SAMPLE', '0.2945'], mock_out.getvalue().split('\n')[-2].split())
+
+        results = self.scorer.score_records(records, [(query_name, record) for record in records], lock,
+                                  thread=0, number_threads=1, stdout=False, use_disease_weights=True)
+        self.assertAlmostEqual(float(results[-1][2]), 0.2945, 2)
+
+        results = self.scorer.score_records(records, [(query_name, record) for record in records], lock,
+                                  thread=0, number_threads=1, stdout=False, use_disease_weights=False)
+        self.assertAlmostEqual(float(results[-1][2]), 0.2945, 2)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -196,7 +268,8 @@ class ScorerTestCase(unittest.TestCase):
         # set all weights to 0.0, result should be the same as all weights being 1.0
         weights_a = np.zeros(len(weights_a))
         weights_b = np.zeros(len(weights_b))
-        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b, min_score_mask=None)
+        self.min_score_mask = None
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
         self.assertEqual(score_bmwa, 0.2985)
 
         # Test weight adjustment masking
@@ -225,13 +298,15 @@ class ScorerTestCase(unittest.TestCase):
         weights_b = [1., 1., 1.]
 
         # compute pairwise best match weighted average
-        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b, min_score_mask=None)
+        self.scorer.min_score_mask = None
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
         self.assertEqual(score_bmwa, 0.352)
 
         # because both patients were described to have ID, but only patient a has ataxia and ss
         # we mask good phenotype matches from being weighted down by default
         # we expect to get a better similarity score
+        self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
         self.assertEqual(score_bmwa, 0.365)
@@ -314,16 +389,35 @@ class ScorerTestCase(unittest.TestCase):
         self.hpo_network = process(self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated, ages=ages)
 
         # create instance the scorer class
-        scorer = Scorer(self.hpo_network, agg_score='BMWA')
+        scorer = Scorer(self.hpo_network, agg_score='BMWA', min_score_mask=None)
 
         # select which patients to test in pairwise bmwa
+        sample_records = {'118200', '118210'}
+        records = [x for x in records if x['sample'] in sample_records]
+        # sort terms in records
+        sorted_records = []
+        for record in records:
+            record['terms'] = sorted(record['terms'])
+            sorted_records.append(record)
+
+        results = scorer.score_pairs(sorted_records, lock, stdout=False)
+        self.assertEqual(len(results), 4)
+
+        # the right answer =
+        answer = np.average([0.166, 1.0, 1.0, 0.125, 0.25, 1.0, 1.0], weights=[0.481, 1.0, 1.0, 0.0446, 1.0, 1.0, 1.0])
+
+        self.assertAlmostEqual(float(results[1][2]), answer, 4)
+
+        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
+                                    hpo_network=self.hpo_network)
+        # select  patients as before but without pre-sorting hpids
         sample_records = {'118200', '118210'}
         records = [x for x in records if x['sample'] in sample_records]
 
         results = scorer.score_pairs(records, lock, stdout=False)
         self.assertEqual(len(results), 4)
 
-        self.assertAlmostEqual(float(results[1][2]), 0.6452, 1)
+        self.assertAlmostEqual(float(results[1][2]), answer, 4)
 
         # Test identical records for which one age exist and one doesn't
         records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
@@ -336,4 +430,3 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), 1.0, 1)
-
