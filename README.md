@@ -48,13 +48,28 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     Output:
     ```
     #query	omim_id	score
-    SAMPLE	210100	0.003.172551296022093e-05
-    SAMPLE	163600	0.04450039556373293
-    SAMPLE	615763	0.05497737732718229
+    SAMPLE	210100	0.0
+    SAMPLE	163600	0.0445
+    SAMPLE	615763	0.0543
+    ...
+    ```
+    
+2. Score similarity of an entity defined by the HPO terms from an input file against all the OMIM diseases in
+`.phenopy/data/phenotype.hpoa`, use `--agg-score=BMWA` to weigh each diseases' phenotypes by the frequency of
+a phenotype seen in each particular disease.
+    ```bash
+    phenopy score tests/data/test.score.txt --agg-score=BMWA
+    ```
+    Output:
+    ```
+    #query	omim_id	score
+    SAMPLE	210100	0.0
+    SAMPLE	163600	0.0371
+    SAMPLE	615763	0.0561
     ...
     ```
 
-2. Score similarity of an entity defined by the HPO terms from an input file against a custom list of entities with HPO annotations, referred to as the `--records-file`.
+3. Score similarity of an entity defined by the HPO terms from an input file against a custom list of entities with HPO annotations, referred to as the `--records-file`.
     ```bash
     phenopy score tests/data/test.score.txt --records-file tests/data/test.score-product.txt
     ```
@@ -67,7 +82,7 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     ...
     ```
 
-3. Score pairwise similarity of entities defined in the `--records-file`.
+4. Score pairwise similarity of entities defined in the `--records-file`.
 
     ```bash
     phenopy score-product tests/data/test.score-product.txt --threads 4
@@ -79,10 +94,9 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     118200	300905	0.2647
     ...
     ```
-4. Score age-adjusted pairwise similarity of entities defined in the `--records-file`, 
+5. Score age-adjusted pairwise similarity of entities defined in the `--records-file`, 
     using phenotype mean age and standard deviation defined in the `--pheno_ages_file`,
     select best-match weighted average as the scoring aggregation method `--agg_score BMWA`.
-
     ```bash
     phenopy score-product tests/data/test.score-product-age.txt --pheno_ages_file tests/data/phenotype_age.tsv --agg_score BMWA --threads 4
     ```
