@@ -81,8 +81,7 @@ disease, but could be any concept that warrants annotation of phenotype terms.
     ```
 4. Score age-adjusted pairwise similarity of entities defined in the `--records-file`, 
     using phenotype mean age and standard deviation defined in the `--pheno_ages_file`,
-    select best-match weighted average as the scoring aggregation method `--agg_score BMWA`.\
-    
+    select best-match weighted average as the scoring aggregation method `--agg_score BMWA`.
 
     ```bash
     phenopy score-product tests/data/test.score-product-age.txt --pheno_ages_file tests/data/phenotype_age.tsv --agg_score BMWA --threads 4
@@ -110,6 +109,8 @@ disease, but could be any concept that warrants annotation of phenotype terms.
    ```bash
     phenopy score-product tests/data/test.score-product-age.txt  --agg_score BMWA --threads 4
     ```
+
+
 ## Parameters
 For a full list of command arguments use `phenopy [subcommand] --help`:
 ```bash
