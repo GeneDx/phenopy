@@ -108,7 +108,7 @@ disease, but could be any concept that warrants annotation of phenotype terms.
   If no phenotype ages file is provided `--agg_score BMWA` can be selected to use default, open access literature-derived phenotype ages (~ 1,400 age weighted phenotypes).  
    ```bash
     phenopy score-product tests/data/test.score-product-age.txt  --agg_score BMWA --threads 4
-    ```
+   ```
 
 
 ## Parameters
