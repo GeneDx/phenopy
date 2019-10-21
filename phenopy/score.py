@@ -201,7 +201,7 @@ class Scorer:
             elif len(weights) == 1:
                 return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights[0])
             else:
-                sys.stderr('weights cannot be an empty list or have more than two elements.')
+                sys.stderr.write('weights cannot be an empty list or have more than two elements.')
                 sys.exit(1)
         else:
             return 0.0
