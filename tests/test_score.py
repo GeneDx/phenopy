@@ -154,6 +154,12 @@ class ScorerTestCase(unittest.TestCase):
         score_bwma_one_weights = scorer.score(terms_a, terms_b, [weights_b])
         self.assertEqual(score_bwma_one_weights, 0.6218)
 
+        # make sure phenopy exits if length of weights is not 1 or 2.
+        with self.assertRaises(SystemExit):
+            score_bwma_zero_weights = scorer.score(terms_a, terms_b, [])
+        with self.assertRaises(SystemExit):
+            score_bwma_three_weights = scorer.score(terms_a, terms_b, [[0.1], [0.2], [0.3]])
+
     @patch('sys.stdout', new_callable=StringIO)
     def test_score_records(self, mock_out):
         manager = Manager()
@@ -177,6 +183,10 @@ class ScorerTestCase(unittest.TestCase):
 
         results = self.scorer.score_records(records, [(query_name, record) for record in records], lock,
                                   thread=0, number_threads=1, stdout=False, use_disease_weights=True)
+        self.assertAlmostEqual(float(results[-1][2]), 0.2945, 2)
+
+        results = self.scorer.score_records(records, [(query_name, record) for record in records], lock,
+                                  thread=0, number_threads=1, stdout=False, use_disease_weights=False)
         self.assertAlmostEqual(float(results[-1][2]), 0.2945, 2)
 
     def test_no_parents(self):
