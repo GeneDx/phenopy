@@ -116,7 +116,7 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
         }
     config['age'] = {
         'open_access_phenotype_age': os.path.join(
-            project_directory,
+            project_data_dir,
             'oa_phenotype_age.tsv',
         ),
 
