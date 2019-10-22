@@ -233,13 +233,6 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
     # create instance the scorer class
     scorer = Scorer(hpo_network, agg_score=agg_score)
 
-    # # clean HPO ids: convert from alternate primary then filter and sort
-    # records = {item['sample']: item['terms'] for item in records}
-    # # clean the records dictionary
-    # for record_id, phenotypes in records.items():
-    #     records[record_id] = scorer.convert_alternate_ids(phenotypes)
-    #     records[record_id] = scorer.filter_and_sort_hpo_ids(phenotypes)
-
     # iterate over each cross-product and score the pair of records
     manager = Manager()
     lock = manager.Lock()
