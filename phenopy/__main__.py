@@ -194,7 +194,7 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
         try:
             ages = make_age_distributions(pheno_ages_file)
             logger.info(
-                'Added phenotype age distributions to HPO nodes.'
+                'Added custom phenotype age distributions to HPO nodes.'
             )
         except (FileNotFoundError, PermissionError) as e:
             logger.critical(e)
@@ -202,6 +202,19 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
                 'Specified phenotype ages file could not be loaded or does not exist'
             )
             exit(1)
+    elif agg_score == 'BMWA':
+        try:
+            ages = make_age_distributions(config.get('age', 'open_access_phenotype_age'))
+            logger.info(
+                'Added default phenotype age distributions to HPO nodes.'
+            )
+        except (FileNotFoundError, PermissionError) as e:
+            logger.critical(e)
+            logger.critical(
+                'Default phenotype ages file could not be loaded or does not exist'
+            )
+            exit(1)
+
     else:
         ages = None
 
@@ -219,13 +232,6 @@ def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, p
 
     # create instance the scorer class
     scorer = Scorer(hpo_network, agg_score=agg_score)
-
-    # # clean HPO ids: convert from alternate primary then filter and sort
-    # records = {item['sample']: item['terms'] for item in records}
-    # # clean the records dictionary
-    # for record_id, phenotypes in records.items():
-    #     records[record_id] = scorer.convert_alternate_ids(phenotypes)
-    #     records[record_id] = scorer.filter_and_sort_hpo_ids(phenotypes)
 
     # iterate over each cross-product and score the pair of records
     manager = Manager()
