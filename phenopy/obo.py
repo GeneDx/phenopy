@@ -1,10 +1,9 @@
 import re
-
 import obonet
 import sys
-
 import networkx as nx
 
+from phenopy import parse_input
 from phenopy.ic import calculate_information_content
 
 
@@ -26,7 +25,8 @@ def load(obo_file, logger=None):
         exit(1)
 
 
-def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_annotations_file=None, ages=None, phenotype_disease_frequencies=None, logger=None):
+def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotations_file=None, ages=None,
+            phenotype_disease_frequencies=None, logger=None):
     """
     Cleans the HPO network.
 
@@ -35,7 +35,7 @@ def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_a
     :param hpo_network: `networkx.MultiDiGraph` to clean.
     :param phenotype_to_diseases: Dictionary mapping HPO terms to diseases.
     :param num_diseases_annotated: Number of diseases with HPO annotations.
-    :param custom_annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
+    :param annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
     :param ages: age distributions object
     :param phenotype_disease_frequencies: dictionary of phenotype to disease frequencies
     :param logger: Python `logging` logger instance.
@@ -58,26 +58,14 @@ def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_a
             hpo_network.remove_nodes_from([hpo_id] + list(children))
 
     # Before calculating information content, check for custom_annotations_file and load
-    if custom_annotations_file is not None:
+    custom_annos = None
+    if annotations_file is not None:
         custom_annos = {}
-        try:
-            with open(custom_annotations_file, 'r') as f:
-                for line in f:
-                    if line.startswith('#'):
-                        continue
-                    entity_id, patient_info, hpo_ids_string = line.split('\t')
-                    hpo_ids = hpo_ids_string.split('|')
-                    for hpo_id in hpo_ids:
-                        if hpo_id in custom_annos:
-                            custom_annos[hpo_id].append(entity_id)
-                        else:
-                            custom_annos[hpo_id] = [entity_id]
-
-        except (FileNotFoundError, PermissionError, IsADirectoryError) as e:
-            logger.critical(f'{custom_annotations_file} not found or is not accessible.')
-            raise e
-    else:
-        custom_annos = None
+        for record in parse_input(annotations_file):
+            for term_id in record['terms']:
+                if term_id not in custom_annos:
+                    custom_annos[term_id] = []
+                custom_annos[term_id].append(record['record_id'])
 
     for node_id, data in hpo_network.nodes(data=True):
         # annotate with information content value

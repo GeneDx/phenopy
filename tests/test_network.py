@@ -5,7 +5,7 @@ import networkx as nx
 
 from phenopy.config import config
 from phenopy.d2p import load as load_d2p
-from phenopy.network import _load_hpo_network
+from phenopy.network import load
 
 
 class NetworkTestCase(unittest.TestCase):
@@ -27,43 +27,43 @@ class NetworkTestCase(unittest.TestCase):
             os.remove(cls.hpo_network_file)
 
     def test_load_from_hp_obo(self):
-        self.hpo_network = _load_hpo_network(self.obo_file, self.phenotype_to_diseases,
-                                             len(self.disease_to_phenotypes), custom_annotations_file=None,
-                                             hpo_network_file=self.hpo_network_file,
-                                             phenotype_disease_frequencies=self.phenotype_disease_frequencies)
+        self.hpo_network = load(self.obo_file, self.phenotype_to_diseases,
+                                len(self.disease_to_phenotypes), annotations_file=None,
+                                hpo_network_file=self.hpo_network_file,
+                                phenotype_disease_frequencies=self.phenotype_disease_frequencies)
 
         # this is a cleaned version of the network, so it is not the same as test_obo.py
         self.assertEqual(len(self.hpo_network), 28)
         self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 5.69, 2)
 
     def test_load_custom(self):
-        self.hpo_network = _load_hpo_network(self.obo_file, self.phenotype_to_diseases, len(self.disease_to_phenotypes),
-                                        custom_annotations_file=os.path.join(self.parent_dir,
+        self.hpo_network = load(self.obo_file, self.phenotype_to_diseases, len(self.disease_to_phenotypes),
+                                annotations_file=os.path.join(self.parent_dir,
                                                                              'data/test.score-product.txt'),
-                                        hpo_network_file=self.hpo_network_file,
-                                             phenotype_disease_frequencies=self.phenotype_disease_frequencies,
-                                        )
+                                hpo_network_file=self.hpo_network_file,
+                                phenotype_disease_frequencies=self.phenotype_disease_frequencies,
+                                )
 
         self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 6.38, 2)
 
     def test_restore(self):
-        hpo_network1 = _load_hpo_network(self.obo_file, self.phenotype_to_diseases, len(self.disease_to_phenotypes),
-                                        custom_annotations_file=os.path.join(self.parent_dir,
+        hpo_network1 = load(self.obo_file, self.phenotype_to_diseases, len(self.disease_to_phenotypes),
+                            annotations_file=os.path.join(self.parent_dir,
                                                                              'data/test.score-product.txt'),
-                                        hpo_network_file=self.hpo_network_file,
-                                         phenotype_disease_frequencies=self.phenotype_disease_frequencies,
-                                        )
+                            hpo_network_file=self.hpo_network_file,
+                            phenotype_disease_frequencies=self.phenotype_disease_frequencies,
+                            )
         # this should get loaded from the pickled hpo_network_file
-        hpo_network2 = _load_hpo_network(self.obo_file, self.phenotype_to_diseases, len(self.disease_to_phenotypes),
-                                        custom_annotations_file=os.path.join(self.parent_dir,
+        hpo_network2 = load(self.obo_file, self.phenotype_to_diseases, len(self.disease_to_phenotypes),
+                            annotations_file=os.path.join(self.parent_dir,
                                                                              'data/test.score-product.txt'),
-                                        hpo_network_file=self.hpo_network_file,
-                                         phenotype_disease_frequencies=self.phenotype_disease_frequencies
-                                        )
+                            hpo_network_file=self.hpo_network_file,
+                            phenotype_disease_frequencies=self.phenotype_disease_frequencies
+                            )
         self.assertTrue(nx.is_isomorphic(hpo_network1, hpo_network2))
 
     def test_phenotype_to_diseases(self):
         with self.assertRaises(ValueError) as se:
-            self.hpo_network_file = _load_hpo_network(self.obo_file, self.phenotype_hpoa_file, len(self.disease_to_phenotypes),
-                                                      custom_annotations_file=None, hpo_network_file=None,
-                                                      phenotype_disease_frequencies=self.phenotype_disease_frequencies)
+            self.hpo_network_file = load(self.obo_file, self.phenotype_hpoa_file, len(self.disease_to_phenotypes),
+                                         annotations_file=None, hpo_network_file=None,
+                                         phenotype_disease_frequencies=self.phenotype_disease_frequencies)

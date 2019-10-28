@@ -1,16 +1,15 @@
-import os
+import itertools
 import numpy as np
+import os
 import pandas as pd
 import unittest
 
-from io import StringIO
-from multiprocessing import Manager
+from phenopy import parse_input
 from phenopy.obo import process
 from phenopy.obo import load as load_obo
 from phenopy.d2p import load as load_d2p
 from phenopy.score import Scorer
-from phenopy.util import remove_parents, read_records_file
-from unittest.mock import patch
+from phenopy.util import remove_parents
 from phenopy.weights import get_truncated_normal
 
 
@@ -160,34 +159,47 @@ class ScorerTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit):
             score_bwma_three_weights = scorer.score(terms_a, terms_b, [[0.1], [0.2], [0.3]])
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_score_records(self, mock_out):
-        manager = Manager()
-        lock = manager.Lock()
+    def test_score_records(self,):
         query_name = 'SAMPLE'
         query_terms = [
             'HP:0000750',
             'HP:0010863',
         ]
-        records = self.disease_to_phenotypes
-        records[query_name] = query_terms
+        input_records = [{
+            'record_id': query_name,
+            'terms': query_terms,
+        }]
+        score_records = self.disease_to_phenotypes
         #
         for hpo_id in query_terms:
             self.hpo_network.node[hpo_id]['weights']['disease_frequency'][query_name] = 1.0
-        for record_id, phenotypes in records.items():
-            records[record_id] = set(self.scorer.convert_alternate_ids(phenotypes))
-            records[record_id] = self.scorer.filter_and_sort_hpo_ids(phenotypes)
-        self.scorer.score_records(records, [(query_name, record) for record in records], lock,
-                                  thread=0, number_threads=1, stdout=True, use_disease_weights=True)
-        self.assertEqual(['SAMPLE', 'SAMPLE', '0.2945'], mock_out.getvalue().split('\n')[-2].split())
+        for record in score_records:
+            record['terms'] = self.scorer.convert_alternate_ids(record['terms'])
+            record['terms'] = self.scorer.filter_and_sort_hpo_ids(record['terms'])
 
-        results = self.scorer.score_records(records, [(query_name, record) for record in records], lock,
-                                  thread=0, number_threads=1, stdout=False, use_disease_weights=True)
-        self.assertAlmostEqual(float(results[-1][2]), 0.2945, 2)
+        # using weights
+        results = self.scorer.score_records(
+            input_records,
+            score_records,
+            itertools.product(range(len(input_records)), range(len(score_records))),
+            thread_index=0,
+            threads=1,
+            use_weights=True,
+        )
+        self.assertEqual(1184, len(results))
+        self.assertAlmostEqual(float(results[0][2]), 0.1387, 2)
 
-        results = self.scorer.score_records(records, [(query_name, record) for record in records], lock,
-                                  thread=0, number_threads=1, stdout=False, use_disease_weights=False)
-        self.assertAlmostEqual(float(results[-1][2]), 0.2945, 2)
+        # without weights
+        results = self.scorer.score_records(
+            input_records,
+            score_records,
+            itertools.product(range(len(input_records)), range(len(score_records))),
+            thread_index=0,
+            threads=1,
+            use_weights=False,
+        )
+        self.assertEqual(1184, len(results))
+        self.assertAlmostEqual(float(results[0][2]), 0.1387, 2)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -200,41 +212,30 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = ['HP:0000715', 'HP:0012434']
         self.assertIn('HP:0000708', self.scorer.convert_alternate_ids(terms_a))
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_score_pairs(self, mock_out):
-        # multiprocessing objects
-        manager = Manager()
-        lock = manager.Lock()
-
+    def test_score_self(self):
         # read in records
-        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=False,
-                                    hpo_network=self.hpo_network)
+        records = parse_input(os.path.join(self.parent_dir, 'data/test.score-product.txt'))
+
+        for record in records:
+            # prune parent terms
+            record['terms'] = remove_parents(record['terms'], self.hpo_network)
+
+            # convert and filter the query hpo ids
+            record['terms'] = self.scorer.convert_alternate_ids(record['terms'])
+            record['terms'] = self.scorer.filter_and_sort_hpo_ids(record['terms'])
+
         # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
-        sample_records = {'213200', '302801'}
+        input_records = [x for x in records if x['record_id'] in ['213200', '302801']]
 
-        records = [x for x in records if x['sample'] in sample_records]
+        results = self.scorer.score_records(
+            input_records,
+            input_records,
+            itertools.combinations(range(len(input_records)), 2),
+        )
+        self.assertEqual(len(results), 1)
 
-        results = self.scorer.score_pairs(records, lock, stdout=False)
-        self.assertEqual(len(results), 4)
-        # test the second element '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.415, 2)
-
-        # test the second element '213200' - '302801' using no_parents
-        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product.txt'), no_parents=True,
-                                    hpo_network=self.hpo_network)
-        # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
-        sample_records = {'213200', '302801'}
-        records = [x for x in records if x['sample'] in sample_records]
-
-        results = self.scorer.score_pairs(records, lock, stdout=False)
-        self.assertEqual(len(results), 4)
-        # test the second element '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.415, 2)
-
-        # test the second element '213200' - '302801' using stdout
-
-        self.scorer.score_pairs(records, lock, stdout=True)
-        self.assertEqual(mock_out.getvalue().split('\n')[1].split(), ['302801', '213200', '0.4133'])
+        # test the score of '213200' - '302801'
+        self.assertAlmostEqual(float(results[0][2]), 0.415, 2)
 
     def test_bmwa(self):
         # test best match weighted average
@@ -370,13 +371,17 @@ class ScorerTestCase(unittest.TestCase):
 
     def test_score_pairs_age(self):
         # Test reading in records files and calculating pairwise scores
-        # multiprocessing objects
-        manager = Manager()
-        lock = manager.Lock()
-
         # read in records
-        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
-                                    hpo_network=self.hpo_network)
+        records = parse_input(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'))
+
+        for record in records:
+            # prune parent terms
+            record['terms'] = remove_parents(record['terms'], self.hpo_network)
+
+            # convert and filter the query hpo ids
+            record['terms'] = self.scorer.convert_alternate_ids(record['terms'])
+            record['terms'] = self.scorer.filter_and_sort_hpo_ids(record['terms'])
+
         # model age using truncated normal
         ages = pd.DataFrame([
             {'hpid': 'HP:0001251', 'age_dist': get_truncated_normal(6.0, 3.0, 0.0, 6.0)},
@@ -392,15 +397,19 @@ class ScorerTestCase(unittest.TestCase):
         scorer = Scorer(self.hpo_network, agg_score='BMWA', min_score_mask=None)
 
         # select which patients to test in pairwise bmwa
-        sample_records = {'118200', '118210'}
-        records = [x for x in records if x['sample'] in sample_records]
+        input_records = [x for x in records if x['record_id'] in ['118200', '118210']]
+
         # sort terms in records
         sorted_records = []
-        for record in records:
+        for record in input_records:
             record['terms'] = sorted(record['terms'])
             sorted_records.append(record)
 
-        results = scorer.score_pairs(sorted_records, lock, stdout=False)
+        results = scorer.score_records(
+            sorted_records,
+            sorted_records,
+            itertools.combinations(range(len(sorted_records)), 2),
+        )
         self.assertEqual(len(results), 4)
 
         # the right answer =
@@ -408,25 +417,26 @@ class ScorerTestCase(unittest.TestCase):
 
         self.assertAlmostEqual(float(results[1][2]), answer, 4)
 
-        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
-                                    hpo_network=self.hpo_network)
         # select  patients as before but without pre-sorting hpids
-        sample_records = {'118200', '118210'}
-        records = [x for x in records if x['sample'] in sample_records]
+        input_records = [x for x in records if x['record_id'] in ['118200', '118210']]
 
-        results = scorer.score_pairs(records, lock, stdout=False)
+        results = scorer.score_records(
+            input_records,
+            input_records,
+            itertools.combinations(range(len(input_records)), 2)
+        )
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), answer, 4)
 
         # Test identical records for which one age exist and one doesn't
-        records = read_records_file(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), no_parents=False,
-                                    hpo_network=self.hpo_network)
-        sample_records = {'118210', '118211'}
+        input_records = [x for x in records if x['record_id'] in ['118210', '118211']]
 
-        records = [x for x in records if x['sample'] in sample_records]
-
-        results = scorer.score_pairs(records, lock, stdout=False)
+        results = scorer.score_records(
+            input_records,
+            input_records,
+            itertools.combinations(range(len(input_records)), 2)
+        )
         self.assertEqual(len(results), 4)
 
         self.assertAlmostEqual(float(results[1][2]), 1.0, 1)

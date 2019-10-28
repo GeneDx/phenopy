@@ -1,11 +1,9 @@
 import itertools
-import sys
-
 import networkx as nx
 import numpy as np
 import pandas as pd
+import sys
 
-from itertools import product
 from phenopy.weights import age_to_weights
 
 
@@ -120,7 +118,7 @@ class Scorer:
         if self.hpo_network.has_edge(term_b, term_a):
             term_a_child = True
 
-        if (term_a_child or term_b_child):
+        if term_a_child or term_b_child:
             return 1
 
         a_to_lca = nx.shortest_path_length(self.hpo_network, term_a, term_lca)
@@ -164,14 +162,12 @@ class Scorer:
 
         return pair_score
 
-    def score(self, terms_a, terms_b, weights=[]):
+    def score(self, terms_a, terms_b, weights=None):
         """
         Scores the comparison of terms in list A to terms in list B.
 
         :param terms_a: List of HPO terms A.
         :param terms_b: List of HPO terms B.
-        :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
-            Must be one of {'BMA', 'BMWA'}
         :param weights: List (length=2) of weights, one for each dimension of score matrix.
         :return: `float` (comparison score)
         """
@@ -179,6 +175,9 @@ class Scorer:
         # if either set is empty return 0.0
         if not terms_a or not terms_b:
             return 0.0
+
+        if weights is None:
+            weights = []
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
@@ -206,94 +205,46 @@ class Scorer:
         else:
             return 0.0
 
-    def score_pairs(self, records, lock, thread=0, number_threads=1, stdout=True):
+    def score_records(self, a_records, b_records, record_pairs, thread_index=0, threads=1, use_weights=False):
         """
         Score list pair of records.
-
-        :param records: list of dictionaries.
-        :param thread: Thread index for multiprocessing.
-        :param number_threads: Total number of threads for multiprocessing.
-        :param stdout:(True,False) write results to standard out
-        :return: `list` of `tuples`
-        """
-        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
-        results = []
-
-        record_pairs = product([x['sample'] for x in records], repeat=2)
-
-        record_terms = {x['sample']: x['terms'] for x in records}
-        # clean the records dictionary
-        for record_id, phenotypes in record_terms.items():
-            record_terms[record_id] = self.convert_alternate_ids(phenotypes)
-            record_terms[record_id] = self.filter_and_sort_hpo_ids(phenotypes)
-
-        for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
-
-            if self.agg_score == 'BMWA':
-
-                record_age = {x['sample']: x['age'] for x in records}
-
-                weights_a = self.calculate_age_weights(record_terms[record_a], record_age[record_b])
-                weights_b = self.calculate_age_weights(record_terms[record_b], record_age[record_a])
-
-                score = self.score(record_terms[record_a], record_terms[record_b], weights=[weights_a, weights_b])
-            else:
-
-                score = self.score(record_terms[record_a], record_terms[record_b])
-
-            if stdout:
-                try:
-                    lock.acquire()
-                    sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
-                    sys.stdout.write('\n')
-                finally:
-                    sys.stdout.flush()
-                    lock.release()
-            else:
-                results.append((record_a, record_b, str(score)))
-
-        return results
-
-    def score_records(self, records, record_pairs, lock, thread=0, number_threads=1, stdout=True, use_disease_weights=None):
-        """
-        Score list pair of records.
-        :param records: Records dictionary.
+        :param a_records: Input records dictionary.
+        :param b_records: Score against records. If not provided both pairs members are pulled from "a_records".
         :param record_pairs: List of record pairs to score.
-        :param thread: Thread index for multiprocessing.
-        :param number_threads: Total number of threads for multiprocessing.
-        :param stdout:(True,False) write results to standard out
-        :return: `list` of `tuples`
+        :param thread_index: Thread index for multiprocessing.
+        :param threads: Total number of threads for multiprocessing.
+        :param use_weights: Use disease weights.
         """
-        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         results = []
-        for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
-            if use_disease_weights is True:
-                # disease_id is record_b
-                score = self.score(records[record_a], records[record_b], weights=[self.get_disease_weights(records[record_b], record_b)])
-            else:
-                score = self.score(records[record_a], records[record_b])
+        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
+        for record_a, record_b in itertools.islice(record_pairs, thread_index, None, threads):
+            # set weights if needed
+            weights = None
+            if use_weights is True:
+                weights = [self.get_disease_weights(b_records[record_b]['terms'], b_records[record_b]['record_id'])]
 
-            if stdout:
-                try:
-                    lock.acquire()
-                    sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
-                    sys.stdout.write('\n')
-                finally:
-                    sys.stdout.flush()
-                    lock.release()
-            else:
-                results.append((record_a, record_b, str(score)))
+            score = self.score(
+                a_records[record_a]['terms'],
+                b_records[record_b]['terms'],
+                weights=weights,
+            )
 
+            results.append((
+                a_records[record_a]['record_id'],
+                b_records[record_b]['record_id'],
+                str(score),
+            ))
         return results
 
-    def best_match_average(self, df):
+    @staticmethod
+    def best_match_average(df):
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
         return np.average(np.append(max1, max0)).round(4)
 
-
-    def maximum(self, df):
+    @staticmethod
+    def maximum(df):
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 

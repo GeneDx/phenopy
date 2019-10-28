@@ -63,14 +63,20 @@ def load(phenotype_annotations_file, logger=None):
                         np.mean(phenotype_disease_frequencies[phenotype][disease])
 
         phenotype_to_diseases = dict()
+        disease_records = list()
         for disease_accession, phenotype_ids in disease_to_phenotypes.items():
+            # append disease record
+            disease_records.append({
+                'record_id': disease_accession,
+                'terms': phenotype_ids
+            })
             for phenotype_id in phenotype_ids:
                 if phenotype_id not in phenotype_to_diseases:
                     phenotype_to_diseases[phenotype_id] = [disease_accession]
                 else:
                     phenotype_to_diseases[phenotype_id].append(disease_accession)
 
-        return disease_to_phenotypes, phenotype_to_diseases, phenotype_disease_frequencies
+        return disease_records, phenotype_to_diseases, phenotype_disease_frequencies
 
     except (FileNotFoundError, PermissionError) as e:
         hpoa_file_error_msg = f'{phenotype_annotations_file} not found or incorrect permissions'
