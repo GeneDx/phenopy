@@ -24,13 +24,16 @@ def parse_input(input_file):
     try:
         with open(input_file, 'r') as input_fh:
             reader = csv.reader(filter(lambda l: not l.startswith('#'), input_fh), delimiter='\t')
-            records = [
-                {
+            records = []
+            for line in reader:
+                record = {
                     'record_id': line[0],
                     'terms': line[2].split('|'),
+                    'weights': {},
                     **dict(item.split('=') for item in line[1].split(';') if line[1] != '.')
-                } for line in reader
-            ]
+                }
+
+
     except (FileNotFoundError, PermissionError) as e:
         logger.critical(f'Provided input file could not be loaded or does not exist: {e}')
         exit(1)

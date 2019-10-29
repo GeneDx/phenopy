@@ -22,7 +22,7 @@ def load(phenotype_annotations_file, logger=None):
             reader = csv.DictReader(filter(lambda line: line[0] != '#', tsv_fh), delimiter='\t')
 
             disease_to_phenotypes = dict()
-            phenotype_disease_frequencies = dict()
+            phenotype_to_diseases = dict()
             for row in reader:
                 # phenotype term id
                 term_id = row['HPO_ID']
@@ -32,51 +32,43 @@ def load(phenotype_annotations_file, logger=None):
                 if db not in ['OMIM']:
                     continue
 
-                # For now, skip negative phenotpye annotations
+                # For now, skip negative phenotype annotations
                 if row['Qualifier'] == 'NOT':
                     continue
 
-                # annotate the frequency of the phenotype to disease
-                # assign a new dictionary for a phenotype term when one doesn't exist yet
-                if term_id not in phenotype_disease_frequencies:
-                    phenotype_disease_frequencies[term_id] = {disease_accession:
-                                                                  [frequency_converter(row['Frequency'])]}
+                if term_id not in phenotype_to_diseases:
+                    phenotype_to_diseases[term_id] = {disease_accession: {'frequency': []}}
+
                 else:
-                    # if the phenotype key already exists, check if the disease accession also already exists.
-                    # there can be multiple reported disease phenotype frequencies in the .hpoa file.
-                    if disease_accession in phenotype_disease_frequencies[term_id]:
-                        phenotype_disease_frequencies[term_id][disease_accession].append(
-                            frequency_converter(row['Frequency']))
-                    else:
-                        phenotype_disease_frequencies[term_id][disease_accession] = \
-                            [frequency_converter(row['Frequency'])]
+                    if disease_accession not in phenotype_to_diseases[term_id]:
+                        phenotype_to_diseases[term_id].update({disease_accession: {'frequency': []}})
+
+                phenotype_to_diseases[term_id][disease_accession]['frequency'].append(frequency_converter(row['Frequency']))
 
                 # add the phenotype to the disease in the disease_to_phenotypes dictionary
                 if disease_accession not in disease_to_phenotypes:
-                    disease_to_phenotypes[disease_accession] = [term_id]
-                else:
-                    disease_to_phenotypes[disease_accession].append(term_id)
+                    disease_to_phenotypes[disease_accession] = {'record_id': disease_accession,
+                                                                'terms': [],
+                                                                'weights': {'disease_frequency': [],
+                                                                            'disease_onset': [],
+                                                                            },
+                                                                }
+                disease_to_phenotypes[disease_accession]['terms'].append(term_id)
 
-            for phenotype, diseases in phenotype_disease_frequencies.items():
-                for disease in diseases:
-                    phenotype_disease_frequencies[phenotype][disease] = \
-                        np.mean(phenotype_disease_frequencies[phenotype][disease])
-
-        phenotype_to_diseases = dict()
+        # going from dict to a list of disease records and setting weights
         disease_records = list()
-        for disease_accession, phenotype_ids in disease_to_phenotypes.items():
-            # append disease record
-            disease_records.append({
-                'record_id': disease_accession,
-                'terms': phenotype_ids
-            })
-            for phenotype_id in phenotype_ids:
-                if phenotype_id not in phenotype_to_diseases:
-                    phenotype_to_diseases[phenotype_id] = [disease_accession]
-                else:
-                    phenotype_to_diseases[phenotype_id].append(disease_accession)
+        for disease_accession, disease in disease_to_phenotypes.items():
+            for term_id in disease['terms']:
+                try:
+                    frequency_weight = np.mean(phenotype_to_diseases[term_id][disease_accession]['frequency'])
+                except TypeError:
+                    # TODO: discuss with team what is a good default for the unannotated disease frequency.
+                    frequency_weight = 0.5
+                disease['weights']['disease_frequency'].append(frequency_weight)
+            disease_records.append(disease)
 
-        return disease_records, phenotype_to_diseases, phenotype_disease_frequencies
+        # TODO: do we need phenotype_to_diseases
+        return disease_records, phenotype_to_diseases
 
     except (FileNotFoundError, PermissionError) as e:
         hpoa_file_error_msg = f'{phenotype_annotations_file} not found or incorrect permissions'
@@ -99,4 +91,4 @@ def frequency_converter(hpoa_frequency):
     elif '%' in hpoa_frequency:
         return float(hpoa_frequency.strip('%')) / 100
     # return 0.5 by default
-    return 0.5
+    return None

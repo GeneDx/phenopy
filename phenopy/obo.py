@@ -77,12 +77,9 @@ def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotati
             custom_annos,
         )
         # annotate with phenotype age distribution
-        hpo_network.node[node_id]['weights'] = {
-            'age_dist': None,
-            'age_exists': False,
-            'default_weight': 1.0,
-            'disease_frequency': {},
-        }
+        hpo_network.node[node_id]['age_dist'] = None
+        hpo_network.node[node_id]['disease_weights'] = {}
+
         if ages is not None:
             if node_id in ages.index:
                 hpo_network.node[node_id]['weights']['age_dist'] = ages.loc[node_id]['age_dist']

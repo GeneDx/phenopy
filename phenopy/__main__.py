@@ -54,19 +54,17 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
 
     # load phenotypes to diseases associations
     (
-        score_records,
+        disease_records,
         phenotype_to_diseases,
-        phenotype_disease_frequencies,
     ) = load_d2p(disease_to_phenotype_file)
 
     # load hpo network
     hpo_network = load_network(
         obo_file,
         phenotype_to_diseases,
-        len(score_records),
+        len(disease_records),
         annotations_file=annotations_file,
         ages_distribution_file=ages_distribution_file,
-        phenotype_disease_frequencies=phenotype_disease_frequencies,
     )
 
     # create instance the scorer class
@@ -103,6 +101,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         else:
             # convert and filter disease to phenotypes records terms
             # TODO: we should probably do this during d2p
+            score_records = disease_records
             for record in score_records:
                 record['terms'] = scorer.convert_alternate_ids(record['terms'])
                 record['terms'] = scorer.filter_and_sort_hpo_ids(record['terms'])

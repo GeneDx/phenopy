@@ -162,22 +162,24 @@ class Scorer:
 
         return pair_score
 
-    def score(self, terms_a, terms_b, weights=None):
+    def score(self, record_a, record_b):
         """
         Scores the comparison of terms in list A to terms in list B.
 
         :param terms_a: List of HPO terms A.
         :param terms_b: List of HPO terms B.
-        :param weights: List (length=2) of weights, one for each dimension of score matrix.
         :return: `float` (comparison score)
         """
 
         # if either set is empty return 0.0
+        terms_a = record_a['terms']
+        terms_b = record_b['terms']
         if not terms_a or not terms_b:
             return 0.0
 
-        if weights is None:
-            weights = []
+        # calculate weights for record_a and record_b
+        weights_a = record_a['weights'] if record_a['weights'] is not None else []
+        weights_b = record_b['weights'] if record_a['weights'] is not None else []
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
@@ -187,23 +189,24 @@ class Scorer:
         ).set_index(
             ['a', 'b']
         ).unstack()
-
-        if self.agg_score == 'BMA':
-            return self.best_match_average(df)
-        elif self.agg_score == 'maximum':
-            return self.maximum(df)
-        elif self.agg_score == 'BMWA':
-            # age weights scoring for scrore product
-            if len(weights) == 2:
-                return self.bmwa(df, weights_a=weights[0], weights_b=weights[1])
-            # disease weights scoring for score
-            elif len(weights) == 1:
-                return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights[0])
-            else:
-                sys.stderr.write('weights cannot be an empty list or have more than two elements.')
-                sys.exit(1)
-        else:
-            return 0.0
+        a = 1
+        return
+        # if self.agg_score == 'BMA':
+        #     return self.best_match_average(df)
+        # elif self.agg_score == 'maximum':
+        #     return self.maximum(df)
+        # elif self.agg_score == 'BMWA':
+        #     # age weights scoring for scrore product
+        #     if len(weights) == 2:
+        #         return self.bmwa(df, weights_a=weights_a, weights_b=weights_b)
+        #     # disease weights scoring for score
+        #     elif len(weights) == 1:
+        #         return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights_b)
+        #     else:
+        #         sys.stderr.write('weights cannot be an empty list or have more than two elements.')
+        #         sys.exit(1)
+        # else:
+        #     return 0.0
 
     def score_records(self, a_records, b_records, record_pairs, thread_index=0, threads=1, use_weights=False):
         """
@@ -220,13 +223,12 @@ class Scorer:
         for record_a, record_b in itertools.islice(record_pairs, thread_index, None, threads):
             # set weights if needed
             weights = None
-            if use_weights is True:
-                weights = [self.get_disease_weights(b_records[record_b]['terms'], b_records[record_b]['record_id'])]
+            # if use_weights is True:
+            #     weights = [self.get_disease_weights(b_records[record_b]['terms'], b_records[record_b]['record_id'])]
 
             score = self.score(
-                a_records[record_a]['terms'],
-                b_records[record_b]['terms'],
-                weights=weights,
+                a_records[record_a],
+                b_records[record_b],
             )
 
             results.append((
