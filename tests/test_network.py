@@ -61,9 +61,3 @@ class NetworkTestCase(unittest.TestCase):
                             phenotype_disease_frequencies=self.phenotype_disease_frequencies
                             )
         self.assertTrue(nx.is_isomorphic(hpo_network1, hpo_network2))
-
-    def test_phenotype_to_diseases(self):
-        with self.assertRaises(ValueError) as se:
-            self.hpo_network_file = load(self.obo_file, self.phenotype_hpoa_file, len(self.disease_to_phenotypes),
-                                         annotations_file=None, hpo_network_file=None,
-                                         phenotype_disease_frequencies=self.phenotype_disease_frequencies)
