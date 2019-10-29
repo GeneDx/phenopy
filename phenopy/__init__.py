@@ -6,6 +6,7 @@ import sys
 from contextlib import contextmanager
 
 from phenopy.config import logger
+from phenopy.util import remove_parents
 
 
 @contextmanager
@@ -17,7 +18,21 @@ def open_or_stdout(filename):
         yield sys.stdout
 
 
-def parse_input(input_file):
+def generate_alternate_ids(hpo_network):
+    """Create a key, value store of alternate terms to canonical terms."""
+    alt2prim = {}
+    for n in hpo_network.nodes(data=True):
+        n = n[0]
+        try:
+            for alt in hpo_network.node[n]['alt_id']:
+                alt2prim[alt] = n
+        except KeyError:
+            # no alternate HPO ids for this term
+            continue
+    return alt2prim
+
+
+def parse_input(input_file, hpo_network, alt2prim):
     """
     Parse input file.
     """
@@ -26,14 +41,24 @@ def parse_input(input_file):
             reader = csv.reader(filter(lambda l: not l.startswith('#'), input_fh), delimiter='\t')
             records = []
             for line in reader:
+                # prcoess terms with convert and filter first
+                terms = []
+                for term_id in line[2].split('|'):
+                    # convert alternate ids to primary
+                    if term_id in alt2prim:
+                        term_id = alt2prim[term_id]
+                    # filtering terms not in the hpo network
+                    if term_id not in hpo_network.nodes():
+                        continue
+                    terms.append(term_id)
+
                 record = {
                     'record_id': line[0],
-                    'terms': line[2].split('|'),
+                    'terms': remove_parents(terms, hpo_network),
                     'weights': {},
                     **dict(item.split('=') for item in line[1].split(';') if line[1] != '.')
                 }
                 records.append(record)
-
 
     except (FileNotFoundError, PermissionError) as e:
         logger.critical(f'Provided input file could not be loaded or does not exist: {e}')

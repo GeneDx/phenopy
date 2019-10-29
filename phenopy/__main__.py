@@ -4,9 +4,9 @@ import itertools
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Pool
 
-from phenopy import open_or_stdout, parse_input
+from phenopy import open_or_stdout, parse_input, generate_alternate_ids
 from phenopy.config import config, logger
-from phenopy.network import load as load_network
+from phenopy.network import load as load_network, annotate
 from phenopy.d2p import load as load_d2p
 from phenopy.score import Scorer
 from phenopy.util import remove_parents
@@ -49,18 +49,22 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         )
         exit(1)
 
+    logger.info(f'Loading HPO OBO file: {obo_file}')
+    hpo_network = load_network(obo_file, logger=logger)
+
+    alt2prim = generate_alternate_ids(hpo_network)
     # parse input records
-    input_records = parse_input(input_file)
+    input_records = parse_input(input_file, hpo_network, alt2prim)
 
     # load phenotypes to diseases associations
     (
         disease_records,
         phenotype_to_diseases,
-    ) = load_d2p(disease_to_phenotype_file)
+    ) = load_d2p(disease_to_phenotype_file, hpo_network, alt2prim)
 
     # load hpo network
-    hpo_network = load_network(
-        obo_file,
+    hpo_network = annotate(
+        hpo_network,
         phenotype_to_diseases,
         len(disease_records),
         annotations_file=annotations_file,
@@ -69,16 +73,6 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
 
     # create instance the scorer class
     scorer = Scorer(hpo_network)
-
-    # TODO: refactor cleanup into a generic function so we can called for all records dataset
-    for record in input_records:
-        # TODO: can we combine these cleanup operations so we don't have to iterate over all terms multiple times
-        # prune parent terms
-        record['terms'] = remove_parents(record['terms'], hpo_network)
-
-        # convert and filter the query hpo ids
-        record['terms'] = scorer.convert_alternate_ids(record['terms'])
-        record['terms'] = scorer.filter_and_sort_hpo_ids(record['terms'])
 
     if self:
         score_records = input_records
@@ -90,21 +84,8 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     else:
         if records_file:
             score_records = parse_input(records_file)
-
-            for record in score_records:
-                # prune parent terms if requested
-                record['terms'] = remove_parents(record['terms'], hpo_network)
-
-                # convert and filter the query hpo ids
-                record['terms'] = scorer.convert_alternate_ids(record['terms'])
-                record['terms'] = scorer.filter_and_sort_hpo_ids(record['terms'])
         else:
-            # convert and filter disease to phenotypes records terms
-            # TODO: we should probably do this during d2p
             score_records = disease_records
-            for record in score_records:
-                record['terms'] = scorer.convert_alternate_ids(record['terms'])
-                record['terms'] = scorer.filter_and_sort_hpo_ids(record['terms'])
 
         scoring_pairs = itertools.product(
             range(len(input_records)),

@@ -12,7 +12,7 @@ hpo_id_to_float = {
 }
 
 
-def load(phenotype_annotations_file, logger=None):
+def load(phenotype_annotations_file, hpo_network, alt2prim, logger=None):
     """Parse the hpoa file
     :param phenotype_annotations_file: path to the phenotype.hpoa file
     :return: three dictionaries of disease to phenotypes, phenotypes to disease, and phenotypes to disease frequencies
@@ -25,7 +25,11 @@ def load(phenotype_annotations_file, logger=None):
             phenotype_to_diseases = dict()
             for row in reader:
                 # phenotype term id
-                term_id = row['HPO_ID']
+                # convert alternate phenotype id to primary
+                term_id = row['HPO_ID'] if row['HPO_ID'] not in alt2prim else alt2prim[row['HPO_ID']]
+
+                if term_id not in hpo_network.nodes():
+                    continue
 
                 # parse disease id, currently only supports omim entries
                 db, disease_accession = row['DatabaseID'].split(':')
@@ -58,6 +62,7 @@ def load(phenotype_annotations_file, logger=None):
         # going from dict to a list of disease records and setting weights
         disease_records = list()
         for disease_accession, disease in disease_to_phenotypes.items():
+            disease['terms'] = sorted(set(disease['terms']))
             for term_id in disease['terms']:
                 try:
                     frequency_weight = np.mean(phenotype_to_diseases[term_id][disease_accession]['frequency'])

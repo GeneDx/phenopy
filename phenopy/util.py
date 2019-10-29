@@ -142,4 +142,4 @@ def remove_parents(termlist, hpo_network):
                 terms_to_remove.add(target_term)
             if target_to_source is True and not same_terms:
                 terms_to_remove.add(source_term)
-    return set(termlist) - terms_to_remove
+    return sorted(set(termlist) - terms_to_remove)

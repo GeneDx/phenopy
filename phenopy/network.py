@@ -1,33 +1,76 @@
-import os
-from configparser import NoOptionError, NoSectionError
+import networkx as nx
+import obonet
+import re
+import sys
 
-from phenopy.config import config, logger
-from phenopy.obo import cache, process, restore
-from phenopy.obo import load as load_obo
 from phenopy.weights import make_age_distributions
+from phenopy import parse_input
+from phenopy.ic import calculate_information_content
 
 
-def load(obo_file, phenotype_to_diseases, num_diseases_annotated, annotations_file=None, ages_distribution_file=None,
-         phenotype_disease_frequencies=None, hpo_network_file=None):
+def load(obo_file, logger=None):
     """
-    Load and process phenotypes to diseases and obo files if we don't have a processed network already.
+    Load OBO file into a networkx graph.
 
-    :param obo_file: path to obo file.
-    :param phenotype_to_diseases: Dictionary of HPO terms as keys and list of diseases as values.
-    :param num_diseases_annotated: An integer representing the number of unique diseases in the annotation corpus.
-    :param annotations_file: Path to annotations file, optional.
+    :param obo_file: OBO definition file.
+    :param logger: Python `logging` logger instance.
+    :return: `networkx.MultiDiGraph`
+    """
+    try:
+        hpo_network = obonet.read_obo(obo_file)
+        #return nx.MultiDiGraph(hpo_network.subgraph(['HP:0000118'] + list(nx.ancestors(hpo_network, 'HP:0000118'))))
+    except (FileNotFoundError, PermissionError) as e:
+        if logger is not None:
+            logger.critical(e)
+        else:
+            sys.stderr.write(str(e))
+        exit(1)
+
+    # roots for non-phenotype nodes
+    non_phenotypes = {
+        'mortality_aging': 'HP:0040006',
+        'mode_of_inheritance': 'HP:0000005',
+        'clinical_modifier': 'HP:0012823',
+        'frequency': 'HP:0040279',
+        'clinical_course': 'HP:0031797',
+    }
+
+    # remove non-phenotype branches
+    for _, hpo_id in non_phenotypes.items():
+        if hpo_id in hpo_network.nodes:
+            children = nx.ancestors(hpo_network, hpo_id)
+            hpo_network.remove_nodes_from([hpo_id] + list(children))
+
+    return hpo_network
+
+
+def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotations_file=None, ages_distribution_file=None,
+            phenotype_disease_frequencies=None, logger=None):
+    """
+    Cleans the HPO network.
+
+    Removes non-phenotype branches of the network, and merges all synonyms into one tag.
+
+    :param hpo_network: `networkx.MultiDiGraph` to clean.
+    :param phenotype_to_diseases: Dictionary mapping HPO terms to diseases.
+    :param num_diseases_annotated: Number of diseases with HPO annotations.
+    :param annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
+    :param ages: age distributions object
+    :param phenotype_disease_frequencies: dictionary of phenotype to disease frequencies
+    :param logger: Python `logging` logger instance.
     :param ages_distribution_file: Path to phenotypes ages distribution file.
-    :param hpo_network_file: Path to pre-processed HPO network file.
+    :return: `networkx.MultiDiGraph`
     """
-    # We instruct the user that they can set hpo_network_file in .phenopy/phenopy.ini
-    # The default value is ~/.phenopy/data/hpo_network.pickle
-    if hpo_network_file is None:
-        try:
-            hpo_network_file = config.get('hpo', 'hpo_network_file')
-        except (NoSectionError, NoOptionError):
-            logger.critical(
-                'No HPO network file found in the configuration file. See "hpo:hpo_network_file" parameter.')
-            exit(1)
+
+    # Before calculating information content, check for custom_annotations_file and load
+    custom_annos = None
+    if annotations_file is not None:
+        custom_annos = {}
+        for record in parse_input(annotations_file):
+            for term_id in record['terms']:
+                if term_id not in custom_annos:
+                    custom_annos[term_id] = []
+                custom_annos[term_id].append(record['record_id'])
 
     # make ages distributions
     ages = None
@@ -44,24 +87,47 @@ def load(obo_file, phenotype_to_diseases, num_diseases_annotated, annotations_fi
             )
             exit(1)
 
-    # load and process hpo network if we receive an annotation file or if we don't have a pre-processed one
-    if None not in [annotations_file, ages_distribution_file] or not os.path.exists(hpo_network_file):
-        logger.info(f'Loading HPO OBO file: {obo_file}')
-        hpo_network = load_obo(obo_file, logger=logger)
-        hpo_network = process(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotations_file,
-                              ages=ages, phenotype_disease_frequencies=phenotype_disease_frequencies, logger=logger)
+    for node_id, data in hpo_network.nodes(data=True):
+        # annotate with information content value
+        hpo_network.node[node_id]['ic'] = calculate_information_content(
+            node_id,
+            hpo_network,
+            phenotype_to_diseases,
+            num_diseases_annotated,
+            custom_annos,
+        )
+        # annotate with phenotype age distribution
+        hpo_network.node[node_id]['age_dist'] = None
+        hpo_network.node[node_id]['disease_weights'] = {}
 
-        # save a cache of the processed network only if no optional files were provided
-        if None not in [annotations_file, ages_distribution_file]:
-            cache(hpo_network, hpo_network_file)
+        if ages is not None:
+            if node_id in ages.index:
+                hpo_network.node[node_id]['weights']['age_dist'] = ages.loc[node_id]['age_dist']
+                hpo_network.node[node_id]['weights']['age_exists'] = True
 
-    # the default hpo_network pickle file was found
-    else:
+        # add the disease_frequency weights as attributes to the node
+        if phenotype_disease_frequencies is not None:
+            if node_id in phenotype_disease_frequencies:
+                for disease_id, frequency in phenotype_disease_frequencies[node_id].items():
+                    hpo_network.node[node_id]['weights']['disease_frequency'][disease_id] = frequency
+
+        # annotate with depth value
+        # hard-coding origin node for now
+        origin = 'HP:0000001'
+        hpo_network.node[node_id]['depth'] = nx.shortest_path_length(
+            hpo_network,
+            node_id,
+            origin
+        )
+
+        # clean synonyms
+        synonyms = []
         try:
-            hpo_network = restore(hpo_network_file)
-        except (FileNotFoundError, PermissionError, IsADirectoryError) as e:
-            logger.critical(f'{hpo_network_file} is not a valid path to a pickled hpo_network file.\n'
-                            f'In your $HOME/.phenopy/phenopy.ini, please set hpo_network_file'
-                            f'=/path/to/hpo_netowrk.pickle OR leave it empty to use the default. ')
-            raise e
+            for synonym in data['synonym']:
+                synonyms.append(synonym)
+            hpo_network.node[node_id]['synonyms'] = re.findall(r'"(.*?)"', ','.join(synonyms))
+        except KeyError:
+            # pass if no synonym tags in the node
+            pass
+
     return hpo_network

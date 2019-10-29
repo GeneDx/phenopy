@@ -2,7 +2,6 @@ import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
-import sys
 
 from phenopy.weights import age_to_weights
 
@@ -10,11 +9,7 @@ from phenopy.weights import age_to_weights
 class Scorer:
     def __init__(self, hpo_network, agg_score='BMA', min_score_mask=0.05):
         self.hpo_network = hpo_network
-
         self.scores_cache = {}
-
-        self.alt2prim = {}
-        self.generate_alternate_ids()
         self.agg_score = agg_score
         self.min_score_mask = min_score_mask
 
@@ -47,26 +42,6 @@ class Scorer:
         # find the ancestor with the highest IC
         # break ties by choosing the node with the greatest depth
         return max(common_parents, key=lambda n: (self.hpo_network.node[n]['ic'], self.hpo_network.node[n]['depth']))
-
-    def generate_alternate_ids(self):
-        """Create a key, value store of alternate terms to canonical terms."""
-        for n in self.hpo_network.nodes(data=True):
-            n = n[0]
-            try:
-                for alt in self.hpo_network.node[n]['alt_id']:
-                    self.alt2prim[alt] = n
-            except KeyError:
-                # no alternate HPO ids for this term
-                continue
-
-    def convert_alternate_ids(self, termlist):
-        """return a list of terms with list of alternate HPO ids converted to canonical ones."""
-        return [self.alt2prim[t] if t in self.alt2prim else t for t in termlist]
-
-    def filter_and_sort_hpo_ids(self, termlist):
-        """return a sorted list of unique terms that are present in the hpo_network object"""
-        # adding sorted keeps term lists consistent with the output of itertools product
-        return sorted(list(set([t for t in termlist if t in self.hpo_network.nodes()])))
 
     def calculate_beta(self, term_a, term_b):
         """calculates the beta term in HRSS equation
@@ -190,6 +165,7 @@ class Scorer:
             ['a', 'b']
         ).unstack()
         return
+
         # if self.agg_score == 'BMA':
         #     return self.best_match_average(df)
         # elif self.agg_score == 'maximum':
