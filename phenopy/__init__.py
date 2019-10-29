@@ -32,6 +32,7 @@ def parse_input(input_file):
                     'weights': {},
                     **dict(item.split('=') for item in line[1].split(';') if line[1] != '.')
                 }
+                records.append(record)
 
 
     except (FileNotFoundError, PermissionError) as e:

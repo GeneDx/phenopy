@@ -179,7 +179,7 @@ class Scorer:
 
         # calculate weights for record_a and record_b
         weights_a = record_a['weights'] if record_a['weights'] is not None else []
-        weights_b = record_b['weights'] if record_a['weights'] is not None else []
+        weights_b = record_b['weights'] if record_b['weights'] is not None else []
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
@@ -189,7 +189,6 @@ class Scorer:
         ).set_index(
             ['a', 'b']
         ).unstack()
-        a = 1
         return
         # if self.agg_score == 'BMA':
         #     return self.best_match_average(df)
