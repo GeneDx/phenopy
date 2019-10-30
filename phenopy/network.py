@@ -45,7 +45,7 @@ def load(obo_file):
     return hpo_network
 
 
-def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotations_file=None, ages_distribution_file=None,
+def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2prim, annotations_file=None, ages_distribution_file=None,
             phenotype_disease_frequencies=None):
     """
     Cleans the HPO network.
@@ -55,6 +55,7 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotat
     :param hpo_network: `networkx.MultiDiGraph` to clean.
     :param phenotype_to_diseases: Dictionary mapping HPO terms to diseases.
     :param num_diseases_annotated: Number of diseases with HPO annotations.
+    :param alt2prim: The dict of alternate terms to canonical terms.
     :param annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
     :param ages: age distributions object
     :param phenotype_disease_frequencies: dictionary of phenotype to disease frequencies
@@ -67,7 +68,7 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotat
     custom_annos = None
     if annotations_file is not None:
         custom_annos = {}
-        for record in parse_input(annotations_file):
+        for record in parse_input(annotations_file, hpo_network, alt2prim):
             for term_id in record['terms']:
                 if term_id not in custom_annos:
                     custom_annos[term_id] = []

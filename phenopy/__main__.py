@@ -66,6 +66,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         hpo_network,
         phenotype_to_diseases,
         len(disease_records),
+        alt2prim,
         annotations_file=annotations_file,
         ages_distribution_file=ages_distribution_file,
     )

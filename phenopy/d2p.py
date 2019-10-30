@@ -49,7 +49,7 @@ def load(phenotype_annotations_file, hpo_network, alt2prim, logger=None):
 
                 phenotype_to_diseases[term_id][disease_accession]['frequency'].append(frequency_converter(row['Frequency']))
 
-                # add the phenotype to the disease in the disease_to_phenotypes dictionary
+                # add the phenotype to the disease in the disease_records dictionary
                 if disease_accession not in disease_to_phenotypes:
                     disease_to_phenotypes[disease_accession] = {'record_id': disease_accession,
                                                                 'terms': [],
