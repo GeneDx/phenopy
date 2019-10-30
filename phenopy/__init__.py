@@ -63,7 +63,7 @@ def parse_input(input_file, hpo_network, alt2prim):
                 # set weights
                 if 'age' in record:
                     record['weights']['age'] = calculate_age_weights(record['terms'], record['age'], hpo_network)
-
+                # assign new weights here ex. Sex weights (similar to the age weights).
                 records.append(record)
 
     except (FileNotFoundError, PermissionError) as e:
