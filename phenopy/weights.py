@@ -4,6 +4,26 @@ import sys
 from scipy.stats import truncnorm
 
 
+def calculate_age_weights(terms, age, hpo_network):
+    """
+    Calculates an age-based weight vector given an iterable of terms.
+    :param terms: iterable of hpo terms
+    :param age: numeric age of patient
+    :param hpo_network: HPO network
+    :return: list of weights in same order as terms
+    """
+    weights = []
+    for term_id in terms:
+        if term_id not in hpo_network.node:
+            weights.append(1.0)
+        elif 'age_dist' in hpo_network.node[term_id]:
+            weights.append(age_to_weights(hpo_network.node[term_id]['age_dist'], age))
+        else:
+            weights.append(1.0)
+
+    return weights
+
+
 def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
     """
     Model truncated normal given summary stats
@@ -27,7 +47,7 @@ def age_to_weights(age_dist, age):
     if age is None:
         return 1.0
     else:
-        return age_dist.cdf(age)
+        return age_dist.cdf(float(age))
 
 
 def make_age_distributions(phenotype_age_file, logger=None):

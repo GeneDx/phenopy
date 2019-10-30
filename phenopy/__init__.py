@@ -7,6 +7,7 @@ from contextlib import contextmanager
 
 from phenopy.config import logger
 from phenopy.util import remove_parents
+from phenopy.weights import calculate_age_weights
 
 
 @contextmanager
@@ -58,6 +59,11 @@ def parse_input(input_file, hpo_network, alt2prim):
                     'weights': {},
                     **dict(item.split('=') for item in line[1].split(';') if line[1] != '.')
                 }
+
+                # set weights
+                if 'age' in record:
+                    record['weights']['age'] = calculate_age_weights(record['terms'], record['age'], hpo_network)
+
                 records.append(record)
 
     except (FileNotFoundError, PermissionError) as e:

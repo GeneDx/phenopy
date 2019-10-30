@@ -6,10 +6,9 @@ from multiprocessing import Pool
 
 from phenopy import open_or_stdout, parse_input, generate_alternate_ids
 from phenopy.config import config, logger
-from phenopy.network import load as load_network, annotate
 from phenopy.d2p import load as load_d2p
+from phenopy.network import load as load_network, annotate
 from phenopy.score import Scorer
-from phenopy.util import remove_parents
 
 
 def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
@@ -52,11 +51,9 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         exit(1)
 
     logger.info(f'Loading HPO OBO file: {obo_file}')
-    hpo_network = load_network(obo_file, logger=logger)
+    hpo_network = load_network(obo_file)
 
     alt2prim = generate_alternate_ids(hpo_network)
-    # parse input records
-    input_records = parse_input(input_file, hpo_network, alt2prim)
 
     # load phenotypes to diseases associations
     (
@@ -72,6 +69,9 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         annotations_file=annotations_file,
         ages_distribution_file=ages_distribution_file,
     )
+
+    # parse input records
+    input_records = parse_input(input_file, hpo_network, alt2prim)
 
     # create instance the scorer class
     scorer = Scorer(hpo_network, summarization_method=summarization_method)
@@ -117,8 +117,6 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
             for s in r:
                 output_fh.write('\t'.join(s))
                 output_fh.write('\n')
-
-    return results
 
 
 def main():

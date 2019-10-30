@@ -221,11 +221,27 @@ class Scorer:
         max_b = df.max(axis=0).values
         scores = np.append(max_a, max_b)
 
-        weights_matrix = weights_a.copy()
+        weights_matrix = {}
+        for w in weights_a:
+            # init weight list if necessary
+            if w not in weights_matrix:
+                weights_matrix[w] = []
+
+            # extend weight with the values of a
+            weights_matrix[w].extend(weights_a[w])
+
+            # for columns not in b, fill in with 1s for each b row
+            if w is not weights_b:
+                weights_matrix[w].extend([1 for _ in range(max_b.shape[0])])
+
         for w in weights_b:
+            # for columns not in a, fill in with 1s for each a row
             if w not in weights_matrix:
                 weights_matrix[w] = [1 for _ in range(max_a.shape[0])]
+
+            # extend weight with the values of b
             weights_matrix[w].extend(weights_b[w])
+
         weights_df = pd.DataFrame.from_dict(weights_matrix)
         weights = weights_df.min(axis=1)
 
@@ -241,24 +257,3 @@ class Scorer:
             weights = np.ones(len(weights))
 
         return np.average(scores, weights=weights).round(4)
-
-    def calculate_age_weights(self, terms, age):
-        """
-        Calculates an age-based weight vector given an iterable of terms.
-        :param terms: iterable of hpo terms
-        :param age: numeric age of patient
-        :return: list of weights in same order as terms
-        """
-        weights = []
-        for node_id in terms:
-            if node_id not in self.hpo_network.node:
-                weights.append(1.0)
-            elif self.hpo_network.node[node_id]['weights']['age_exists']:
-                weights.append(age_to_weights(self.hpo_network.node[node_id]['weights']['age_dist'], age))
-            else:
-                weights.append(1.0)
-        return weights
-
-    def get_disease_weights(self, terms, disease_id):
-        """Lookup the disease weights for the input terms to the disease_id"""
-        return [self.hpo_network.node[node_id]['weights']['disease_frequency'][disease_id] for node_id in terms]

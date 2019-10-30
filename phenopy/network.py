@@ -3,12 +3,13 @@ import obonet
 import re
 import sys
 
-from phenopy.weights import make_age_distributions
 from phenopy import parse_input
+from phenopy.config import logger
 from phenopy.ic import calculate_information_content
+from phenopy.weights import make_age_distributions
 
 
-def load(obo_file, logger=None):
+def load(obo_file):
     """
     Load OBO file into a networkx graph.
 
@@ -45,7 +46,7 @@ def load(obo_file, logger=None):
 
 
 def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotations_file=None, ages_distribution_file=None,
-            phenotype_disease_frequencies=None, logger=None):
+            phenotype_disease_frequencies=None):
     """
     Cleans the HPO network.
 
@@ -97,13 +98,10 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, annotat
             custom_annos,
         )
         # annotate with phenotype age distribution
-        hpo_network.node[node_id]['age_dist'] = None
         hpo_network.node[node_id]['disease_weights'] = {}
 
-        if ages is not None:
-            if node_id in ages.index:
-                hpo_network.node[node_id]['weights']['age_dist'] = ages.loc[node_id]['age_dist']
-                hpo_network.node[node_id]['weights']['age_exists'] = True
+        if ages is not None and node_id in ages.index:
+            hpo_network.node[node_id]['age_dist'] = ages.loc[node_id]['age_dist']
 
         # add the disease_frequency weights as attributes to the node
         if phenotype_disease_frequencies is not None:
