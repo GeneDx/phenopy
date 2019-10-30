@@ -54,7 +54,6 @@ def load(phenotype_annotations_file, hpo_network, alt2prim, logger=None):
                     disease_to_phenotypes[disease_accession] = {'record_id': disease_accession,
                                                                 'terms': [],
                                                                 'weights': {'disease_frequency': [],
-                                                                            'disease_onset': [],
                                                                             },
                                                                 }
                 disease_to_phenotypes[disease_accession]['terms'].append(term_id)

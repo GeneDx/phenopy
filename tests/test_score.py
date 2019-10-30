@@ -110,12 +110,12 @@ class ScorerTestCase(unittest.TestCase):
         # test BMA
         score_bma = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_bma, 0.207, places=2)
-        self.scorer.agg_score = 'maximum'
+        self.scorer.summarization_method = 'maximum'
         score_max = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_max, 0.25, places=4)
 
         # test wrong method
-        self.scorer.agg_score = 'not_a_method'
+        self.scorer.summarization_method = 'not_a_method'
         score_not_method = self.scorer.score(terms_a, terms_b)
         self.assertAlmostEqual(score_not_method, 0.0, places=4)
 
@@ -125,7 +125,7 @@ class ScorerTestCase(unittest.TestCase):
         weights_a = [0.67, 1., 1., 0.4, 0.4]
         weights_b = [1., 1., 1.]
         weights = [weights_a, weights_b]
-        self.scorer.agg_score = 'BMWA'
+        self.scorer.summarization_method = 'BMWA'
         self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.score(terms_a, terms_b, weights=weights)
         self.assertAlmostEqual(score_bmwa, 0.5927, places=4)
@@ -136,7 +136,7 @@ class ScorerTestCase(unittest.TestCase):
         weights_b = [1., 1., 0.5]
 
         scorer = self.scorer
-        scorer.agg_score = 'BMWA'
+        scorer.summarization_method = 'BMWA'
 
         terms_a = scorer.convert_alternate_ids(terms_a)
         terms_b = scorer.convert_alternate_ids(terms_b)
@@ -394,7 +394,7 @@ class ScorerTestCase(unittest.TestCase):
         self.hpo_network = process(self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated, ages=ages)
 
         # create instance the scorer class
-        scorer = Scorer(self.hpo_network, agg_score='BMWA', min_score_mask=None)
+        scorer = Scorer(self.hpo_network, summarization_method='BMWA', min_score_mask=None)
 
         # select which patients to test in pairwise bmwa
         input_records = [x for x in records if x['record_id'] in ['118200', '118210']]

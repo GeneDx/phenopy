@@ -13,7 +13,7 @@ from phenopy.util import remove_parents
 
 
 def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
-          self=False, threads=1):
+          self=False, summarization_method='BMWA', threads=1):
     """
     Scores similarity of provided HPO annotated entries (see format below) against a set of HPO annotated dataset. By
     default scoring happens against diseases annotated by the HPO group. See https://hpo.jax.org/app/download/annotation.
@@ -30,6 +30,8 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     :param ages_distribution_file: Phenotypes age summary stats file containing phenotype HPO id, mean_age, and std.
      [default: None]
     :param self: Score entries in the "input_file" against itself.
+    :param summarization_method: The method used to summarize the HRSS matrix. Supported Values are best match average
+    (BMA), best match weighted average (BMWA), and maximum (maximum). [default: BMWA]
     :param threads: Number of parallel processes to use. [default: 1]
     """
 
@@ -72,7 +74,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     )
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network)
+    scorer = Scorer(hpo_network, summarization_method=summarization_method)
 
     if self:
         score_records = input_records

@@ -7,10 +7,10 @@ from phenopy.weights import age_to_weights
 
 
 class Scorer:
-    def __init__(self, hpo_network, agg_score='BMA', min_score_mask=0.05):
+    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05):
         self.hpo_network = hpo_network
         self.scores_cache = {}
-        self.agg_score = agg_score
+        self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
 
     def find_lca(self, term_a, term_b):
@@ -164,24 +164,14 @@ class Scorer:
         ).set_index(
             ['a', 'b']
         ).unstack()
-        return
 
-        # if self.agg_score == 'BMA':
-        #     return self.best_match_average(df)
-        # elif self.agg_score == 'maximum':
-        #     return self.maximum(df)
-        # elif self.agg_score == 'BMWA':
-        #     # age weights scoring for scrore product
-        #     if len(weights) == 2:
-        #         return self.bmwa(df, weights_a=weights_a, weights_b=weights_b)
-        #     # disease weights scoring for score
-        #     elif len(weights) == 1:
-        #         return self.bmwa(df, weights_a=np.ones(df.shape[0]), weights_b=weights_b)
-        #     else:
-        #         sys.stderr.write('weights cannot be an empty list or have more than two elements.')
-        #         sys.exit(1)
-        # else:
-        #     return 0.0
+        if self.summarization_method == 'maximum':
+            return self.maximum(df)
+        elif self.summarization_method == 'BMWA':
+            # age weights scoring for scrore, but we only have disease_weights
+            return self.bmwa(df, weights_a=weights_a, weights_b=weights_b)
+        else:
+            return self.best_match_average(df)
 
     def score_records(self, a_records, b_records, record_pairs, thread_index=0, threads=1, use_weights=False):
         """
@@ -227,11 +217,17 @@ class Scorer:
 
     def bmwa(self, df, weights_a, weights_b):
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
-        max1 = df.max(axis=1).values
-        max0 = df.max(axis=0).values
+        max_a = df.max(axis=1).values
+        max_b = df.max(axis=0).values
+        scores = np.append(max_a, max_b)
 
-        scores = np.append(max1, max0)
-        weights = np.array(np.append(weights_a, weights_b))
+        weights_matrix = weights_a.copy()
+        for w in weights_b:
+            if w not in weights_matrix:
+                weights_matrix[w] = [1 for _ in range(max_a.shape[0])]
+            weights_matrix[w].extend(weights_b[w])
+        weights_df = pd.DataFrame.from_dict(weights_matrix)
+        weights = weights_df.min(axis=1)
 
         # mask good matches from weighting
         # mask threshold based on >75% of pairwise scores of all hpo terms
