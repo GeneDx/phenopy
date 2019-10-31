@@ -8,18 +8,18 @@ import pandas as pd
 from itertools import product
 from phenopy.weights import age_to_weights
 
+
 class Scorer:
-    def __init__(self, hpo_network, agg_score='BMA', complete_output=False):
+
+    def __init__(self, hpo_network, agg_score='BMA', complete_output=False,min_score_mask=0.05):
+
         self.hpo_network = hpo_network
-
         self.scores_cache = {}
-
         self.alt2prim = {}
         self.generate_alternate_ids()
         self.agg_score = agg_score
         self.compelete_output = complete_output
-
-
+        self.min_score_mask = min_score_mask
 
     def find_lca(self, term_a, term_b):
         """
@@ -66,6 +66,11 @@ class Scorer:
         """return a list of terms with list of alternate HPO ids converted to canonical ones."""
         return [self.alt2prim[t] if t in self.alt2prim else t for t in termlist]
 
+    def filter_and_sort_hpo_ids(self, termlist):
+        """return a sorted list of unique terms that are present in the hpo_network object"""
+        # adding sorted keeps term lists consistent with the output of itertools product
+        return sorted(list(set([t for t in termlist if t in self.hpo_network.nodes()])))
+
     def calculate_beta(self, term_a, term_b):
         """calculates the beta term in HRSS equation
 
@@ -79,9 +84,11 @@ class Scorer:
             if self.hpo_network.in_edges(term):
                 # children terms generator
                 children = nx.ancestors(self.hpo_network, term)
-                # append the max IC leaf
-                mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
-                    p) >= 1 and self.hpo_network.in_degree(p) == 0}))
+                # append the max IC leaf (choose the one with the max depth)
+                leaves = {p for p in children if self.hpo_network.out_degree(
+                    p) >= 1 and self.hpo_network.in_degree(p) == 0}
+                mil = max(leaves, key=lambda n: (self.hpo_network.node[n]['ic'], self.hpo_network.node[n]['depth']))
+                mil_ic.append(self.hpo_network.node[mil]['ic'])
             # the node is a leaf
             else:
                 mil_ic.append(self.hpo_network.node[term]['ic'])
@@ -167,13 +174,6 @@ class Scorer:
         :param weights: List (length=2) of weights, one for each dimension of score matrix.
         :return: `float` (comparison score), if atomize is True return `list` of score, alpha, beta, gamma
         """
-        # convert alternate HPO ids to canonical ones
-        terms_a = set(self.convert_alternate_ids(terms_a))
-        terms_b = set(self.convert_alternate_ids(terms_b))
-
-        # filter out hpo terms not in the network and unique them
-        terms_a = list(filter(lambda x: x in self.hpo_network.node, terms_a))
-        terms_b = list(filter(lambda x: x in self.hpo_network.node, terms_b))
 
         # if either set is empty return 0.0
         if not terms_a or not terms_b:
@@ -209,14 +209,23 @@ class Scorer:
                 return self.maximum(df_score)
 
             elif self.agg_score == 'BMWA':
-                bmwa_score, override_weights = self.bmwa(df_score, weights_a=weights[0], weights_b=weights[1])
-                bmwa_alpha, override_weights = self.bmwa(df_alpha, override_weights=override_weights)
-                bmwa_beta, override_weights = self.bmwa(df_beta, override_weights=override_weights)
-                bmwa_gamma, override_weights = self.bmwa(df_gamma, override_weights=override_weights)
+                if len(weights) == 2:
+                    bmwa_score, override_weights = self.bmwa(df_score, weights_a=weights[0], weights_b=weights[1])
+                    bmwa_alpha, override_weights = self.bmwa(df_alpha, override_weights=override_weights)
+                    bmwa_beta, override_weights = self.bmwa(df_beta, override_weights=override_weights)
+                    bmwa_gamma, override_weights = self.bmwa(df_gamma, override_weights=override_weights)
 
-                return bmwa_score, bmwa_alpha, bmwa_beta, bmwa_gamma
+                    return bmwa_score, bmwa_alpha, bmwa_beta, bmwa_gamma
+                elif len(weights) == 1:
+                    bmwa_score, override_weights = self.bmwa(df_score, weights_a=np.ones(df_score.shape[0]), weights_b=weights[0])
+                    bmwa_alpha, override_weights = self.bmwa(df_alpha, override_weights=override_weights)
+                    bmwa_beta, override_weights = self.bmwa(df_beta, override_weights=override_weights)
+                    bmwa_gamma, override_weights = self.bmwa(df_gamma, override_weights=override_weights)
+                    return bmwa_score, bmwa_alpha, bmwa_beta, bmwa_gamma
             else:
-                return 0.0
+                sys.stderr.write('weights cannot be an empty list or have more than two elements.')
+                sys.exit(1)
+
         else:
 
             if self.agg_score == 'BMA':
@@ -226,18 +235,21 @@ class Scorer:
                 return self.maximum(df_score)
 
             elif self.agg_score == 'BMWA':
-                bmwa_score = self.bmwa(df_score, weights_a=weights[0], weights_b=weights[1])
-                return bmwa_score
-            else:
-                return 0.0
+                # age weights scoring for scrore product
+                if len(weights) == 2:
+                    return self.bmwa(df_score, weights_a=weights[0], weights_b=weights[1])
+                    # disease weights scoring for score
+                elif len(weights) == 1:
+                    return self.bmwa(df_score, weights_a=np.ones(df_score.shape[0]), weights_b=weights[0])
+                else:
+                    sys.stderr.write('weights cannot be an empty list or have more than two elements.')
+                    sys.exit(1)
 
     def score_pairs(self, records, lock, thread=0, number_threads=1, stdout=True):
         """
         Score list pair of records.
 
-        :param records: Records dictionary.
-        :param record_pairs: List of record pairs to score.
-        :param weight_method: (age) List of methods by which to adjust score.
+        :param records: list of dictionaries.
         :param thread: Thread index for multiprocessing.
         :param number_threads: Total number of threads for multiprocessing.
         :param stdout:(True,False) write results to standard out
@@ -249,6 +261,10 @@ class Scorer:
         record_pairs = product([x['sample'] for x in records], repeat=2)
 
         record_terms = {x['sample']: x['terms'] for x in records}
+        # clean the records dictionary
+        for record_id, phenotypes in record_terms.items():
+            record_terms[record_id] = self.convert_alternate_ids(phenotypes)
+            record_terms[record_id] = self.filter_and_sort_hpo_ids(phenotypes)
 
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
 
@@ -286,7 +302,7 @@ class Scorer:
 
         return results
 
-    def score_records(self, records, record_pairs, lock, thread=0, number_threads=1, stdout=True):
+    def score_records(self, records, record_pairs, lock, thread=0, number_threads=1, stdout=True, use_disease_weights=None):
         """
         Score list pair of records.
         :param records: Records dictionary.
@@ -299,8 +315,11 @@ class Scorer:
         # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         results = []
         for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
-            score = self.score(records[record_a],
-                               records[record_b])
+            if use_disease_weights is True:
+                # disease_id is record_b
+                score = self.score(records[record_a], records[record_b], weights=[self.get_disease_weights(records[record_b], record_b)])
+            else:
+                score = self.score(records[record_a], records[record_b])
 
             if stdout:
                 if self.compelete_output is True:
@@ -334,7 +353,8 @@ class Scorer:
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
-    def bmwa(self, df, weights_a=None, weights_b=None, min_score_mask=0.05, override_weights=None):
+    def bmwa(self, df, weights_a=None, weights_b=None, override_weights=None):
+
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
@@ -344,13 +364,12 @@ class Scorer:
             weights = override_weights
         else:
             weights = np.array(np.append(weights_a, weights_b))
-
             # mask good matches from weighting
             # mask threshold based on >75% of pairwise scores of all hpo terms
             # TODO: expose min_score cutoff value to be set in config
-            if min_score_mask is not None:
+            if self.min_score_mask is not None:
                 # replace weights of hrss scores > min_score_mask with 1.0
-                masked_weights = np.where(scores > min_score_mask, 1.0, weights)
+                masked_weights = np.where(scores > self.min_score_mask, 1.0, weights)
                 weights = masked_weights
 
         # if weights add up to zero, calculate unweighted average
@@ -378,3 +397,7 @@ class Scorer:
             else:
                 weights.append(1.0)
         return weights
+
+    def get_disease_weights(self, terms, disease_id):
+        """Lookup the disease weights for the input terms to the disease_id"""
+        return [self.hpo_network.node[node_id]['weights']['disease_frequency'][disease_id] for node_id in terms]

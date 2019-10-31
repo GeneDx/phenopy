@@ -80,6 +80,8 @@ config = configparser.ConfigParser()
 
 # create config directory if it doesn't exist
 config_directory = os.path.join(os.environ.get('HOME'), f'.{__project__}')
+project_directory = os.path.abspath(__project__)
+project_data_dir = os.path.join(project_directory, 'data')
 try:
     os.makedirs(config_directory)
 except FileExistsError:
@@ -112,6 +114,13 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
                 'phenotype.hpoa',
             ),
         }
+    config['age'] = {
+        'open_access_phenotype_age': os.path.join(
+            project_data_dir,
+            'oa_phenotype_age.tsv',
+        ),
+
+    }
 
     with open(os.path.join(config_directory, 'phenopy.ini'), 'w') as configfile:
         logger.info('writing config file to: %s '%config_directory)

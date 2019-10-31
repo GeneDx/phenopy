@@ -26,7 +26,7 @@ def load(obo_file, logger=None):
         exit(1)
 
 
-def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_annotations_file=None, ages=None, logger=None):
+def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_annotations_file=None, ages=None, phenotype_disease_frequencies=None, logger=None):
     """
     Cleans the HPO network.
 
@@ -37,6 +37,7 @@ def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_a
     :param num_diseases_annotated: Number of diseases with HPO annotations.
     :param custom_annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
     :param ages: age distributions object
+    :param phenotype_disease_frequencies: dictionary of phenotype to disease frequencies
     :param logger: Python `logging` logger instance.
     :return: `networkx.MultiDiGraph`
     """
@@ -91,12 +92,19 @@ def process(hpo_network, phenotype_to_diseases, num_diseases_annotated, custom_a
         hpo_network.node[node_id]['weights'] = {
             'age_dist': None,
             'age_exists': False,
-            'default_weight': 1.0
+            'default_weight': 1.0,
+            'disease_frequency': {},
         }
         if ages is not None:
             if node_id in ages.index:
                 hpo_network.node[node_id]['weights']['age_dist'] = ages.loc[node_id]['age_dist']
                 hpo_network.node[node_id]['weights']['age_exists'] = True
+
+        # add the disease_frequency weights as attributes to the node
+        if phenotype_disease_frequencies is not None:
+            if node_id in phenotype_disease_frequencies:
+                for disease_id, frequency in phenotype_disease_frequencies[node_id].items():
+                    hpo_network.node[node_id]['weights']['disease_frequency'][disease_id] = frequency
 
         # annotate with depth value
         # hard-coding origin node for now
