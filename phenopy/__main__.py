@@ -50,7 +50,12 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         exit(1)
 
     logger.info(f'Loading HPO OBO file: {obo_file}')
-    hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(obo_file, disease_to_phenotype_file)
+    hpo_network, alt2prim, disease_records = \
+        generate_annotated_hpo_network(obo_file,
+                                       disease_to_phenotype_file,
+                                       annotations_file=annotations_file,
+                                       ages_distribution_file=ages_distribution_file
+                                       )
 
     # parse input records
     input_records = parse_input(input_file, hpo_network, alt2prim)
