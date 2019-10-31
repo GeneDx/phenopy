@@ -127,7 +127,7 @@ class ScorerTestCase(unittest.TestCase):
         # test wrong method
         self.scorer.agg_score = 'not_a_method'
         score_not_method = self.scorer.score(terms_a, terms_b)
-        self.assertAlmostEqual(score_not_method, 0.0, places=4)
+        self.assertEqual(score_not_method, None)
 
         # test BMWA with age weights
         terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322', 'HP:0012433'] # ATAX, DD,  HYP, SS, AbnSocBeh
@@ -201,6 +201,9 @@ class ScorerTestCase(unittest.TestCase):
         # test complete output
         self.scorer = Scorer(self.hpo_network, agg_score='BMA', complete_output=True)
 
+        terms_a = ['HP:0012433', 'HP:0012434']
+        terms_b = ['HP:0001249', 'HP:0012758']
+
         # if no terms in one set, return 0.0
         score0 = self.scorer.score([], terms_b)
         self.assertEqual(score0, (0.0, 0.0, 0.0, 0.0))
@@ -234,7 +237,7 @@ class ScorerTestCase(unittest.TestCase):
 
         self.scorer.agg_score = 'not_a_method'
         score_max = self.scorer.score(terms_a, terms_b)
-        self.assertAlmostEqual(score_max, 0.0, places=4)
+        self.assertAlmostEqual(score_max, None, places=4)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -366,7 +369,8 @@ class ScorerTestCase(unittest.TestCase):
         # test complete output / compute pairwise best match weighted average
 
         self.scorer = Scorer(self.hpo_network, agg_score='BMWA', complete_output=True)
-        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b, min_score_mask=None)
+        self.scorer.min_score_mask=None
+        score_bmwa = self.scorer.bmwa(df, weights_a, weights_b)
 
         self.assertEqual(len(score_bmwa), 2)
 
