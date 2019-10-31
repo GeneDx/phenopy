@@ -4,10 +4,10 @@ import itertools
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Pool
 
-from phenopy import open_or_stdout, parse_input
-from phenopy import generate_annotated_hpo_network
+from phenopy import open_or_stdout, generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.score import Scorer
+from phenopy.util import parse_input
 
 
 def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,

@@ -3,10 +3,10 @@ import obonet
 import re
 import sys
 
-from phenopy import parse_input
 from phenopy.config import logger
 from phenopy.ic import calculate_information_content
 from phenopy.weights import make_age_distributions
+from phenopy.util import parse_input
 
 
 def load(obo_file):
