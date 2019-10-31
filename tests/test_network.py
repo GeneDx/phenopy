@@ -1,30 +1,26 @@
 import os
 import unittest
 
-from phenopy import generate_alternate_ids
 from phenopy.config import config
 from phenopy.d2p import load as load_d2p
 from phenopy.network import load as load_network
 from phenopy.network import annotate
+from phenopy.util import generate_alternate_ids
 
 
 class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
         config.set('hpo', 'data_directory', os.path.join(cls.parent_dir, 'data'))
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
 
     def test_load_network(self):
         hpo_network = load_network(self.obo_file)
-
-        # this is a cleaned version of the network, so it is not the same as test_obo.py
         self.assertEqual(len(hpo_network), 28)
 
     def test_annotate_network(self):
         hpo_network = load_network(self.obo_file)
-
         alt2prim = generate_alternate_ids(hpo_network)
 
         # load phenotypes to diseases associations
