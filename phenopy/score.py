@@ -194,9 +194,9 @@ class Scorer:
             df_alpha = pd.DataFrame([(x['term1'], x['term2'], x['alpha']) for x in hrss],
                                     columns=['a', 'b', 'alpha']).set_index(['a', 'b']).unstack()
             df_beta = pd.DataFrame([(x['term1'], x['term2'], x['beta']) for x in hrss],
-                                    columns=['a', 'b', 'alpha']).set_index(['a', 'b']).unstack()
+                                    columns=['a', 'b', 'beta']).set_index(['a', 'b']).unstack()
             df_gamma = pd.DataFrame([(x['term1'], x['term2'], x['gamma']) for x in hrss],
-                                    columns=['a', 'b', 'alpha']).set_index(['a', 'b']).unstack()
+                                    columns=['a', 'b', 'gamma']).set_index(['a', 'b']).unstack()
 
             if self.agg_score == 'BMA':
                     bma_score = self.best_match_average(df_score)
