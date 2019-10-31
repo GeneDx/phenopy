@@ -13,8 +13,10 @@ from phenopy.util import remove_parents, read_records_file
 from phenopy.weights import make_age_distributions
 
 
-def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None, disease_to_phenotype_file=None, threads=1,
+
+def score(query_hpo_file=None, records_file=None, query_name='SAMPLE', obo_file=None, disease_to_phenotype_file=None, threads=1,
           agg_score='BMA', no_parents=False, complete_output=False, custom_annotations_file=None, output_file=None):
+
     """
     Scores a case HPO terms against all diseases associated HPO.
 
@@ -55,12 +57,6 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             )
             exit(1)
 
-    try:
-        with open(query_hpo_file, 'r') as case_fh:
-            case_hpo = case_fh.read().splitlines()
-    except (FileNotFoundError, PermissionError) as e:
-        logger.critical(e)
-        exit(1)
 
     # load phenotypes to diseases associations
     disease_to_phenotypes, phenotype_to_diseases, phenotype_disease_frequencies = load_d2p(disease_to_phenotype_file, logger=logger)
@@ -77,19 +73,27 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
     manager = Manager()
     lock = manager.Lock()
 
-    if no_parents is True:
-        case_hpo = remove_parents(case_hpo, hpo_network)
 
     # convert and filter disease to phenotypes records terms
     for record_id, phenotypes in disease_to_phenotypes.items():
         disease_to_phenotypes[record_id] = scorer.convert_alternate_ids(phenotypes)
         disease_to_phenotypes[record_id] = scorer.filter_and_sort_hpo_ids(phenotypes)
 
-    # convert and filter the query hpo ids
-    case_hpo = scorer.convert_alternate_ids(case_hpo)
-    case_hpo = scorer.filter_and_sort_hpo_ids(case_hpo)
+    if records_file and query_hpo_file:
+        try:
+            with open(query_hpo_file, 'r') as case_fh:
+                case_hpo = case_fh.read().splitlines()
+        except (FileNotFoundError, PermissionError) as e:
+            logger.critical(e)
+            exit(1)
 
-    if records_file:
+        if no_parents is True:
+            case_hpo = remove_parents(case_hpo, hpo_network)
+
+        # convert and filter the query hpo ids
+        case_hpo = scorer.convert_alternate_ids(case_hpo)
+        case_hpo = scorer.filter_and_sort_hpo_ids(case_hpo)
+
         # score and output case hpo terms against all diseases associated set of hpo terms
         logger.info(
             f'Scoring HPO terms from file: {query_hpo_file} against entities in: {records_file}')
@@ -120,7 +124,49 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             logger.info(f'Scoring completed')
             logger.info(f'Writing results to file: {output_file}')
 
-    else:
+    elif records_file and query_hpo_file is None:
+        # score and output case hpo terms against all diseases associated set of hpo terms
+        logger.info(
+            f'Scoring records from file: {records_file} against against all diseases defined by HPO')
+
+        # set min_score_mask
+        scorer.min_score_mask = None
+
+        # build the records dictionary
+        records_list = read_records_file(records_file, no_parents, hpo_network, logger=logger)
+        records = {item['sample']: item['terms'] for item in records_list}
+        # clean the records dictionary
+        for record_id, phenotypes in records.items():
+            records[record_id] = scorer.convert_alternate_ids(phenotypes)
+            records[record_id] = scorer.filter_and_sort_hpo_ids(phenotypes)
+        if not output_file:
+            sys.stdout.write('\t'.join(['#query', 'omim_id', 'score']))
+            sys.stdout.write('\n')
+            for record_id, phenotypes in records.items():
+                # include the case - to - itself
+                disease_to_phenotypes[record_id] = phenotypes
+                # arbitrarily set the query sample as a custom disease and set weights to 1.0 for self-self scoring.
+                for hpo_id in phenotypes:
+                    hpo_network.node[hpo_id]['weights']['disease_frequency'][record_id] = 1.0
+                # iterate over each cross-product and score the pair of records
+                with Pool(threads) as p:
+                    p.starmap(scorer.score_records, [(disease_to_phenotypes, [
+                        (record_id, disease_id) for disease_id in disease_to_phenotypes], lock, i, threads, True, True) for i in range(threads)])
+                # remove record from disease to phenotypes
+                del disease_to_phenotypes[record_id]
+
+        else:
+            logger.critical(f'Outputting to file is not implemented for score records file')
+            exit(1)
+
+    elif query_hpo_file and records_file is None:
+        try:
+            with open(query_hpo_file, 'r') as case_fh:
+                case_hpo = case_fh.read().splitlines()
+        except (FileNotFoundError, PermissionError) as e:
+            logger.critical(e)
+            exit(1)
+
         # score and output case hpo terms against all disease associated set of hpo terms
         logger.info(f'Scoring case HPO terms from file: {query_hpo_file}')
 
@@ -151,6 +197,10 @@ def score(query_hpo_file, records_file=None, query_name='SAMPLE', obo_file=None,
             scored_results_df.to_csv(output_file, sep='\t', index=False)
             logger.info(f'Scoring completed')
             logger.info(f'Writing results to file: {output_file}')
+    else:
+        logger.critical(f'No input file specified')
+
+        exit(1)
 
 
 def score_product(records_file, obo_file=None, disease_to_phenotype_file=None, pheno_ages_file=None,
