@@ -4,10 +4,9 @@ import itertools
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Pool
 
-from phenopy import open_or_stdout, parse_input, generate_alternate_ids
+from phenopy import open_or_stdout, parse_input
+from phenopy import generate_annotated_hpo_network
 from phenopy.config import config, logger
-from phenopy.d2p import load as load_d2p
-from phenopy.network import load as load_network, annotate
 from phenopy.score import Scorer
 
 
@@ -51,25 +50,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         exit(1)
 
     logger.info(f'Loading HPO OBO file: {obo_file}')
-    hpo_network = load_network(obo_file)
-
-    alt2prim = generate_alternate_ids(hpo_network)
-
-    # load phenotypes to diseases associations
-    (
-        disease_records,
-        phenotype_to_diseases,
-    ) = load_d2p(disease_to_phenotype_file, hpo_network, alt2prim)
-
-    # load hpo network
-    hpo_network = annotate(
-        hpo_network,
-        phenotype_to_diseases,
-        len(disease_records),
-        alt2prim,
-        annotations_file=annotations_file,
-        ages_distribution_file=ages_distribution_file,
-    )
+    hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(obo_file, disease_to_phenotype_file)
 
     # parse input records
     input_records = parse_input(input_file, hpo_network, alt2prim)
