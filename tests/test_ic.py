@@ -3,7 +3,6 @@ import os
 import unittest
 
 from phenopy import generate_alternate_ids
-from phenopy.config import config
 from phenopy.ic import calculate_information_content
 from phenopy.network import annotate
 from phenopy.network import load as load_network
@@ -18,7 +17,6 @@ class ICTestCase(unittest.TestCase):
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
 
         # load and process the network
-        config.set('hpo', 'data_directory', os.path.join(cls.parent_dir, 'data'))
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         cls.hpo_network = load_network(cls.obo_file)
         cls.alt2prim = generate_alternate_ids(cls.hpo_network)

@@ -1,5 +1,6 @@
 import fire
 import itertools
+import sys
 
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Pool
@@ -7,7 +8,7 @@ from multiprocessing import Pool
 from phenopy import open_or_stdout, generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.score import Scorer
-from phenopy.util import parse_input
+from phenopy.util import parse_input, half_product
 
 
 def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
@@ -61,18 +62,19 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     input_records = parse_input(input_file, hpo_network, alt2prim)
 
     # create instance the scorer class
-    scorer = Scorer(hpo_network, summarization_method=summarization_method)
+    try:
+        scorer = Scorer(hpo_network, summarization_method=summarization_method)
+    except ValueError as e:
+        logger.critical(f'Failed to initialize scoring class: {e}')
+        sys.exit(1)
 
     if self:
         score_records = input_records
 
-        scoring_pairs = itertools.combinations(
-            range(len(input_records)),
-            2,
-        )
+        scoring_pairs = list(half_product(len(score_records), len(score_records)))
     else:
         if records_file:
-            score_records = parse_input(records_file)
+            score_records = parse_input(records_file, hpo_network, alt2prim)
         else:
             score_records = disease_records
 
@@ -92,7 +94,6 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
                     scoring_pairs,  # pairs
                     i,  # thread_index
                     threads,  # threads
-                    False,  # use weights
                 ) for i in range(threads)
             ]
         )

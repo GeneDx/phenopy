@@ -3,13 +3,15 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from phenopy.weights import age_to_weights
+from functools import lru_cache
+from phenopy.weights import calculate_age_weights
 
 
 class Scorer:
     def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05):
         self.hpo_network = hpo_network
-        self.scores_cache = {}
+        if summarization_method not in ['BMA', 'BMWA', 'maximum']:
+            raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
         self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
 
@@ -101,20 +103,15 @@ class Scorer:
 
         return a_to_lca + b_to_lca
 
-    def score_hpo_pair_hrss(self, terms):
+    @lru_cache(maxsize=72000000)
+    def score_hpo_pair_hrss(self, term_a, term_b):
         """
         Scores the comparison of a pair of terms, using Hybrid Relative Specificity Similarity (HRSS) algorithm.
 
-        :param terms: HPO terms A and B.
+        :param term_a: HPO term A
+        :param term_b: HPO term B
         :return: `float` (term pair comparison score)
         """
-        term_a, term_b = terms
-
-        if f'{term_a}-{term_b}' in self.scores_cache:
-            return self.scores_cache[f'{term_a}-{term_b}']
-
-        elif f'{term_b}-{term_a}' in self.scores_cache:
-            return self.scores_cache[f'{term_b}-{term_a}']
 
         # calculate beta_ic
         beta_ic = self.calculate_beta(term_a, term_b)
@@ -132,19 +129,18 @@ class Scorer:
         ic = (alpha_ic / float(alpha_ic + beta_ic))
         pair_score = (1.0 / float(1.0 + gamma)) * ic
 
-        # cache this pair score
-        self.scores_cache[f'{term_a}-{term_b}'] = pair_score
-
         return pair_score
 
     def score(self, record_a, record_b):
         """
         Scores the comparison of terms in list A to terms in list B.
 
-        :param terms_a: List of HPO terms A.
-        :param terms_b: List of HPO terms B.
+        :param record_a: record A.
+        :param record_b: record B.
         :return: `float` (comparison score)
         """
+        if self.summarization_method not in ['BMA', 'BMWA', 'maximum']:
+            raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
 
         # if either set is empty return 0.0
         terms_a = record_a['terms']
@@ -153,12 +149,21 @@ class Scorer:
             return 0.0
 
         # calculate weights for record_a and record_b
-        weights_a = record_a['weights'] if record_a['weights'] is not None else []
-        weights_b = record_b['weights'] if record_b['weights'] is not None else []
+        weights_a = record_a['weights'].copy() if record_a['weights'] is not None else []
+        weights_b = record_b['weights'].copy() if record_b['weights'] is not None else []
+
+        # set weights
+        # if we have age of record_a use it to set age weights for record_b
+        if 'age' in record_a:
+            weights_b['age'] = calculate_age_weights(record_b['terms'], record_a['age'], self.hpo_network)
+
+        # if we have age of record_b use it to set age weights for record_a
+        if 'age' in record_b:
+            weights_a['age'] = calculate_age_weights(record_a['terms'], record_b['age'], self.hpo_network)
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
-            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair))
+            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair[0], pair[1]))
              for pair in term_pairs],
             columns=['a', 'b', 'score']
         ).set_index(
@@ -167,13 +172,12 @@ class Scorer:
 
         if self.summarization_method == 'maximum':
             return self.maximum(df)
-        elif self.summarization_method == 'BMWA':
-            # age weights scoring for scrore, but we only have disease_weights
-            return self.bmwa(df, weights_a=weights_a, weights_b=weights_b)
+        elif self.summarization_method == 'BMWA' and any([weights_a, weights_b]):
+            return self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
         else:
             return self.best_match_average(df)
 
-    def score_records(self, a_records, b_records, record_pairs, thread_index=0, threads=1, use_weights=False):
+    def score_records(self, a_records, b_records, record_pairs, thread_index=0, threads=1):
         """
         Score list pair of records.
         :param a_records: Input records dictionary.
@@ -181,15 +185,10 @@ class Scorer:
         :param record_pairs: List of record pairs to score.
         :param thread_index: Thread index for multiprocessing.
         :param threads: Total number of threads for multiprocessing.
-        :param use_weights: Use disease weights.
         """
         results = []
         # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         for record_a, record_b in itertools.islice(record_pairs, thread_index, None, threads):
-            # set weights if needed
-            weights = None
-            # if use_weights is True:
-            #     weights = [self.get_disease_weights(b_records[record_b]['terms'], b_records[record_b]['record_id'])]
 
             score = self.score(
                 a_records[record_a],
@@ -215,7 +214,7 @@ class Scorer:
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
-    def bmwa(self, df, weights_a, weights_b):
+    def best_match_weighted_average(self, df, weights_a, weights_b):
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
         max_a = df.max(axis=1).values
         max_b = df.max(axis=0).values
@@ -231,7 +230,7 @@ class Scorer:
             weights_matrix[w].extend(weights_a[w])
 
             # for columns not in b, fill in with 1s for each b row
-            if w is not weights_b:
+            if w not in weights_b:
                 weights_matrix[w].extend([1 for _ in range(max_b.shape[0])])
 
         for w in weights_b:

@@ -4,7 +4,13 @@ import networkx as nx
 import pandas as pd
 
 from phenopy.config import logger
-from phenopy.weights import calculate_age_weights
+
+
+def half_product(num_rows, num_columns):
+    """yield combinations and the diagonal"""
+    for m in range(0, num_rows):
+        for n in range(m, num_columns):
+            yield (m, n)
 
 
 def export_phenotype_hpoa_with_no_parents(phenotype_hpoa_file, phenotype_hpoa_no_parents_file, hpo_network, logger=None):
@@ -189,9 +195,6 @@ def parse_input(input_file, hpo_network, alt2prim):
                     **dict(item.split('=') for item in line[1].split(';') if line[1] != '.')
                 }
 
-                # set weights
-                if 'age' in record:
-                    record['weights']['age'] = calculate_age_weights(record['terms'], record['age'], hpo_network)
                 # assign new weights here ex. Sex weights (similar to the age weights).
                 records.append(record)
 
