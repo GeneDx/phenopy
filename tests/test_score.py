@@ -143,7 +143,6 @@ class ScorerTestCase(unittest.TestCase):
             'weights': {'age': [1., 1., 0.5]},
         })
 
-
         scorer = self.scorer
         scorer.summarization_method = 'BMWA'
 
@@ -153,6 +152,7 @@ class ScorerTestCase(unittest.TestCase):
 
         # test with one weight array
         scorer.min_score_mask = None
+        record_a['weights'].pop('age', None)
         score_bwma_one_weights = scorer.score(record_a, record_b)
         self.assertEqual(score_bwma_one_weights, 0.6218)
 
