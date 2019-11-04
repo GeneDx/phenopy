@@ -42,7 +42,7 @@ class ICTestCase(unittest.TestCase):
 
     def test_ic_custom(self):
         """Calculate the information content of a phenotype when multiple annotations are present"""
-        custom_annotation_file = os.path.join(self.parent_dir, 'data/test.score-product.txt')
+        custom_annotation_file = os.path.join(self.parent_dir, 'data/test.score-long.txt')
         hpo_network = load_network(self.obo_file)
         hpo_network = annotate(hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated, self.alt2prim,
                               annotations_file=custom_annotation_file)

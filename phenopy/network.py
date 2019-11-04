@@ -56,7 +56,7 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2pri
     :param phenotype_to_diseases: Dictionary mapping HPO terms to diseases.
     :param num_diseases_annotated: Number of diseases with HPO annotations.
     :param alt2prim: The dict of alternate terms to canonical terms.
-    :param annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-product.txt
+    :param annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-long.txt
     :param ages: age distributions object
     :param phenotype_disease_frequencies: dictionary of phenotype to disease frequencies
     :param logger: Python `logging` logger instance.

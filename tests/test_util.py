@@ -31,7 +31,7 @@ class UtilTestCase(unittest.TestCase):
                 'terms': 'HP:0001249|HP:0001263|HP:0001290'.split('|')
             }
         ]
-        records_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/test.score-product-age.txt')
+        records_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/test.score-short.txt')
         records = read_records_file(records_path, no_parents=False)
         self.assertEqual(records,records_truth)
 

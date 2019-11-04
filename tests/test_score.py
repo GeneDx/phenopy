@@ -201,7 +201,7 @@ class ScorerTestCase(unittest.TestCase):
 
     def test_score_self(self):
         # read in records
-        records = parse_input(os.path.join(self.parent_dir, 'data/test.score-product.txt'),
+        records = parse_input(os.path.join(self.parent_dir, 'data/test.score-long.txt'),
                               self.hpo_network,
                               self.alt2prim
                               )
@@ -348,7 +348,7 @@ class ScorerTestCase(unittest.TestCase):
         self.hpo_network = annotate(self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated,
                                     self.alt2prim, ages_distribution_file=self.ages_distribution_file)
 
-        records = parse_input(os.path.join(self.parent_dir, 'data/test.score-product-age.txt'), self.hpo_network,
+        records = parse_input(os.path.join(self.parent_dir, 'data/test.score-short.txt'), self.hpo_network,
                               self.alt2prim)
 
         # create instance the scorer class
