@@ -2,18 +2,30 @@ import pandas as pd
 
 import os
 import unittest
+
+from phenopy import generate_annotated_hpo_network
 from phenopy.config import logger
+from phenopy.weights import get_truncated_normal, hpo_age_to_weight, make_age_distributions
 
-from phenopy.weights import get_truncated_normal, age_to_weights, make_age_distributions
 
+class WeightsTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # parent dir
+        cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
 
-class UtilTestCase(unittest.TestCase):
+        # load and process the network
+        cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
+        cls.disease_to_phenotype_file = os.path.join(cls.parent_dir, 'data/phenotype.hpoa')
+        cls.ages_distribution_file = os.path.join(cls.parent_dir, 'data/phenotype_age.tsv')
+        cls.hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(cls.obo_file,
+                                                         cls.disease_to_phenotype_file,
+                                                         ages_distribution_file=cls.ages_distribution_file
+                                                         )
 
     def test_age_weights(self):
-        self.assertEqual(age_to_weights(get_truncated_normal(6.0, 1.0, 0.0, 6.0), 9.0), 1.0)
-        self.assertEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 9.0), 1.0)
-        self.assertEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 9.0), 1.0)
-        self.assertAlmostEqual(age_to_weights(get_truncated_normal(9.0, 1.0, 0.0, 9.0), 8.0), 0.317, 2)
+        self.assertEqual(hpo_age_to_weight(self.hpo_network, 'HP:0001251', 9.0), 1.0)
+        self.assertAlmostEqual(hpo_age_to_weight(self.hpo_network, 'HP:0001251', 5.0), 0.726, 2)
 
     def test_make_age_distributions(self):
         with self.assertRaises(SystemExit) as se:
