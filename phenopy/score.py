@@ -44,7 +44,7 @@ class Scorer:
         # lca node
         # find the ancestor with the highest IC
         # break ties by choosing the node with the greatest depth
-        return max(common_parents, key=lambda n: (self.hpo_network.node[n]['ic'], self.hpo_network.node[n]['depth']))
+        return max(common_parents, key=lambda n: (self.hpo_network.nodes[n]['ic'], self.hpo_network.nodes[n]['depth']))
 
     def calculate_beta(self, term_a, term_b):
         """calculates the beta term in HRSS equation
@@ -62,15 +62,15 @@ class Scorer:
                 # append the max IC leaf (choose the one with the max depth)
                 leaves = {p for p in children if self.hpo_network.out_degree(
                     p) >= 1 and self.hpo_network.in_degree(p) == 0}
-                mil = max(leaves, key=lambda n: (self.hpo_network.node[n]['ic'], self.hpo_network.node[n]['depth']))
-                mil_ic.append(self.hpo_network.node[mil]['ic'])
+                mil = max(leaves, key=lambda n: (self.hpo_network.nodes[n]['ic'], self.hpo_network.nodes[n]['depth']))
+                mil_ic.append(self.hpo_network.nodes[mil]['ic'])
             # the node is a leaf
             else:
-                mil_ic.append(self.hpo_network.node[term]['ic'])
+                mil_ic.append(self.hpo_network.nodes[term]['ic'])
 
         # calculate beta_ic
-        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic'])
-                   + (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
+        beta_ic = ((mil_ic[0] - self.hpo_network.nodes[term_a]['ic'])
+                   + (mil_ic[1] - self.hpo_network.nodes[term_b]['ic'])) / 2.0
         return beta_ic
 
     def calculate_gamma(self, term_a, term_b, term_lca):
@@ -121,7 +121,7 @@ class Scorer:
         lca_node = self.find_lca(term_a, term_b)
 
         # calculate alpha_ic
-        alpha_ic = self.hpo_network.node[lca_node]['ic']
+        alpha_ic = self.hpo_network.nodes[lca_node]['ic']
 
         # calculate gamma
         gamma = self.calculate_gamma(term_a, term_b, lca_node)

@@ -91,7 +91,7 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2pri
 
     for node_id, data in hpo_network.nodes(data=True):
         # annotate with information content value
-        hpo_network.node[node_id]['ic'] = calculate_information_content(
+        hpo_network.nodes[node_id]['ic'] = calculate_information_content(
             node_id,
             hpo_network,
             phenotype_to_diseases,
@@ -99,21 +99,21 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2pri
             custom_annos,
         )
         # annotate with phenotype age distribution
-        hpo_network.node[node_id]['disease_weights'] = {}
+        hpo_network.nodes[node_id]['disease_weights'] = {}
 
         if ages is not None and node_id in ages.index:
-            hpo_network.node[node_id]['age_dist'] = ages.loc[node_id]['age_dist']
+            hpo_network.nodes[node_id]['age_dist'] = ages.loc[node_id]['age_dist']
 
         # add the disease_frequency weights as attributes to the node
         if phenotype_disease_frequencies is not None:
             if node_id in phenotype_disease_frequencies:
                 for disease_id, frequency in phenotype_disease_frequencies[node_id].items():
-                    hpo_network.node[node_id]['weights']['disease_frequency'][disease_id] = frequency
+                    hpo_network.nodes[node_id]['weights']['disease_frequency'][disease_id] = frequency
 
         # annotate with depth value
         # hard-coding origin node for now
         origin = 'HP:0000001'
-        hpo_network.node[node_id]['depth'] = nx.shortest_path_length(
+        hpo_network.nodes[node_id]['depth'] = nx.shortest_path_length(
             hpo_network,
             node_id,
             origin
@@ -124,7 +124,7 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2pri
         try:
             for synonym in data['synonym']:
                 synonyms.append(synonym)
-            hpo_network.node[node_id]['synonyms'] = re.findall(r'"(.*?)"', ','.join(synonyms))
+            hpo_network.nodes[node_id]['synonyms'] = re.findall(r'"(.*?)"', ','.join(synonyms))
         except KeyError:
             # pass if no synonym tags in the node
             pass

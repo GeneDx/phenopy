@@ -160,7 +160,7 @@ def generate_alternate_ids(hpo_network):
     for n in hpo_network.nodes(data=True):
         n = n[0]
         try:
-            for alt in hpo_network.node[n]['alt_id']:
+            for alt in hpo_network.nodes[n]['alt_id']:
                 alt2prim[alt] = n
         except KeyError:
             # no alternate HPO ids for this term
