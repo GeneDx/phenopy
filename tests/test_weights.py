@@ -18,10 +18,11 @@ class WeightsTestCase(unittest.TestCase):
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         cls.disease_to_phenotype_file = os.path.join(cls.parent_dir, 'data/phenotype.hpoa')
         cls.ages_distribution_file = os.path.join(cls.parent_dir, 'data/phenotype_age.tsv')
-        cls.hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(cls.obo_file,
-                                                         cls.disease_to_phenotype_file,
-                                                         ages_distribution_file=cls.ages_distribution_file
-                                                         )
+        cls.hpo_network, alt2prim, disease_records = \
+            generate_annotated_hpo_network(cls.obo_file,
+                                           cls.disease_to_phenotype_file,
+                                           ages_distribution_file=cls.ages_distribution_file
+                                           )
 
     def test_age_weights(self):
         self.assertEqual(hpo_age_to_weight(self.hpo_network, 'HP:0001251', 9.0), 1.0)

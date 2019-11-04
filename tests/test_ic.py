@@ -31,6 +31,11 @@ class ICTestCase(unittest.TestCase):
         cls.hpo_id = 'HP:0010863'
         cls.disease_to_phenotype_output_file = os.path.join(cls.parent_dir, 'data/phenotype.noparents.hpoa')
 
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(os.path.join(cls.parent_dir, 'data/phenotype.noparents.hpoa')):
+            os.remove(os.path.join(cls.parent_dir, 'data/phenotype.noparents.hpoa'))
+
     def test_ic_d2p(self):
         """Calculate the information content of a phenotype"""
         self.assertAlmostEqual(self.hpo_network.node[self.hpo_id]['ic'], 5.69, 2)
