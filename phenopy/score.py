@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from functools import lru_cache
-from phenopy.util import half_product
 from phenopy.weights import calculate_age_weights
 
 
