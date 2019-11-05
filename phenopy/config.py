@@ -137,6 +137,6 @@ config_file = os.environ.get(
 config.read(config_file)
 logger.info(f'Using configuration file: {config_file}')
 
-logger.info('Checking if HPO files exist')
+# download resource files if necessary
 download_resource_files()
 

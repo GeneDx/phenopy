@@ -1,7 +1,40 @@
 import pandas as pd
 import sys
 
+from functools import lru_cache
 from scipy.stats import truncnorm
+
+
+@lru_cache(maxsize=1300000)
+def hpo_age_to_weight(hpo_network, term_id, age):
+    """
+    calculate weight based on truncated normal distribution CDF
+    :param hpo_network: The hpo_network networkx object
+    :param term_id: the hpo term id
+    :param age:
+    :return:
+    """
+    if term_id not in hpo_network.node or age is None:
+        return 1.0
+    elif 'age_dist' in hpo_network.nodes[term_id]:
+        return hpo_network.nodes[term_id]['age_dist'].cdf(float(age))
+    else:
+        return 1.0
+
+
+def calculate_age_weights(terms, age, hpo_network):
+    """
+    Calculates an age-based weight vector given an iterable of terms.
+    :param terms: iterable of hpo terms
+    :param age: numeric age of patient
+    :param hpo_network: HPO network
+    :return: list of weights in same order as terms
+    """
+    weights = []
+    for term_id in terms:
+        weights.append(hpo_age_to_weight(hpo_network, term_id, age))
+
+    return weights
 
 
 def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
@@ -15,19 +48,6 @@ def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
     """
     return truncnorm(
         (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
-
-
-def age_to_weights(age_dist, age):
-    """calculate weight based on truncated normal distribution CDF
-    :param age_dist: distribution of ages for phenotype
-    :param age: age of patient
-    :return: cdf
-    """
-
-    if age is None:
-        return 1.0
-    else:
-        return age_dist.cdf(age)
 
 
 def make_age_distributions(phenotype_age_file, logger=None):
