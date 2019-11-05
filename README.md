@@ -1,6 +1,7 @@
 [![python-version](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
 [![github-actions](https://github.com/GeneDx/phenopy/workflows/Python%20package/badge.svg)](https://github.com/GeneDx/phenopy/actions)
 [![codecov](https://codecov.io/gh/GeneDx/phenopy/branch/develop/graph/badge.svg)](https://codecov.io/gh/GeneDx/phenopy)
+[![DOI](https://zenodo.org/badge/207335538.svg)](https://zenodo.org/badge/latestdoi/207335538)
 
 # phenopy
 `phenopy` is a Python package to perform phenotype similarity scoring by semantic similarity. `phenopy` is a
@@ -219,3 +220,22 @@ coverage report -m
 
 ## References
 The underlying algorithm which determines the semantic similarity for any two HPO terms is based on an implementation of HRSS, [published here](https://www.ncbi.nlm.nih.gov/pubmed/23741529).
+
+
+## Citing Phenopy
+Please use the following Bibtex to cite this software.
+```
+@software{arvai_phenopy_2019,
+    title = {Phenopy},
+    rights = {Attribution-NonCommercial-ShareAlike 4.0 International},
+    url = {https://github.com/GeneDx/phenopy},
+    abstract = {Phenopy is a Python package to perform phenotype similarity scoring by semantic similarity. 
+        Phenopy is a lightweight but highly optimized command line tool and library to efficiently perform semantic 
+        similarity scoring on generic entities with phenotype annotations from the Human Phenotype Ontology (HPO).},
+    version = {0.3.0},
+    author = {Arvai, Kevin and Borroto, Carlos and Gainullin, Vladimir and Retterer, Kyle},
+    date = {2019-11-05},
+    year = {2019},
+    doi = {10.5281/zenodo.3529569}
+}
+```
