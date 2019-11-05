@@ -1,5 +1,5 @@
 __project__ = 'phenopy'
-__version__ = '0.3.0-dev'
+__version__ = '0.3.1-dev'
 
 import sys
 from contextlib import contextmanager
