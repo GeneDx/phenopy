@@ -7,7 +7,7 @@ import shutil
 from phenopy import __project__, __version__
 
 
-def download_hpo_files():
+def download_resource_files():
     """
     Check if HPO files exist, if not download them
     :return: None
@@ -36,7 +36,6 @@ def download_hpo_files():
                 logger.info('Reason: ', e.code)
                 raise
 
-
         try:
             with open(file_path, 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
@@ -46,19 +45,19 @@ def download_hpo_files():
             raise
 
     # read the config file to get file paths and urls
-    phen_to_genes_path = config.get('hpo', 'pheno2genes_file')
-    phen_to_genes_url = config.get('hpo', 'pheno2genes_file_url')
-
     obo_path = config.get('hpo', 'obo_file')
     obo_url = config.get('hpo', 'obo_file_url')
 
-    if not os.path.isfile(phen_to_genes_path):
-        logger.info(f'Downloading HPO phenotype to: {phen_to_genes_path}')
-        download(phen_to_genes_url, phen_to_genes_path)
+    hpoa_path = config.get('hpo', 'disease_to_phenotype_file')
+    hpoa_url = config.get('hpo', 'disease_to_phenotype_file_url')
 
     if not os.path.isfile(obo_path):
         logger.info(f'Downloading HPO obo file to: {obo_path}')
         download(obo_url, obo_path)
+
+    if not os.path.isfile(hpoa_path):
+        logger.info(f'Downloading phenotype to disease annotations to {hpoa_path}')
+        download(hpoa_url, hpoa_path)
 
 
 # create logger
@@ -81,6 +80,8 @@ config = configparser.ConfigParser()
 
 # create config directory if it doesn't exist
 config_directory = os.path.join(os.environ.get('HOME'), f'.{__project__}')
+project_directory = os.path.abspath(__project__)
+project_data_dir = os.path.join(project_directory, 'data')
 try:
     os.makedirs(config_directory)
 except FileExistsError:
@@ -103,16 +104,23 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
                 'hp.obo',
             ),
             'obo_file_url':'http://purl.obolibrary.org/obo/hp.obo',
-            'pheno2genes_file': os.path.join(
-                data_directory,
-                'phenotype_to_genes.txt',
-            ),
-            'pheno2genes_file_url': 'http://compbio.charite.de/jenkins/job/hpo.annotations.monthly/lastSuccessfulBuild/artifact/annotation/ALL_SOURCES_ALL_FREQUENCIES_phenotype_to_genes.txt',
             'hpo_network_file': os.path.join(
                 data_directory,
                 'hpo_network.pickle',
             ),
+            'disease_to_phenotype_file_url': 'http://compbio.charite.de/jenkins/job/hpo.annotations.current/lastSuccessfulBuild/artifact/misc_2018/phenotype.hpoa',
+            'disease_to_phenotype_file': os.path.join(
+                data_directory,
+                'phenotype.hpoa',
+            ),
         }
+    config['age'] = {
+        'open_access_phenotype_age': os.path.join(
+            project_data_dir,
+            'oa_phenotype_age.tsv',
+        ),
+
+    }
 
     with open(os.path.join(config_directory, 'phenopy.ini'), 'w') as configfile:
         logger.info('writing config file to: %s '%config_directory)
@@ -129,6 +137,6 @@ config_file = os.environ.get(
 config.read(config_file)
 logger.info(f'Using configuration file: {config_file}')
 
-logger.info('Checking if HPO files exist')
-download_hpo_files()
+# download resource files if necessary
+download_resource_files()
 

@@ -1,18 +1,19 @@
 import itertools
-import sys
-
 import networkx as nx
+import numpy as np
 import pandas as pd
+
+from functools import lru_cache
+from phenopy.weights import calculate_age_weights
 
 
 class Scorer:
-    def __init__(self, hpo_network):
+    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05):
         self.hpo_network = hpo_network
-
-        self.scores_cache = {}
-
-        self.alt2prim = {}
-        self.generate_alternate_ids()
+        if summarization_method not in ['BMA', 'BMWA', 'maximum']:
+            raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
+        self.summarization_method = summarization_method
+        self.min_score_mask = min_score_mask
 
     def find_lca(self, term_a, term_b):
         """
@@ -40,22 +41,9 @@ class Scorer:
         common_parents = parents[0].intersection(
             parents[1])
         # lca node
-        return max(common_parents, key=lambda n: self.hpo_network.node[n]['depth'])
-
-    def generate_alternate_ids(self):
-        """Create a key, value store of alternate terms to canonical terms."""
-        for n in self.hpo_network.nodes(data=True):
-            n = n[0]
-            try:
-                for alt in self.hpo_network.node[n]['alt_id']:
-                    self.alt2prim[alt] = n
-            except KeyError:
-                # no alternate HPO ids for this term
-                continue
-
-    def convert_alternate_ids(self, termlist):
-        """return a list of terms with list of alternate HPO ids converted to canonical ones."""
-        return [self.alt2prim[t] if t in self.alt2prim else t for t in termlist]
+        # find the ancestor with the highest IC
+        # break ties by choosing the node with the greatest depth
+        return max(common_parents, key=lambda n: (self.hpo_network.nodes[n]['ic'], self.hpo_network.nodes[n]['depth']))
 
     def calculate_beta(self, term_a, term_b):
         """calculates the beta term in HRSS equation
@@ -70,19 +58,18 @@ class Scorer:
             if self.hpo_network.in_edges(term):
                 # children terms generator
                 children = nx.ancestors(self.hpo_network, term)
-                if children:
-                    # append the max IC leaf
-                    mil_ic.append(max({self.hpo_network.node[p]['ic'] for p in children if self.hpo_network.out_degree(
-                        p) >= 1 and self.hpo_network.in_degree(p) == 0}))
-                # node is a leaf
-                else:
-                    mil_ic.append(self.hpo_network.node[term]['ic'])
+                # append the max IC leaf (choose the one with the max depth)
+                leaves = {p for p in children if self.hpo_network.out_degree(
+                    p) >= 1 and self.hpo_network.in_degree(p) == 0}
+                mil = max(leaves, key=lambda n: (self.hpo_network.nodes[n]['ic'], self.hpo_network.nodes[n]['depth']))
+                mil_ic.append(self.hpo_network.nodes[mil]['ic'])
+            # the node is a leaf
             else:
-                mil_ic.append(self.hpo_network.node[term]['ic'])
+                mil_ic.append(self.hpo_network.nodes[term]['ic'])
 
         # calculate beta_ic
-        beta_ic = ((mil_ic[0] - self.hpo_network.node[term_a]['ic'])
-                   + (mil_ic[1] - self.hpo_network.node[term_b]['ic'])) / 2.0
+        beta_ic = ((mil_ic[0] - self.hpo_network.nodes[term_a]['ic'])
+                   + (mil_ic[1] - self.hpo_network.nodes[term_b]['ic'])) / 2.0
         return beta_ic
 
     def calculate_gamma(self, term_a, term_b, term_lca):
@@ -108,7 +95,7 @@ class Scorer:
         if self.hpo_network.has_edge(term_b, term_a):
             term_a_child = True
 
-        if (term_a_child or term_b_child):
+        if term_a_child or term_b_child:
             return 1
 
         a_to_lca = nx.shortest_path_length(self.hpo_network, term_a, term_lca)
@@ -116,20 +103,15 @@ class Scorer:
 
         return a_to_lca + b_to_lca
 
-    def score_hpo_pair_hrss(self, terms):
+    @lru_cache(maxsize=72000000)
+    def score_hpo_pair_hrss(self, term_a, term_b):
         """
         Scores the comparison of a pair of terms, using Hybrid Relative Specificity Similarity (HRSS) algorithm.
 
-        :param terms: HPO terms A and B.
+        :param term_a: HPO term A
+        :param term_b: HPO term B
         :return: `float` (term pair comparison score)
         """
-        term_a, term_b = terms
-
-        if f'{term_a}-{term_b}' in self.scores_cache:
-            return self.scores_cache[f'{term_a}-{term_b}']
-
-        elif f'{term_b}-{term_a}' in self.scores_cache:
-            return self.scores_cache[f'{term_b}-{term_a}']
 
         # calculate beta_ic
         beta_ic = self.calculate_beta(term_a, term_b)
@@ -138,7 +120,7 @@ class Scorer:
         lca_node = self.find_lca(term_a, term_b)
 
         # calculate alpha_ic
-        alpha_ic = self.hpo_network.node[lca_node]['ic']
+        alpha_ic = self.hpo_network.nodes[lca_node]['ic']
 
         # calculate gamma
         gamma = self.calculate_gamma(term_a, term_b, lca_node)
@@ -147,86 +129,130 @@ class Scorer:
         ic = (alpha_ic / float(alpha_ic + beta_ic))
         pair_score = (1.0 / float(1.0 + gamma)) * ic
 
-
-        # cache this pair score
-        self.scores_cache[f'{term_a}-{term_b}'] = pair_score
-
         return pair_score
 
-    def score(self, terms_a, terms_b, agg_score='BMA'):
+    def score(self, record_a, record_b):
         """
         Scores the comparison of terms in list A to terms in list B.
 
-        :param terms_a: List of HPO terms A.
-        :param terms_b: List of HPO terms B.
-        :param agg_score: The aggregation method to use for summarizing the similarity matrix between two term sets
-            Must be one of {'BMA', }
+        :param record_a: record A.
+        :param record_b: record B.
         :return: `float` (comparison score)
         """
-        # convert alternate HPO ids to canonical ones
-        terms_a = set(self.convert_alternate_ids(terms_a))
-        terms_b = set(self.convert_alternate_ids(terms_b))
-
-        # filter out hpo terms not in the network and unique them
-        terms_a = list(filter(lambda x: x in self.hpo_network.node, terms_a))
-        terms_b = list(filter(lambda x: x in self.hpo_network.node, terms_b))
+        if self.summarization_method not in ['BMA', 'BMWA', 'maximum']:
+            raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
 
         # if either set is empty return 0.0
+        terms_a = record_a['terms']
+        terms_b = record_b['terms']
         if not terms_a or not terms_b:
             return 0.0
 
+        # calculate weights for record_a and record_b
+        weights_a = record_a['weights'].copy() if record_a['weights'] is not None else []
+        weights_b = record_b['weights'].copy() if record_b['weights'] is not None else []
+
+        # set weights
+        # if we have age of record_a use it to set age weights for record_b
+        if 'age' in record_a:
+            weights_b['age'] = calculate_age_weights(record_b['terms'], record_a['age'], self.hpo_network)
+
+        # if we have age of record_b use it to set age weights for record_a
+        if 'age' in record_b:
+            weights_a['age'] = calculate_age_weights(record_a['terms'], record_b['age'], self.hpo_network)
+
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
-            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair))
+            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair[0], pair[1]))
              for pair in term_pairs],
             columns=['a', 'b', 'score']
         ).set_index(
             ['a', 'b']
         ).unstack()
 
-        if agg_score == 'BMA':
-            return self.best_match_average(df)
-        elif agg_score == 'maximum':
+        if self.summarization_method == 'maximum':
             return self.maximum(df)
+        elif self.summarization_method == 'BMWA' and any([weights_a, weights_b]):
+            return self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
         else:
-            return 0.0
+            return self.best_match_average(df)
 
-    def score_pairs(self, records, record_pairs, lock, agg_score='BMA', thread=0, number_threads=1, stdout=True):
+    def score_records(self, a_records, b_records, record_pairs, thread_index=0, threads=1):
         """
         Score list pair of records.
-
-        :param records: Records dictionary.
+        :param a_records: Input records dictionary.
+        :param b_records: Score against records. If not provided both pairs members are pulled from "a_records".
         :param record_pairs: List of record pairs to score.
-        :param thread: Thread index for multiprocessing.
-        :param number_threads: Total number of threads for multiprocessing.
-        :param stdout:(True,False) write results to standard out
-        :return: `list` of `tuples`
+        :param thread_index: Thread index for multiprocessing.
+        :param threads: Total number of threads for multiprocessing.
         """
-        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
         results = []
-        for record_a, record_b in itertools.islice(record_pairs, thread, None, number_threads):
-            score = self.score(records[record_a],
-                               records[record_b], agg_score=agg_score)
+        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
+        for record_a, record_b in itertools.islice(record_pairs, thread_index, None, threads):
 
-            if stdout:
-                try:
-                    lock.acquire()
-                    sys.stdout.write('\t'.join([record_a, record_b, str(score)]))
-                    sys.stdout.write('\n')
-                finally:
-                    sys.stdout.flush()
-                    lock.release()
-            else:
-                results.append((record_a, record_b, str(score)))
+            score = self.score(
+                a_records[record_a],
+                b_records[record_b],
+            )
 
+            results.append((
+                a_records[record_a]['record_id'],
+                b_records[record_b]['record_id'],
+                str(score),
+            ))
         return results
 
-    def best_match_average(self, df):
+    @staticmethod
+    def best_match_average(df):
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
+        max1 = df.max(axis=1).values
+        max0 = df.max(axis=0).values
+        return np.average(np.append(max1, max0)).round(4)
 
-        return round(((df.max(axis=1).sum() + df.max(axis=0).sum()) / (len(df.index) + len(df.columns))), 4)
-
-    def maximum(self, df):
+    @staticmethod
+    def maximum(df):
         """Returns the maximum similarity value between to term lists"""
         return df.values.max().round(4)
 
+    def best_match_weighted_average(self, df, weights_a, weights_b):
+        """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
+        max_a = df.max(axis=1).values
+        max_b = df.max(axis=0).values
+        scores = np.append(max_a, max_b)
+
+        weights_matrix = {}
+        for w in weights_a:
+            # init weight list if necessary
+            if w not in weights_matrix:
+                weights_matrix[w] = []
+
+            # extend weight with the values of a
+            weights_matrix[w].extend(weights_a[w])
+
+            # for columns not in b, fill in with 1s for each b row
+            if w not in weights_b:
+                weights_matrix[w].extend([1 for _ in range(max_b.shape[0])])
+
+        for w in weights_b:
+            # for columns not in a, fill in with 1s for each a row
+            if w not in weights_matrix:
+                weights_matrix[w] = [1 for _ in range(max_a.shape[0])]
+
+            # extend weight with the values of b
+            weights_matrix[w].extend(weights_b[w])
+
+        weights_df = pd.DataFrame.from_dict(weights_matrix)
+        weights = weights_df.min(axis=1)
+
+        # mask good matches from weighting
+        # mask threshold based on >75% of pairwise scores of all hpo terms
+        # TODO: expose min_score cutoff value to be set in config
+        if self.min_score_mask is not None:
+            masked_weights = np.where(scores > self.min_score_mask, 1.0, weights)
+            weights = masked_weights
+
+        # if weights add up to zero, calculate unweighted average
+        if np.sum(weights) == 0.0:
+            weights = np.ones(len(weights))
+
+        return np.average(scores, weights=weights).round(4)

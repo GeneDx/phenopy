@@ -2,41 +2,32 @@ import os
 import unittest
 
 from phenopy.config import config
-from phenopy.p2g import load as load_p2g
-from phenopy.network import _load_hpo_network
+from phenopy.d2p import load as load_d2p
+from phenopy.network import load as load_network
+from phenopy.network import annotate
+from phenopy.util import generate_alternate_ids
 
 
 class NetworkTestCase(unittest.TestCase):
-    def setUp(cls):
-        # parent dir
+    @classmethod
+    def setUpClass(cls):
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
-        cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
-        cls.pheno2genes_file = os.path.join(cls.parent_dir, 'data/phenotypes_to_genes.txt')
-        cls.hpo_network_file = os.path.join(cls.parent_dir, 'data/hpo_network.pickle')
-
         config.set('hpo', 'data_directory', os.path.join(cls.parent_dir, 'data'))
-        terms_to_genes, genes_to_terms, cls.annotations_count = load_p2g(cls.pheno2genes_file)
-        # choose an HPO id that is in the custom annotations file, so it should have different information content
-        cls.hpo_id = 'HP:0000545'
+        cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
 
-    def tearDown(cls):
-        os.remove(cls.hpo_network_file)
+    def test_load_network(self):
+        hpo_network = load_network(self.obo_file)
+        self.assertEqual(len(hpo_network), 28)
 
-    def test_load_from_hp_obo(self):
+    def test_annotate_network(self):
+        hpo_network = load_network(self.obo_file)
+        alt2prim = generate_alternate_ids(hpo_network)
 
-        hpo_network = _load_hpo_network(self.obo_file, self.pheno2genes_file,
-                                        self.annotations_count, custom_annotations_file=None,
-                                        hpo_network_file=self.hpo_network_file)
+        # load phenotypes to diseases associations
+        disease_to_phenotype_file = os.path.join(self.parent_dir, 'data/phenotype.hpoa')
+        disease_records, phenotype_to_diseases = load_d2p(disease_to_phenotype_file, hpo_network, alt2prim)
 
-        # this is a cleaned version of the network, so it is not the same as test_obo.py
-        self.assertEqual(len(hpo_network), 20)
-        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 2.48, 2)
+        num_diseases_annotated = len(disease_records)
+        hpo_network = annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2prim)
 
-    def test_load_custom(self):
-        hpo_network = _load_hpo_network(self.obo_file, self.pheno2genes_file, self.annotations_count,
-                                        custom_annotations_file=os.path.join(self.parent_dir,
-                                                                             'data/test.score-product.txt'),
-                                        hpo_network_file=self.hpo_network_file
-                                        )
-
-        self.assertAlmostEqual(hpo_network.node[self.hpo_id]['ic'], 1.94, 2)
+        self.assertAlmostEqual(hpo_network.nodes['HP:0010863']['ic'], 5.69, 2)
