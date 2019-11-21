@@ -207,12 +207,12 @@ class Scorer:
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
-        return np.average(np.append(max1, max0)).round(4)
+        return np.average(np.append(max1, max0))
 
     @staticmethod
     def maximum(df):
         """Returns the maximum similarity value between to term lists"""
-        return df.values.max().round(4)
+        return df.values.max()
 
     def best_match_weighted_average(self, df, weights_a, weights_b):
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
@@ -255,4 +255,4 @@ class Scorer:
         if np.sum(weights) == 0.0:
             weights = np.ones(len(weights))
 
-        return np.average(scores, weights=weights).round(4)
+        return np.average(scores, weights=weights)
