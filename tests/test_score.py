@@ -148,13 +148,13 @@ class ScorerTestCase(unittest.TestCase):
 
         # test with two weights
         score_bwma_both_weights = scorer.score(record_a, record_b)
-        self.assertEqual(score_bwma_both_weights, 0.6488)
+        self.assertAlmostEqual(score_bwma_both_weights, 0.6488, 4)
 
         # test with one weight array
         scorer.min_score_mask = None
         record_a['weights'].pop('age', None)
         score_bwma_one_weights = scorer.score(record_a, record_b)
-        self.assertEqual(score_bwma_one_weights, 0.6218)
+        self.assertAlmostEqual(score_bwma_one_weights, 0.6218, 4)
 
     def test_score_records(self,):
         query_name = 'SAMPLE'
@@ -241,19 +241,19 @@ class ScorerTestCase(unittest.TestCase):
 
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.3419)
+        self.assertAlmostEqual(score_bmwa, 0.3419, 4)
 
         # set all weights to 1.0
         weights_a = {'age': [1.] * len(terms_a)}
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
-        self.assertEqual(score_bmwa, 0.2985)
+        self.assertAlmostEqual(score_bmwa, 0.2985, 4)
 
         # set all weights to 0.0, result should be the same as all weights being 1.0
         weights_a = {'age': [1.] * len(terms_a)}
         weights_b = {'age': [1.] * len(terms_b)}
         self.min_score_mask = None
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
-        self.assertEqual(score_bmwa, 0.2985)
+        self.assertAlmostEqual(score_bmwa, 0.2985, 4)
 
         # Test weight adjustment masking
         # make pairwise scores matrix
@@ -284,7 +284,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.min_score_mask = None
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.352)
+        self.assertAlmostEqual(score_bmwa, 0.352, 4)
 
         # because both patients were described to have ID, but only patient a has ataxia and ss
         # we mask good phenotype matches from being weighted down by default
@@ -292,7 +292,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.365)
+        self.assertAlmostEqual(score_bmwa, 0.365, 4)
 
     def test_age_weight(self):
         # Test age based weight distribution and best_match_weighted_average calculation
@@ -323,14 +323,14 @@ class ScorerTestCase(unittest.TestCase):
         # compute pairwise best match weighted average
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.3741)
+        self.assertAlmostEqual(score_bmwa, 0.3741, 4)
 
         # set all weights to 1.0, result should be the same as BMA without weights
         weights_a = {'disease_frequency': [1.] * len(terms_a)}
         weights_b = {'disease_frequency': [1.] * len(terms_b)}
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.2985)
+        self.assertAlmostEqual(score_bmwa, 0.2985, 4)
 
         # test term not in network
         terms_a = ['HP:Not_a_term']
