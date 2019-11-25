@@ -10,7 +10,7 @@ from configparser import NoOptionError, NoSectionError
 from multiprocessing import Pool
 
 from phenopy import open_or_stdout, generate_annotated_hpo_network
-from phenopy.config import config, logger
+from phenopy.config import config, data_directory, logger
 from phenopy.hpo_array import generate_hpo_array
 
 from phenopy.score import Scorer
@@ -44,7 +44,7 @@ def score_all_phenotypes(outdir=None, threads=1):
     mapped back to HPO terms with the int2hpo.pkl file.
     """
     if outdir is None:
-        outdir = config.data_directory
+        outdir = data_directory
 
     scores_arr, int2hpo = generate_hpo_array(threads)
 
