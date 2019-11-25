@@ -11,7 +11,7 @@ from multiprocessing import Pool
 
 from phenopy import open_or_stdout, generate_annotated_hpo_network
 from phenopy.config import config, logger
-from pheonopy.hpo_array import generate_hpo_array
+from phenopy.hpo_array import generate_hpo_array
 
 from phenopy.score import Scorer
 from phenopy.util import parse_input, half_product
