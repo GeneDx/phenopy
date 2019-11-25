@@ -1,14 +1,63 @@
 import fire
 import itertools
+import os
+import pickle
 import sys
+
+import numpy as np
 
 from configparser import NoOptionError, NoSectionError
 from multiprocessing import Pool
 
 from phenopy import open_or_stdout, generate_annotated_hpo_network
 from phenopy.config import config, logger
+from pheonopy.hpo_array import generate_hpo_array
+
 from phenopy.score import Scorer
 from phenopy.util import parse_input, half_product
+
+
+def embed(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
+          threads=1):
+    """
+    Given a list of samples in the input file, embed the samples as phenotype similarity vectors. The output is a
+    binary numpy array file. The array has as many columns as there are nodes in the HPO and the number of rows is equal
+    to the number of samples in the input file.
+    :param input_file:
+    :param output_file:
+    :param records_file:
+    :param annotations_file:
+    :param ages_distribution_file:
+    :param threads:
+    :return: A numpy array if output_
+    """
+    pass
+
+
+def score_all_phenotypes(outdir=None, threads=1):
+    """
+    Calculates the HRSS score for every term in the HPO and stores the scores as a pairwise numpy array. Also
+    outputs a dictionary mapping the integer index of the HPO term to the HPO name.
+    :param outdir: Path to output the
+    :param threads: Number of threads to calculate the pairwise HPO HRSS array.
+    :return: A numpy array of pairwise HRSS scores between every term in HPO. The integer index of the array can be
+    mapped back to HPO terms with the int2hpo.pkl file.
+    """
+    if outdir is None:
+        outdir = config.data_directory
+
+    scores_arr, int2hpo = generate_hpo_array(threads)
+
+    try:
+        # store the mapping so we can recover the indices
+        with open(os.path.join(outdir, 'int2hpo.pkl'), 'wb') as f:
+            pickle.dump(int2hpo, f)
+
+        # store the array
+        np.save(os.path.join(outdir, 'hrss_array.npy'), scores_arr)
+
+    except NotADirectoryError:
+        logger.critical('Please choose a valid directory to store results in or set outdir=None.')
 
 
 def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
@@ -30,7 +79,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
      [default: None]
     :param self: Score entries in the "input_file" against itself.
     :param summarization_method: The method used to summarize the HRSS matrix. Supported Values are best match average
-    (BMA), best match weighted average (BMWA), and maximum (maximum). [default: BMWA]
+    (BMA), best match weighted average (BMWA), maximum (maximum), and vector (vector). [default: BMWA]
     :param threads: Number of parallel processes to use. [default: 1]
     """
 
@@ -110,6 +159,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
 def main():
     fire.Fire({
         'score': score,
+        'embed': embed,
     })
 
 

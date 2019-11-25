@@ -30,6 +30,7 @@ def generate_annotated_hpo_network(obo_file, disease_to_phenotype_file, annotati
     ) = load_d2p(disease_to_phenotype_file, hpo_network, alt2prim)
 
     # load hpo network
+    # len of disease_records is the denominator for the information content calculation.
     hpo_network = annotate(
         hpo_network,
         phenotype_to_diseases,
