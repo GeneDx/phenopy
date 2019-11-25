@@ -37,7 +37,7 @@ def embed(input_file, output_file='-', records_file=None, annotations_file=None,
 def score_all_phenotypes(outdir=None, threads=1):
     """
     Calculates the HRSS score for every term in the HPO and stores the scores as a pairwise numpy array. Also
-    outputs a dictionary mapping the integer index of the HPO term to the HPO name.
+    outputs a dictionary mapping the integer index of the HPO term to the HPO name. This runs in ~1 hour on 48 cpus.
     :param outdir: Path to output the
     :param threads: Number of threads to calculate the pairwise HPO HRSS array.
     :return: A numpy array of pairwise HRSS scores between every term in HPO. The integer index of the array can be
