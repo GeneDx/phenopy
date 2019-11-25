@@ -103,7 +103,7 @@ using `--output-file=/path/to/output_file.txt`
     118211  118211  0.2048
     ```
 5. Score age-adjusted pairwise similarity of entities defined in the input file, 
-    using phenotype mean age and standard deviation defined in the `--pheno_ages_file`,
+    using phenotype mean age and standard deviation defined in the `--ages_distribution_file`,
     select best-match weighted average as the scoring summarization method `--summarization-method BMWA`.
 
     ```bash
