@@ -158,8 +158,9 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
 
 def main():
     fire.Fire({
-        'score': score,
         'embed': embed,
+        'score': score,
+        'score-all-phenotypes': score_all_phenotypes,
     })
 
 
