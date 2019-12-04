@@ -37,7 +37,7 @@ class Scorer:
         parents = []
         for term in [term_a, term_b]:
             parents.append(
-                {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
+                {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)}.add(term))
         common_parents = parents[0].intersection(
             parents[1])
         # lca node
