@@ -27,6 +27,7 @@ scorer = Scorer(hpo)
 n_hpos = len(hpo.nodes())
 
 int2hpo = {i: hpoid for i, hpoid in enumerate(hpo.nodes())}
+hpo2int = {hpoid: i for i, hpoid in int2hpo.items()}
 c_arr = np.ctypeslib.as_ctypes(np.zeros((n_hpos, n_hpos)))
 term_scores = RawArray(c_arr._type_, c_arr)
 
@@ -37,14 +38,24 @@ def score_hpo_pair_hrss_wrapper(terms):
     tmp[terms[0], terms[1]] = scorer.score_hpo_pair_hrss(term_a, term_b)
 
 
-def generate_hpo_array(threads):
+def score_hpo_pair_wup_wrapper(terms):
+    term_a, term_b = int2hpo[terms[0]], int2hpo[terms[1]]
+    tmp = np.ctypeslib.as_array(term_scores)
+    tmp[terms[0], terms[1]] = scorer.score_hpo_pair_wup(term_a, term_b)
+
+
+def generate_hpo_array(threads, algorithm='wup'):
     """
     Generates the numpy array of pairwise HPO HRSS scores.
     :param threads: Number of threads used to calculate the pairwise array.
     :return: A numpy array of pairwise HRSS scores for every HPO term and the mapping dictionary.
     """
-    with Pool(threads) as p:
-        p.map(score_hpo_pair_hrss_wrapper, half_product(n_hpos, n_hpos))
+    if algorithm == 'hrss':
+        with Pool(threads) as p:
+            p.map(score_hpo_pair_hrss_wrapper, half_product(n_hpos, n_hpos))
+    elif algorithm == 'wup':
+        with Pool(threads) as p:
+            p.map(score_hpo_pair_wup_wrapper, half_product(n_hpos, n_hpos))
 
     # convert to numpy
     scores_arr = np.ctypeslib.as_array(term_scores)

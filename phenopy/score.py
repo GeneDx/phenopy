@@ -104,6 +104,25 @@ class Scorer:
         return a_to_lca + b_to_lca
 
     @lru_cache(maxsize=72000000)
+    def score_hpo_pair_wup(self, term_a, term_b):
+        """
+        Scores the comparison of a pair of terms, using Wu and Palmer algorithm.
+        Sim(C1, C2) = 2 * N / N1 + N2 + 2 * N
+
+        :param term_a: HPO term A
+        :param term_b: HPO term B
+        :return: `float` (term pair comparison score)
+        """
+        # lca_depth == N
+        lca_node = self.find_lca(term_a, term_b)
+        lca_depth = self.hpo_network.nodes[lca_node]['depth']
+
+        n1 = nx.shortest_path_length(self.hpo_network, term_a, lca_node)
+        n2 = nx.shortest_path_length(self.hpo_network, term_b, lca_node)
+
+        return (2 * lca_depth) / (n1 + n2 + 2 * lca_depth)
+
+    @lru_cache(maxsize=72000000)
     def score_hpo_pair_hrss(self, term_a, term_b):
         """
         Scores the comparison of a pair of terms, using Hybrid Relative Specificity Similarity (HRSS) algorithm.

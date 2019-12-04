@@ -34,11 +34,12 @@ def embed(input_file, output_file='-', records_file=None, annotations_file=None,
     pass
 
 
-def score_all_phenotypes(outdir=None, threads=1):
+def score_all_phenotypes(outdir=None, algorithm='wup', threads=1):
     """
     Calculates the HRSS score for every term in the HPO and stores the scores as a pairwise numpy array. Also
     outputs a dictionary mapping the integer index of the HPO term to the HPO name. This runs in ~1 hour on 48 cpus.
-    :param outdir: Path to output the
+    :param outdir: Path to output the pairwise scores array.
+    :param algorithm: The semantic similarity algorithm used to score two HPO terms. {'wup', 'hrss'}
     :param threads: Number of threads to calculate the pairwise HPO HRSS array.
     :return: A numpy array of pairwise HRSS scores between every term in HPO. The integer index of the array can be
     mapped back to HPO terms with the int2hpo.pkl file.
@@ -46,7 +47,7 @@ def score_all_phenotypes(outdir=None, threads=1):
     if outdir is None:
         outdir = data_directory
 
-    scores_arr, int2hpo = generate_hpo_array(threads)
+    scores_arr, int2hpo = generate_hpo_array(threads, algorithm=algorithm)
 
     try:
         # store the mapping so we can recover the indices
@@ -54,7 +55,7 @@ def score_all_phenotypes(outdir=None, threads=1):
             pickle.dump(int2hpo, f)
 
         # store the array
-        np.save(os.path.join(outdir, 'hrss_array.npy'), scores_arr)
+        np.save(os.path.join(outdir, f'pairwise.{algorithm}.npy'), scores_arr)
 
     except NotADirectoryError:
         logger.critical('Please choose a valid directory to store results in or set outdir=None.')
