@@ -119,8 +119,11 @@ class Scorer:
 
         n1 = nx.shortest_path_length(self.hpo_network, term_a, lca_node)
         n2 = nx.shortest_path_length(self.hpo_network, term_b, lca_node)
-
-        return (2 * lca_depth) / (n1 + n2 + 2 * lca_depth)
+        try:
+            return (2 * lca_depth) / (n1 + n2 + 2 * lca_depth)
+        except ZeroDivisionError:
+            # HP:0000001 to itself raises this
+            return 1.0
 
     @lru_cache(maxsize=72000000)
     def score_hpo_pair_hrss(self, term_a, term_b):
