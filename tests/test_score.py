@@ -51,6 +51,14 @@ class ScorerTestCase(unittest.TestCase):
         parent_lca = self.scorer.find_lca('HP:0012758', 'HP:0012759')
         self.assertEqual(parent_lca, 'HP:0012759')
 
+        # LCA of self-self is self
+        parent_lca = self.scorer.find_lca('HP:0012759', 'HP:0012759')
+        self.assertEqual(parent_lca, 'HP:0012759')
+
+        # LCA of grandparent-child is grandparent
+        parent_lca = self.scorer.find_lca('HP:0012759', 'HP:0000750')
+        self.assertEqual(parent_lca, 'HP:0012759')
+
     def test_calculate_gamma(self):
         t1 = 'HP:0012758'
         t2 = 'HP:0012759'
