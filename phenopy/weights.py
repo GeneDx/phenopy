@@ -14,7 +14,7 @@ def hpo_age_to_weight(hpo_network, term_id, age):
     :param age:
     :return:
     """
-    if term_id not in hpo_network.node or age is None:
+    if term_id not in hpo_network.nodes or age is None:
         return 1.0
     elif 'age_dist' in hpo_network.nodes[term_id]:
         return hpo_network.nodes[term_id]['age_dist'].cdf(float(age))
