@@ -123,14 +123,14 @@ class Scorer:
         # calculate alpha_ic
         alpha_ic = self.hpo_network.nodes[lca_node]['ic']
 
-        # calculate gamma
+        if (alpha_ic == 0.0) and (beta_ic == 0.0):
+            return 0.0
+
         gamma = self.calculate_gamma(term_a, term_b, lca_node)
+        I = (alpha_ic / (alpha_ic + beta_ic))
+        D = (1.0 / (1.0 + gamma))
+        return I * D
 
-        # calculate the pairs score
-        ic = (alpha_ic / float(alpha_ic + beta_ic))
-        pair_score = (1.0 / float(1.0 + gamma)) * ic
-
-        return pair_score
 
     def score(self, record_a, record_b):
         """
