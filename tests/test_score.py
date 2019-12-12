@@ -391,6 +391,7 @@ class ScorerTestCase(unittest.TestCase):
 
     def test_alpha_zero(self):
         """the root term should contain all diseases therefore the IC should be zero"""
+
         root_term_ic = self.hpo_network.nodes['HP:0000118']['ic']
         self.assertEqual(0.0,root_term_ic)
 
@@ -399,7 +400,12 @@ class ScorerTestCase(unittest.TestCase):
         two leaves therfore beta is zero
         different branches therefore alpha is zero
         define I = (0.0 / (0.0 + 0.0)) as zero and not nan"""
-        generalized_hypotonia_term = 'HP:0001290'
-        moderate_receptive_langage_delay_term = 'HP:0011351'
-        score_two_leaves_diff_branches = self.scorer.score_hpo_pair_hrss(generalized_hypotonia_term,moderate_receptive_langage_delay_term)
+
+        # generalized hypotonia
+        term_a = 'HP:0001290'
+
+        # moderate receptive langage delay
+        term_b = 'HP:0011351'
+
+        score_two_leaves_diff_branches = self.scorer.score_hpo_pair_hrss(term_a,term_b)
         self.assertEqual(0.0,score_two_leaves_diff_branches)
