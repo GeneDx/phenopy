@@ -33,7 +33,7 @@ def load(phenotype_annotations_file, hpo_network, alt2prim, logger=None):
 
                 # parse disease id, currently only supports omim entries
                 db, disease_accession = row['DatabaseID'].split(':')
-                if db not in ['OMIM']:
+                if db not in ['OMIM', 'ORPHA']:
                     continue
 
                 # For now, skip negative phenotype annotations
