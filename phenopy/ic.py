@@ -21,10 +21,14 @@ def calculate_information_content(hpo_id, hpo_network, phenotype_to_diseases, nu
 
     def get_ic(hpo_ids, annotations):
         # count the number of unique diseases annotated to the hpo term and it's children
-        n_unique_diseases = len({g for h in hpo_ids if h in annotations for g in annotations[h]})
-        # negative log of the number of hpo annotations divided by the total number of hpo terms in the
-        # phenotypes_to_genes file
-        information_content = -np.log((n_unique_diseases + SMOOTH) / float(num_diseases_annotated + SMOOTH))
+        n_unique_diseases = len({disease_id for hpo_id in hpo_ids if hpo_id in annotations for disease_id in annotations[hpo_id]})
+        # negative log of the number of hpo annotations divided by the total number of hpo terms in phenotype.hpoa
+        # additive smoothing using Laplace's Rule of succession
+        # https://en.wikipedia.org/wiki/Additive_smoothing
+        information_content = -np.log((n_unique_diseases + SMOOTH) / float(num_diseases_annotated))
+
+        if information_content < 0.0:
+            information_content = 0.0
 
         return information_content
 

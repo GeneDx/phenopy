@@ -82,7 +82,7 @@ class ScorerTestCase(unittest.TestCase):
         t1 = 'HP:0001344'
         t2 = 'HP:0012759'
         beta = self.scorer.calculate_beta(t1, t2)
-        self.assertAlmostEqual(beta, 3.51, places=2)
+        self.assertAlmostEqual(beta, 3.79, places=2)
 
     def test_score_hpo_pair_hrss(self):
         t1 = 'HP:0011351'
@@ -117,7 +117,7 @@ class ScorerTestCase(unittest.TestCase):
 
         # test BMA
         score_bma = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bma, 0.207, places=2)
+        self.assertAlmostEqual(score_bma, 0.164, places=2)
         self.scorer.summarization_method = 'maximum'
         score_max = self.scorer.score(record_a, record_b)
         self.assertAlmostEqual(score_max, 0.25, places=4)
@@ -140,7 +140,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.summarization_method = 'BMWA'
         self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bmwa, 0.6239, places=4)
+        self.assertAlmostEqual(score_bmwa, 0.6504, places=4)
 
         record_a.update({
             'terms': ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322'], # ATAX, DD,  HYP, SS, AbnSocBeh
@@ -185,8 +185,8 @@ class ScorerTestCase(unittest.TestCase):
             thread_index=0,
             threads=1,
         )
-        self.assertEqual(1184, len(results))
-        self.assertAlmostEqual(float(results[0][2]), 0.1325, 2)
+        self.assertEqual(2231, len(results))
+        self.assertAlmostEqual(float(results[0][2]), 0.1604, 2)
 
         # without weights -- defaults to best match average (BMA)
         [record['weights'].pop('disease_frequency') for record in score_records]
@@ -197,8 +197,8 @@ class ScorerTestCase(unittest.TestCase):
             thread_index=0,
             threads=1,
         )
-        self.assertEqual(1184, len(results))
-        self.assertAlmostEqual(float(results[0][2]), 0.1387, 2)
+        self.assertEqual(2231, len(results))
+        self.assertAlmostEqual(float(results[0][2]), 0.168, 2)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']

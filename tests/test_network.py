@@ -30,4 +30,4 @@ class NetworkTestCase(unittest.TestCase):
         num_diseases_annotated = len(disease_records)
         hpo_network = annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2prim)
 
-        self.assertAlmostEqual(hpo_network.nodes['HP:0010863']['ic'], 5.69, 2)
+        self.assertAlmostEqual(hpo_network.nodes['HP:0010863']['ic'], 5.76, 2)
