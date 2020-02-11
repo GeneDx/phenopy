@@ -1,19 +1,44 @@
+import gzip
 import itertools
+from multiprocessing import Pool
 import networkx as nx
 import numpy as np
 import pandas as pd
+import sys
 
 from functools import lru_cache
+from phenopy.config import logger
 from phenopy.weights import calculate_age_weights
 
 
 class Scorer:
-    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05):
+    """
+    A class with methods to calculate the score between two hpo terms or sets of hpo terms.
+    """
+    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05, hrss_array_file=None, hpo2int=None):
         self.hpo_network = hpo_network
         if summarization_method not in ['BMA', 'BMWA', 'maximum']:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
         self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
+        self.hpo2int = hpo2int
+        self.int2hpo = None
+        if self.hpo2int is not None:
+            self.int2hpo = {idx: hpo_id for hpo_id, idx in self.hpo2int.items()}
+        self.cohort_df = None
+        if hrss_array_file is not None:
+            try:
+                h = gzip.GzipFile(hrss_array_file, 'r')
+                self.hrss_array = np.load(h)
+            except FileNotFoundError:
+                logger.critical('Please use a valid hrss array file ending in .npy or .npy.gz')
+                sys.exit(1)
+            except OSError:
+                self.hrss_array = np.load(hrss_array_file)
+        else:
+            # leave hrss_array as None if hrss_array_file is None
+            logger.info('No hrss array detected, Scorer will calculate HRSS scores on the fly.')
+            self.hrss_array = hrss_array_file
 
     def find_lca(self, term_a, term_b):
         """
@@ -105,6 +130,10 @@ class Scorer:
         return a_to_lca + b_to_lca
 
     @lru_cache(maxsize=72000000)
+    def lookup_hpo_pair_hrss(self, term_a, term_b):
+        return self.hrss_array[term_a, term_b]
+
+    @lru_cache(maxsize=72000000)
     def score_hpo_pair_hrss(self, term_a, term_b):
         """
         Scores the comparison of a pair of terms, using Hybrid Relative Specificity Similarity (HRSS) algorithm.
@@ -130,7 +159,6 @@ class Scorer:
         I = (alpha_ic / (alpha_ic + beta_ic))
         D = (1.0 / (1.0 + gamma))
         return I * D
-
 
     def score(self, record_a, record_b):
         """
@@ -162,9 +190,13 @@ class Scorer:
         if 'age' in record_b:
             weights_a['age'] = calculate_age_weights(record_a['terms'], record_b['age'], self.hpo_network)
 
+        pair_score = self.score_hpo_pair_hrss
+        if self.hrss_array is not None:
+            pair_score = self.lookup_hpo_pair_hrss
+
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
-            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair[0], pair[1]))
+            [(pair[0], pair[1], pair_score(pair[0], pair[1]))
              for pair in term_pairs],
             columns=['a', 'b', 'score']
         ).set_index(
@@ -257,3 +289,47 @@ class Scorer:
             weights = np.ones(len(weights))
 
         return np.average(scores, weights=weights)
+
+    def convert_hpos_to_ints(self, terms):
+        """Map hpo terms to their integer representations.
+
+        :param terms: A list of hpo terms
+        :return: A list of integers representing hpo terms.
+        """
+        return [self.hpo2int[term] for term in terms if term in self.hpo2int]
+
+    def score_bma_from_dataframe(self, entity_ids):
+        id1, id2 = entity_ids
+        terms_a = self.cohort_df['hpo_integers'].loc[self.cohort_df['id'] == id1].to_list()[0]
+        terms_b = self.cohort_df['hpo_integers'].loc[self.cohort_df['id'] == id2].tolist()[0]
+        term_pairs = itertools.product(terms_a, terms_b)
+        df = pd.DataFrame(
+            [(pair[0], pair[1], self.lookup_hpo_pair_hrss(pair[0], pair[1]))
+             for pair in term_pairs],
+            columns=['a', 'b', 'score']
+        ).set_index(
+            ['a', 'b']
+        ).unstack()
+        return id1, id2, self.best_match_average(df)
+
+    def pairwise_scores_from_dataframe(self, cohort_df, n_cpus=4):
+        """Generate the cross-product of semantic similarity scores for all entities in cohort_df.
+        Assumes that the pandas DataFrame has at least two columns [id, hpo_terms]
+
+        :param cohort_df: Pandas DataFrame containing [id, hpo_terms]
+        :param n_cpus: number of cpus to use to
+        :return: A square pandas DataFrame with semantic similarity scores for the product of all ids.
+        """
+        if self.hrss_array is None:
+            logger.critical('This method is computationally expensive, please pass a valid hrss_array.npy or hrss_array.npy.gz to the scorer class.')
+            return
+
+        self.cohort_df = cohort_df
+        self.cohort_df['hpo_integers'] = self.cohort_df['hpo_terms'].apply(self.convert_hpos_to_ints)
+        pairwise_entities = itertools.product(cohort_df['id'], cohort_df['id'])
+
+        if self.summarization_method == 'BMA':
+            with Pool(n_cpus) as p:
+                results = p.map(self.score_bma_from_dataframe, pairwise_entities)
+            pairwise_df = pd.DataFrame(results, columns=['a', 'b', 'score'])
+            return pairwise_df.set_index(['a', 'b']).unstack()
