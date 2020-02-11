@@ -324,6 +324,10 @@ class Scorer:
             logger.critical('This method is computationally expensive, please pass a valid hrss_array.npy or hrss_array.npy.gz to the scorer class.')
             return
 
+        if cohort_df['id'].duplicated().any():
+            logger.critical('This requires unique entity ids, please drop duplicates.')
+            return
+
         self.cohort_df = cohort_df
         self.cohort_df['hpo_integers'] = self.cohort_df['hpo_terms'].apply(self.convert_hpos_to_ints)
         pairwise_entities = itertools.product(cohort_df['id'], cohort_df['id'])
