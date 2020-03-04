@@ -25,13 +25,6 @@ def calculate_information_content(hpo_id, hpo_network, phenotype_to_diseases, nu
         # negative log of the number of hpo annotations divided by the total number of hpo terms in the
         # phenotypes_to_genes file
         information_content = -np.log((n_unique_diseases + SMOOTH) / float(num_diseases_annotated + SMOOTH))
-        # include this to avoid returning zero division warnings.
-        # when comparing two different leaves whose LCA is "phenotypic abnormality", the right side of the equation:
-        # alphaIC / (alphaIC / betaIC), would be 0.0 / (0.0 / 0.0)
-        if np.isinf(information_content):
-            return -np.log(np.nextafter(0, 1))
-        if information_content == 0.0:
-            return np.nextafter(0, 1)
 
         return information_content
 

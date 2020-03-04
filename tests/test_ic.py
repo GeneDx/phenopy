@@ -49,16 +49,6 @@ class ICTestCase(unittest.TestCase):
 
         self.assertAlmostEqual(hpo_network.nodes[self.hpo_id]['ic'], 6.38, 1)
 
-    def test_inf_ic(self):
-        inf_ic = calculate_information_content(
-            self.hpo_id,
-            self.hpo_network,
-            self.phenotype_to_diseases,
-            1e310,
-            None,
-        )
-        self.assertAlmostEqual(inf_ic, -np.log(np.nextafter(0, 1)))
-
     def test_ic_d2p_no_parents(self):
         export_phenotype_hpoa_with_no_parents(self.disease_to_phenotype_file, self.disease_to_phenotype_output_file, self.hpo_network)
         self.assertTrue(os.path.exists(self.disease_to_phenotype_output_file))
