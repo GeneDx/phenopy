@@ -108,7 +108,7 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
                 data_directory,
                 'hpo_network.pickle',
             ),
-            'disease_to_phenotype_file_url': 'http://compbio.charite.de/jenkins/job/hpo.annotations.current/lastSuccessfulBuild/artifact/misc_2018/phenotype.hpoa',
+            'disease_to_phenotype_file_url': 'http://compbio.charite.de/jenkins/job/hpo.annotations.current/lastStableBuild/artifact/current/phenotype.hpoa',
             'disease_to_phenotype_file': os.path.join(
                 data_directory,
                 'phenotype.hpoa',

@@ -51,6 +51,14 @@ class ScorerTestCase(unittest.TestCase):
         parent_lca = self.scorer.find_lca('HP:0012758', 'HP:0012759')
         self.assertEqual(parent_lca, 'HP:0012759')
 
+        # LCA of self-self is self
+        parent_lca = self.scorer.find_lca('HP:0012759', 'HP:0012759')
+        self.assertEqual(parent_lca, 'HP:0012759')
+
+        # LCA of grandparent-child is grandparent
+        parent_lca = self.scorer.find_lca('HP:0012759', 'HP:0000750')
+        self.assertEqual(parent_lca, 'HP:0012759')
+
     def test_calculate_gamma(self):
         t1 = 'HP:0012758'
         t2 = 'HP:0012759'
@@ -132,7 +140,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.summarization_method = 'BMWA'
         self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bmwa, 0.5927, places=4)
+        self.assertAlmostEqual(score_bmwa, 0.6239, places=4)
 
         record_a.update({
             'terms': ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322'], # ATAX, DD,  HYP, SS, AbnSocBeh
@@ -148,13 +156,13 @@ class ScorerTestCase(unittest.TestCase):
 
         # test with two weights
         score_bwma_both_weights = scorer.score(record_a, record_b)
-        self.assertEqual(score_bwma_both_weights, 0.6488)
+        self.assertAlmostEqual(score_bwma_both_weights, 0.6901, 4)
 
         # test with one weight array
         scorer.min_score_mask = None
         record_a['weights'].pop('age', None)
         score_bwma_one_weights = scorer.score(record_a, record_b)
-        self.assertEqual(score_bwma_one_weights, 0.6218)
+        self.assertAlmostEqual(score_bwma_one_weights, 0.6026, 4)
 
     def test_score_records(self,):
         query_name = 'SAMPLE'
@@ -217,7 +225,7 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(len(results), 3)
 
         # test the score of '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.415, 2)
+        self.assertAlmostEqual(float(results[1][2]), 0.3758, 2)
 
     def test_bmwa(self):
         # test best match weighted average
@@ -241,19 +249,19 @@ class ScorerTestCase(unittest.TestCase):
 
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.3419)
+        self.assertAlmostEqual(score_bmwa, 0.3419, 4)
 
         # set all weights to 1.0
         weights_a = {'age': [1.] * len(terms_a)}
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
-        self.assertEqual(score_bmwa, 0.2985)
+        self.assertAlmostEqual(score_bmwa, 0.2985, 4)
 
         # set all weights to 0.0, result should be the same as all weights being 1.0
         weights_a = {'age': [1.] * len(terms_a)}
         weights_b = {'age': [1.] * len(terms_b)}
         self.min_score_mask = None
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
-        self.assertEqual(score_bmwa, 0.2985)
+        self.assertAlmostEqual(score_bmwa, 0.2985, 4)
 
         # Test weight adjustment masking
         # make pairwise scores matrix
@@ -284,7 +292,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.min_score_mask = None
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.352)
+        self.assertAlmostEqual(score_bmwa, 0.352, 4)
 
         # because both patients were described to have ID, but only patient a has ataxia and ss
         # we mask good phenotype matches from being weighted down by default
@@ -292,7 +300,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.365)
+        self.assertAlmostEqual(score_bmwa, 0.365, 4)
 
     def test_age_weight(self):
         # Test age based weight distribution and best_match_weighted_average calculation
@@ -323,14 +331,14 @@ class ScorerTestCase(unittest.TestCase):
         # compute pairwise best match weighted average
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.3741)
+        self.assertAlmostEqual(score_bmwa, 0.3741, 4)
 
         # set all weights to 1.0, result should be the same as BMA without weights
         weights_a = {'disease_frequency': [1.] * len(terms_a)}
         weights_b = {'disease_frequency': [1.] * len(terms_b)}
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
-        self.assertEqual(score_bmwa, 0.2985)
+        self.assertAlmostEqual(score_bmwa, 0.2985, 4)
 
         # test term not in network
         terms_a = ['HP:Not_a_term']
@@ -367,7 +375,7 @@ class ScorerTestCase(unittest.TestCase):
         # the right answer =
         answer = np.average([0.166, 1.0, 1.0, 0.125, 0.25, 1.0, 1.0], weights=[0.481, 1.0, 1.0, 0.0446, 1.0, 1.0, 1.0])
 
-        self.assertAlmostEqual(float(results[0][2]), answer, 4)
+        self.assertAlmostEqual(float(results[0][2]), answer, 2)
 
         # Test identical records for which one age exist and one doesn't
         input_records = [x for x in records if x['record_id'] in ['118210', '118211']]
@@ -380,3 +388,24 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(len(results), 1)
 
         self.assertAlmostEqual(float(results[0][2]), 1.0, 1)
+
+    def test_alpha_zero(self):
+        """the root term should contain all diseases therefore the IC should be zero"""
+
+        root_term_ic = self.hpo_network.nodes['HP:0000118']['ic']
+        self.assertEqual(0.0,root_term_ic)
+
+    def test_leaves_diff_branches_score_zero(self):
+        """two leaves in different branches
+        two leaves therfore beta is zero
+        different branches therefore alpha is zero
+        define I = (0.0 / (0.0 + 0.0)) as zero and not nan"""
+
+        # generalized hypotonia
+        term_a = 'HP:0001290'
+
+        # moderate receptive langage delay
+        term_b = 'HP:0011351'
+
+        score_two_leaves_diff_branches = self.scorer.score_hpo_pair_hrss(term_a,term_b)
+        self.assertEqual(0.0,score_two_leaves_diff_branches)

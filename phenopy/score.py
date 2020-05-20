@@ -35,9 +35,10 @@ class Scorer:
 
         # find common breadth-first-search predecessors
         parents = []
-        for term in [term_a, term_b]:
+        for i, term in enumerate([term_a, term_b]):
             parents.append(
                 {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
+            parents[i].add(term)
         common_parents = parents[0].intersection(
             parents[1])
         # lca node
@@ -122,14 +123,14 @@ class Scorer:
         # calculate alpha_ic
         alpha_ic = self.hpo_network.nodes[lca_node]['ic']
 
-        # calculate gamma
+        if (alpha_ic == 0.0) and (beta_ic == 0.0):
+            return 0.0
+
         gamma = self.calculate_gamma(term_a, term_b, lca_node)
+        I = (alpha_ic / (alpha_ic + beta_ic))
+        D = (1.0 / (1.0 + gamma))
+        return I * D
 
-        # calculate the pairs score
-        ic = (alpha_ic / float(alpha_ic + beta_ic))
-        pair_score = (1.0 / float(1.0 + gamma)) * ic
-
-        return pair_score
 
     def score(self, record_a, record_b):
         """
@@ -207,12 +208,12 @@ class Scorer:
         """Returns the Best-Match average of a termlist to termlist similarity matrix."""
         max1 = df.max(axis=1).values
         max0 = df.max(axis=0).values
-        return np.average(np.append(max1, max0)).round(4)
+        return np.average(np.append(max1, max0))
 
     @staticmethod
     def maximum(df):
         """Returns the maximum similarity value between to term lists"""
-        return df.values.max().round(4)
+        return df.values.max()
 
     def best_match_weighted_average(self, df, weights_a, weights_b):
         """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
@@ -255,4 +256,4 @@ class Scorer:
         if np.sum(weights) == 0.0:
             weights = np.ones(len(weights))
 
-        return np.average(scores, weights=weights).round(4)
+        return np.average(scores, weights=weights)
