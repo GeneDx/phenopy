@@ -131,10 +131,9 @@ class Scorer:
         D = (1.0 / (1.0 + gamma))
         return I * D
 
-
     def score(self, record_a, record_b):
         """
-        Scores the comparison of terms in list A to terms in list B.
+        Scores the comparison of terms listed in record A to terms listed in record B.
 
         :param record_a: record A.
         :param record_b: record B.
@@ -175,6 +174,31 @@ class Scorer:
             return self.maximum(df)
         elif self.summarization_method == 'BMWA' and any([weights_a, weights_b]):
             return self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
+        else:
+            return self.best_match_average(df)
+
+    def score_term_sets_basic(self, terms_a, terms_b):
+        """
+        Calculate the semantic similarity of two lists of terms.
+        This is intended to be used as a library function. It is not used by the CLI.
+        :param terms_a: List of HPO identifiers.
+        :param terms_b: List of HPO identifiers.
+        :return: Semantic similarity score
+        """
+        terms_a = set(terms_a)
+        terms_b = set(terms_b)
+
+        term_pairs = itertools.product(terms_a, terms_b)
+        df = pd.DataFrame(
+            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair[0], pair[1]))
+             for pair in term_pairs],
+            columns=['a', 'b', 'score']
+        ).set_index(
+            ['a', 'b']
+        ).unstack()
+
+        if self.summarization_method == 'maximum':
+            return self.maximum(df)
         else:
             return self.best_match_average(df)
 
