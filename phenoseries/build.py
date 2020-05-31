@@ -175,10 +175,16 @@ def build_phenoseries_experiment(
     mimdf = pd.DataFrame()
     mimdf["omim_id"] = experiment_omims
     mimdf["hpo_terms"] = mimdf["omim_id"].apply(lambda mim_id: mim_hpos[mim_id])
-    mimdf['hpo_string'] = mimdf['hpo_terms'].apply('|'.join)
+    mimdf['age'] = '.'
+    mimdf["hpo_string"] = mimdf["hpo_terms"].apply("|".join)
 
     # dump the mimdf DataFrame to csv
-    mimdf[["omim_id", "hpo_string"]].to_csv(os.path.join(outdir, "phenoseries.mim_hpo_ids.txt"), sep="\t", index=False)
+    mimdf[["omim_id", "age", "hpo_string"]].to_csv(
+        os.path.join(outdir, "phenoseries.mim_hpo_ids.txt"),
+        sep="\t",
+        index=False,
+        header=False,
+    )
 
     # dump the dictionary that contains list of mims for each ps
     with open(os.path.join(outdir, "phenoseries.ps_mim_ids.pkl"), "wb") as handle:
