@@ -12,7 +12,7 @@ from phenopy.util import parse_input, half_product
 
 
 def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
-          self=False, summarization_method='BMWA', threads=1):
+          self=False, summarization_method='BMWA', scoring_method='HRSS', threads=1):
     """
     Scores similarity of provided HPO annotated entries (see format below) against a set of HPO annotated dataset. By
     default scoring happens against diseases annotated by the HPO group. See https://hpo.jax.org/app/download/annotation.
@@ -31,6 +31,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     :param self: Score entries in the "input_file" against itself.
     :param summarization_method: The method used to summarize the HRSS matrix. Supported Values are best match average
     (BMA), best match weighted average (BMWA), and maximum (maximum). [default: BMWA]
+    :param socring_method: Either HRSS or Resnik
     :param threads: Number of parallel processes to use. [default: 1]
     """
 
@@ -63,7 +64,8 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
 
     # create instance the scorer class
     try:
-        scorer = Scorer(hpo_network, summarization_method=summarization_method)
+        scorer = Scorer(hpo_network, summarization_method=summarization_method,
+                        scoring_method=scoring_method)
     except ValueError as e:
         logger.critical(f'Failed to initialize scoring class: {e}')
         sys.exit(1)

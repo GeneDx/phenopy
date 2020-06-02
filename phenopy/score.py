@@ -8,12 +8,14 @@ from phenopy.weights import calculate_age_weights
 
 
 class Scorer:
-    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05):
+    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05,
+                 scoring_method='HRSS'):
         self.hpo_network = hpo_network
         if summarization_method not in ['BMA', 'BMWA', 'maximum']:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
         self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
+        self.scoring_method = scoring_method
 
     def find_lca(self, term_a, term_b):
         """
@@ -122,6 +124,8 @@ class Scorer:
 
         # calculate alpha_ic
         alpha_ic = self.hpo_network.nodes[lca_node]['ic']
+        if self.scoring_method == 'Resnik':
+            return alpha_ic
 
         if (alpha_ic == 0.0) and (beta_ic == 0.0):
             return 0.0
