@@ -182,14 +182,14 @@ hpo_network, alt2prim, disease_records = \
 
 scorer = Scorer(hpo_network)
 
-terms_a = ['HP:0001882', 'HP:0011839']
+terms_a = ['HP:0001263', 'HP:0011839']
 terms_b = ['HP:0001263', 'HP:0000252']
 
-print(scorer.score(terms_a, terms_b))
+print(scorer.score_term_sets_basic(terms_a, terms_b))
 ```
 Output:
 ```
-0.0005
+0.11213185474495047
 ```
 
 The library can be used to prune parent phenotypes from the `phenotype.hpoa` and store pruned annotations as a file.

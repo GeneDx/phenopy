@@ -408,4 +408,11 @@ class ScorerTestCase(unittest.TestCase):
         term_b = 'HP:0011351'
 
         score_two_leaves_diff_branches = self.scorer.score_hpo_pair_hrss(term_a,term_b)
-        self.assertEqual(0.0,score_two_leaves_diff_branches)
+        self.assertEqual(0.0, score_two_leaves_diff_branches)
+
+    def test_score_term_sets_basic(self):
+        """Test the scoring functionality"""
+        terms_a = ['HP:0001290', 'HP:0000118']
+        terms_b = ['HP:0001290', 'HP:0011351']
+
+        self.assertAlmostEqual(0.5, self.scorer.score_term_sets_basic(terms_a, terms_b))
