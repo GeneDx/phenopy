@@ -19,7 +19,10 @@ def load(phenotype_annotations_file, hpo_network, alt2prim, logger=None):
     """
     try:
         with open(phenotype_annotations_file, 'r') as tsv_fh:
-            reader = csv.DictReader(filter(lambda line: line[0] != '#', tsv_fh), delimiter='\t')
+            [next(tsv_fh) for _ in range(4)]
+            reader = csv.DictReader(tsv_fh, delimiter='\t')
+            # this removes the leading hash
+            reader.fieldnames[0] = 'DatabaseID'
 
             disease_to_phenotypes = dict()
             phenotype_to_diseases = dict()
