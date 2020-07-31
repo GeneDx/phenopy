@@ -410,9 +410,25 @@ class ScorerTestCase(unittest.TestCase):
         score_two_leaves_diff_branches = self.scorer.score_hpo_pair_hrss(term_a,term_b)
         self.assertEqual(0.0, score_two_leaves_diff_branches)
 
-    def test_score_term_sets_basic(self):
+    def test_score_hrss_basic(self):
         """Test the scoring functionality"""
+        self.scorer.scoring_method = 'HRSS'
         terms_a = ['HP:0001290', 'HP:0000118']
         terms_b = ['HP:0001290', 'HP:0011351']
 
         self.assertAlmostEqual(0.5, self.scorer.score_term_sets_basic(terms_a, terms_b))
+
+    def test_score_resnik_basic(self):
+        """Test the scoring functionality"""
+        self.scorer.scoring_method = 'Resnik'
+        terms_a = ['HP:0001290', 'HP:0000118']
+        terms_b = ['HP:0001290', 'HP:0011351']
+        self.assertAlmostEqual(3.54, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
+
+    def test_score_jaccard_basic(self):
+        """Test the scoring functionality"""
+        self.scorer.scoring_method = 'Jaccard'
+        terms_a = ['HP:0001290', 'HP:0000118']
+        terms_b = ['HP:0001290', 'HP:0011351']
+
+        self.assertAlmostEqual(0.33, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)

@@ -15,6 +15,8 @@ class Scorer:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
         self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
+        if scoring_method not in ['HRSS', 'Resnik', 'Jaccard']:
+            raise ValueError('Unsupported semantic similarity scoring method, please choose from HRSS, Resnik, or Jaccard.')
         self.scoring_method = scoring_method
 
     def find_lca(self, term_a, term_b):
@@ -152,6 +154,11 @@ class Scorer:
         if not terms_a or not terms_b:
             return 0.0
 
+        if self.scoring_method == 'Jaccard':
+            intersection = len(list(set(terms_a).intersection(terms_b)))
+            union = (len(terms_a) + len(terms_b)) - intersection
+            return float(intersection) / union
+
         # calculate weights for record_a and record_b
         weights_a = record_a['weights'].copy() if record_a['weights'] is not None else []
         weights_b = record_b['weights'].copy() if record_b['weights'] is not None else []
@@ -191,6 +198,11 @@ class Scorer:
         """
         terms_a = set(terms_a)
         terms_b = set(terms_b)
+
+        if self.scoring_method == 'Jaccard':
+            intersection = len(list(set(terms_a).intersection(terms_b)))
+            union = (len(terms_a) + len(terms_b)) - intersection
+            return float(intersection) / union
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
