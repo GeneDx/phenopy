@@ -44,7 +44,7 @@ def convert_and_filter_hpoids(terms, hpo, alt2prim):
 
 
 def build_phenoseries_experiment(
-    phenotypic_series_filepath=None, outdir=None, min_hpos=4, min_entities=2
+    phenotypic_series_filepath=None, outdir=None, min_hpos=4, min_entities=2, phenoseries_fraction=1.0
 ):
     """Create a DataFrame that has PS and list of MIM ids."""
 
@@ -83,7 +83,7 @@ def build_phenoseries_experiment(
         names=["PS", "MIM", "Phenotype"],
     )
     # null phenotypes are actually null MIM id fields, so just drop these
-    psdf = psdf.dropna()
+    psdf = psdf.dropna().sample(frac=phenoseries_fraction, random_state=72)
     psdf.reset_index(inplace=True, drop=True)
 
     # create a dictionary for phenotypic series to list of omim ids mapping
@@ -205,13 +205,22 @@ if __name__ == "__main__":
         "--min-hpos",
         "-n",
         default=4,
+        type=int,
         help="The minimum number of hpo ids per entity (mim id, for example) to be considered for the experiment",
     )
     parser.add_argument(
         "--min-entities",
         "-m",
         default=2,
+        type=int,
         help="The minimum number of entities (mim id, for example) per series to be considered for the experiment",
+    )
+    parser.add_argument(
+        "--phenoseries-fraction",
+        "-f",
+        default=1.0,
+        help="The fraction of phenoseries to use",
+        type=float
     )
     args = parser.parse_args()
 
@@ -219,10 +228,12 @@ if __name__ == "__main__":
     phenotypic_series_filepath = args.phenotypic_series_filepath
     min_hpos = args.min_hpos
     min_entities = args.min_entities
+    phenoseries_fraction = args.phenoseries_fraction
 
     build_phenoseries_experiment(
         phenotypic_series_filepath=phenotypic_series_filepath,
         outdir=outdir,
         min_hpos=min_hpos,
         min_entities=min_entities,
+        phenoseries_fraction=phenoseries_fraction,
     )
