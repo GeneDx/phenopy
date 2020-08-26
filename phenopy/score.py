@@ -8,12 +8,16 @@ from phenopy.weights import calculate_age_weights
 
 
 class Scorer:
-    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05):
+    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05,
+                 scoring_method='HRSS'):
         self.hpo_network = hpo_network
         if summarization_method not in ['BMA', 'BMWA', 'maximum']:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
         self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
+        if scoring_method not in ['HRSS', 'Resnik', 'Jaccard']:
+            raise ValueError('Unsupported semantic similarity scoring method, please choose from HRSS, Resnik, or Jaccard.')
+        self.scoring_method = scoring_method
 
     def find_lca(self, term_a, term_b):
         """
@@ -122,6 +126,8 @@ class Scorer:
 
         # calculate alpha_ic
         alpha_ic = self.hpo_network.nodes[lca_node]['ic']
+        if self.scoring_method == 'Resnik':
+            return alpha_ic
 
         if (alpha_ic == 0.0) and (beta_ic == 0.0):
             return 0.0
@@ -147,6 +153,11 @@ class Scorer:
         terms_b = record_b['terms']
         if not terms_a or not terms_b:
             return 0.0
+
+        if self.scoring_method == 'Jaccard':
+            intersection = len(list(set(terms_a).intersection(terms_b)))
+            union = (len(terms_a) + len(terms_b)) - intersection
+            return float(intersection) / union
 
         # calculate weights for record_a and record_b
         weights_a = record_a['weights'].copy() if record_a['weights'] is not None else []
@@ -187,6 +198,11 @@ class Scorer:
         """
         terms_a = set(terms_a)
         terms_b = set(terms_b)
+
+        if self.scoring_method == 'Jaccard':
+            intersection = len(list(set(terms_a).intersection(terms_b)))
+            union = (len(terms_a) + len(terms_b)) - intersection
+            return float(intersection) / union
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(

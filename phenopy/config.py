@@ -118,8 +118,10 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
         'open_access_phenotype_age': os.path.join(
             project_data_dir,
             'oa_phenotype_age.tsv',
-        ),
-
+        )
+    }
+    config['omim'] = {
+        'omim_api_key': '',
     }
 
     with open(os.path.join(config_directory, 'phenopy.ini'), 'w') as configfile:
