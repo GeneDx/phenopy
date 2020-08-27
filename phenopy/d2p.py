@@ -4,7 +4,7 @@ import sys
 
 hpo_id_to_float = {
     'HP:0040280': 1.0,
-    'HP:0040281': np.mean([80, 99]),
+    'HP:0040281': np.mean([0.80, 0.99]),
     'HP:0040282': np.mean([0.30, 0.79]),
     'HP:0040283': np.mean([0.05, 0.29]),
     'HP:0040284': np.mean([0.01, 0.04]),
@@ -12,10 +12,10 @@ hpo_id_to_float = {
 }
 
 
-def read_hpo_annotation_file(phenotype_annotations_file, logger=None):
+def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=None):
     """
     :param phenotype_annotations_file: path to the phenotype.hpoa file
-    :return: dicts of disease records
+    :return: records
     """
 
     try:
@@ -25,12 +25,14 @@ def read_hpo_annotation_file(phenotype_annotations_file, logger=None):
             # this removes the leading hash
             reader.fieldnames[0] = 'DatabaseID'
 
-            disease_to_phenotypes = dict()
-            phenotype_to_diseases = dict()
+            records = []
+
             for row in reader:
                 # phenotype term id
                 # convert alternate phenotype id to primary
                 term_id = row['HPO_ID']
+                if term_id not in hpo_network.nodes():
+                    continue
                 # parse disease id, currently only supports omim entries
                 db, disease_accession = row['DatabaseID'].split(':')
                 if db not in ['OMIM']:
@@ -38,24 +40,10 @@ def read_hpo_annotation_file(phenotype_annotations_file, logger=None):
                 # For now, skip negative phenotype annotations
                 if row['Qualifier'] == 'NOT':
                     continue
-                if term_id not in phenotype_to_diseases:
-                    phenotype_to_diseases[term_id] = {disease_accession: {'frequency': []}}
-                else:
-                    if disease_accession not in phenotype_to_diseases[term_id]:
-                        phenotype_to_diseases[term_id].update({disease_accession: {'frequency': []}})
 
-                phenotype_to_diseases[term_id][disease_accession]['frequency'].append(
-                    frequency_converter(row['Frequency']))
+                records.append((term_id, disease_accession, frequency_converter(row['Frequency'])))
 
-                # add the phenotype to the disease in the disease_records dictionary
-                if disease_accession not in disease_to_phenotypes:
-                    disease_to_phenotypes[disease_accession] = {'record_id': disease_accession,
-                                                                'terms': [],
-                                                                'weights': {'disease_frequency': [],
-                                                                            },
-                                                                }
-                disease_to_phenotypes[disease_accession]['terms'].append(term_id)
-        return disease_to_phenotypes, phenotype_to_diseases
+        return records
 
     except (FileNotFoundError, PermissionError) as e:
         hpoa_file_error_msg = f'{phenotype_annotations_file} not found or incorrect permissions'
@@ -66,16 +54,63 @@ def read_hpo_annotation_file(phenotype_annotations_file, logger=None):
         exit(1)
 
 
-def load(phenotype_annotations_file, hpo_network, alt2prim):
+def read_custom_annotation_file(custom_annotation_file_path, hpo_network, logger=None):
+    try:
+        with open(custom_annotation_file_path, 'r') as tsv_fh:
+            reader = csv.reader(tsv_fh, delimiter='\t')
+
+            records = []
+            for row in reader:
+                # phenotype term id
+                # convert alternate phenotype id to primary
+                term_id, disease_accession, freq = row
+                if term_id not in hpo_network.nodes():
+                    continue
+
+                records.append((term_id, disease_accession, float(freq)))
+
+        return records
+
+    except (FileNotFoundError, PermissionError) as e:
+        hpoa_file_error_msg = f'{custom_annotation_file_path} not found or incorrect permissions'
+        if logger is not None:
+            logger.critical(hpoa_file_error_msg)
+        else:
+            sys.stderr.write(hpoa_file_error_msg)
+        exit(1)
+
+
+def load(phenotype_annotations_file, hpo_network, alt2prim, default_frequency=0.5):
     """Parse the hpoa file
     :param phenotype_annotations_file: path to the phenotype.hpoa file
     :return: three dictionaries of disease to phenotypes, phenotypes to disease, and phenotypes to disease frequencies
     """
     if phenotype_annotations_file.endswith("hpoa"):
-        disease_to_phenotypes, phenotype_to_diseases = read_hpo_annotation_file(phenotype_annotations_file)
+        records = read_hpo_annotation_file(phenotype_annotations_file,hpo_network)
     else:
-        raise NotImplementedError
-        exit(1)
+        records = read_custom_annotation_file(phenotype_annotations_file,hpo_network)
+
+    disease_to_phenotypes = dict()
+    phenotype_to_diseases = dict()
+
+    for r in records:
+        term_id, disease_accession, freq = r
+        if term_id not in phenotype_to_diseases:
+            phenotype_to_diseases[term_id] = {disease_accession: {'frequency': default_frequency}}
+        else:
+            if disease_accession not in phenotype_to_diseases[term_id]:
+                phenotype_to_diseases[term_id].update({disease_accession: {'frequency': default_frequency}})
+
+        phenotype_to_diseases[term_id][disease_accession]['frequency'] = freq
+
+        # add the phenotype to the disease in the disease_records dictionary
+        if disease_accession not in disease_to_phenotypes:
+            disease_to_phenotypes[disease_accession] = {'record_id': disease_accession,
+                                                        'terms': [],
+                                                        'weights': {'disease_frequency': [],
+                                                                    },
+                                                        }
+        disease_to_phenotypes[disease_accession]['terms'].append(term_id)
 
     # going from dict to a list of disease records and setting weights
     disease_records = list()
@@ -86,22 +121,21 @@ def load(phenotype_annotations_file, hpo_network, alt2prim):
             term_id = term_id if term_id not in alt2prim else alt2prim[term_id]
             if term_id not in hpo_network.nodes():
                 continue
-            try:
-                frequency_weight = np.mean(phenotype_to_diseases[term_id][disease_accession]['frequency'])
-            except TypeError:
-                # TODO: discuss with team what is a good default for the unannotated disease frequency.
-                frequency_weight = 0.5
+
+            frequency_weight = phenotype_to_diseases[term_id][disease_accession]['frequency']
+            #
             disease['weights']['disease_frequency'].append(frequency_weight)
+
         disease_records.append(disease)
 
-    # TODO: do we need phenotype_to_diseases
+    # TODO: do we need phenotype_to_diseases?
     return disease_records, phenotype_to_diseases
 
 
 def frequency_converter(hpoa_frequency):
     """convert the frequency column from the hpoa file to a float"""
     if 'HP:' in hpoa_frequency:
-        return hpo_id_to_float.get(hpoa_frequency, '')
+        return hpo_id_to_float.get(hpoa_frequency, 0.5)
 
     elif '/' in hpoa_frequency:
         n, d = hpoa_frequency.split('/')
@@ -110,4 +144,4 @@ def frequency_converter(hpoa_frequency):
     elif '%' in hpoa_frequency:
         return float(hpoa_frequency.strip('%')) / 100
     # return 0.5 by default
-    return None
+    return 0.5
