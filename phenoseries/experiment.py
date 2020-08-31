@@ -6,7 +6,8 @@ import requests
 
 from phenopy import generate_annotated_hpo_network
 from phenopy.config import config, logger
-from phenopy.util import remove_parents
+from phenopy.score import Scorer
+from phenopy.util import remove_parents, half_product
 
 from txt2hpo.extract import Extractor
 
@@ -19,12 +20,14 @@ def request_mimid_info(mimid):
     request mimid description from OMIM
     """
     access = "entry?"
-
+    api_key = os.getenv('OMIM_API_KEY')
+    if api_key is None:
+        api_key = config.get("omim", "omim_api_key")
     payload = {
         "mimNumber": mimid,
         "include": "text",
         "format": "json",
-        "apiKey": config.get("omim", "omim_api_key"),
+        "apiKey": api_key,
     }
 
     r = requests.get(OMIM_API_URL + access, params=payload)
@@ -43,10 +46,112 @@ def convert_and_filter_hpoids(terms, hpo, alt2prim):
     return terms
 
 
-def build_phenoseries_experiment(
-    phenotypic_series_filepath=None, outdir=None, min_hpos=4, min_entities=2, phenoseries_fraction=1.0
+def make_rank_dataframe(pairwise_sim_matrix, mimdf, ps2mimids):
+    relevant_ranks_results = []
+    for psid, ps_mim_ids in ps2mimids.items():
+        # Grab the index of the "relevant" mim ids
+        # Helps identify index in pairwise distance matrix
+        ps_mim_idxs = mimdf[mimdf["omim_id"].isin(ps_mim_ids)].index.tolist()
+        for query_mim_idx in ps_mim_idxs:
+            ranks = return_relevant_ranks(
+                pairwise_sim_matrix, query_mim_idx, ps_mim_idxs
+            )
+            query_mim = mimdf.iloc[query_mim_idx]["omim_id"]
+            relevant_ranks_results.append([psid, query_mim, ranks])
+
+    rankdf = pd.DataFrame(
+        relevant_ranks_results, columns=["psid", "query_mim_id", "relevant_ranks"]
+    )
+    # for calculation of recall -- TP / total relevant
+    rankdf["total_relevant"] = rankdf.apply(
+        lambda row: len(row["relevant_ranks"]), axis=1
+    )
+
+    return rankdf
+
+
+def return_relevant_ranks(pairwise_sim, query_idx, other_mim_indices):
+    """Given a pairwise similarity matrix, compute the rank of the similarity between
+    a query mim and another mim disease from the same PS.
+    """
+    other_idxs = other_mim_indices.copy()
+    other_idxs.remove(query_idx)
+    array = pairwise_sim[query_idx].copy()
+    order = array.argsort()
+    ranks = order.argsort()
+    ranks = max(ranks) - ranks
+    return sorted(ranks[other_idxs])
+
+
+def phenoseries_ranks(
+    mimdf, pairwise_scores, ps2mimids, outdir=None
 ):
-    """Create a DataFrame that has PS and list of MIM ids."""
+
+    if outdir is None:
+        outdir = os.getcwd()
+
+    rankdf = make_rank_dataframe(pairwise_scores.values, mimdf, ps2mimids)
+    rankdf.to_csv(
+        os.path.join(outdir, "phenoseries.ranks.dataframe.txt"), sep="\t", index=False
+    )
+    # ranks = list(chain.from_iterable(rankdf["relevant_ranks"].tolist()))
+    return rankdf#, ranks
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--outdir", "-o", default=os.getcwd(), help="Path where to store the results."
+    )
+    parser.add_argument(
+        "--phenotypic-series-filepath",
+        "-p",
+        help="path to the omim text file defining phenotypic series to omim id",
+    )
+    parser.add_argument(
+        "--min-hpos",
+        "-n",
+        default=4,
+        type=int,
+        help="The minimum number of hpo ids per entity (mim id, for example) to be considered for the experiment",
+    )
+    parser.add_argument(
+        "--min-entities",
+        "-m",
+        default=2,
+        type=int,
+        help="The minimum number of entities (mim id, for example) per series to be considered for the experiment",
+    )
+    parser.add_argument(
+        "--phenoseries-fraction",
+        "-f",
+        default=1.0,
+        help="The fraction of phenoseries to use",
+        type=float,
+    )
+    parser.add_argument(
+        "--scoring-method",
+        "-s",
+        default='HRSS',
+        help="The scoring method to use",
+        type=str,
+    )
+    parser.add_argument(
+        "--threads",
+        "-t",
+        default=4,
+        help="The number of threads to use",
+        type=int,
+    )
+    args = parser.parse_args()
+
+    outdir = args.outdir
+    phenotypic_series_filepath = args.phenotypic_series_filepath
+    min_hpos = args.min_hpos
+    min_entities = args.min_entities
+    phenoseries_fraction = args.phenoseries_fraction
+    scoring_method = args.scoring_method
+    threads = args.threads
 
     # load HPO network
     # data directory
@@ -83,7 +188,7 @@ def build_phenoseries_experiment(
         names=["PS", "MIM", "Phenotype"],
     )
     # null phenotypes are actually null MIM id fields, so just drop these
-    psdf = psdf.dropna().sample(frac=phenoseries_fraction, random_state=72)
+    psdf = psdf.dropna().sample(frac=phenoseries_fraction, random_state=42)
     psdf.reset_index(inplace=True, drop=True)
 
     # create a dictionary for phenotypic series to list of omim ids mapping
@@ -175,65 +280,50 @@ def build_phenoseries_experiment(
     mimdf = pd.DataFrame()
     mimdf["omim_id"] = experiment_omims
     mimdf["hpo_terms"] = mimdf["omim_id"].apply(lambda mim_id: mim_hpos[mim_id])
-    mimdf['age'] = '.'
-    mimdf["hpo_string"] = mimdf["hpo_terms"].apply("|".join)
 
-    # dump the mimdf DataFrame to csv
-    mimdf[["omim_id", "age", "hpo_string"]].to_csv(
-        os.path.join(outdir, "phenoseries.mim_hpo_ids.txt"),
-        sep="\t",
-        index=False,
-        header=False,
+    # data directory
+    phenopy_data_directory = os.path.join(os.getenv("HOME"), ".phenopy/data")
+
+    # files used in building the annotated HPO network
+    obo_file = os.path.join(phenopy_data_directory, "hp.obo")
+    disease_to_phenotype_file = os.path.join(phenopy_data_directory, "phenotype.hpoa")
+
+    # if you have a custom ages_distribution_file, you can set it here.
+    # ages_distribution_file = os.path.join(phenopy_data_directory, 'xa_age_stats_oct052019.tsv')
+
+    hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(
+        obo_file, disease_to_phenotype_file,
     )
 
-    # dump the dictionary that contains list of mims for each ps
-    with open(os.path.join(outdir, "phenoseries.ps_mim_ids.pkl"), "wb") as handle:
-        dump(experiment_ps2mimids, handle)
+    scorer = Scorer(hpo_network, scoring_method=scoring_method)
+    records = [
+        {
+            "record_id": mim_id,
+            "terms": convert_and_filter_hpoids(hpo_terms, hpo_network, alt2prim),
+            "weights": {},
+        }
+        for mim_id, hpo_terms in dict(zip(mimdf["omim_id"], mimdf["hpo_terms"])).items()
+    ]
 
+    results = scorer.score_records(
+        records,
+        records,
+        half_product(len(records), len(records)),
+        threads=threads
+    )
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--outdir", "-o", default=os.getcwd(), help="Path where to store the results."
+    pairwise_scores = pd.DataFrame(results, columns=['mimid1', 'mimid2', 'phenopy-score'])
+    # convert to square form
+    pairwise_scores = pairwise_scores.set_index(['mimid1', 'mimid2']).unstack()
+    # This pandas method chain fills in the missing scores of the square matrix with the values from the transpose of df.
+    pairwise_scores = (
+        pairwise_scores["phenopy-score"]
+        .reset_index(drop=True)
+        .fillna(pairwise_scores.T.droplevel(0).reset_index(drop=True))
+        .set_index(pairwise_scores.index, drop=True)
     )
-    parser.add_argument(
-        "--phenotypic-series-filepath",
-        "-p",
-        help="path to the omim text file defining phenotypic series to omim id",
-    )
-    parser.add_argument(
-        "--min-hpos",
-        "-n",
-        default=4,
-        type=int,
-        help="The minimum number of hpo ids per entity (mim id, for example) to be considered for the experiment",
-    )
-    parser.add_argument(
-        "--min-entities",
-        "-m",
-        default=2,
-        type=int,
-        help="The minimum number of entities (mim id, for example) per series to be considered for the experiment",
-    )
-    parser.add_argument(
-        "--phenoseries-fraction",
-        "-f",
-        default=1.0,
-        help="The fraction of phenoseries to use",
-        type=float
-    )
-    args = parser.parse_args()
+    # reindex with the mimdf index
+    pairwise_scores = pairwise_scores.reindex(mimdf["omim_id"].tolist())
+    pairwise_scores = pairwise_scores[mimdf["omim_id"].tolist()]
 
-    outdir = args.outdir
-    phenotypic_series_filepath = args.phenotypic_series_filepath
-    min_hpos = args.min_hpos
-    min_entities = args.min_entities
-    phenoseries_fraction = args.phenoseries_fraction
-
-    build_phenoseries_experiment(
-        phenotypic_series_filepath=phenotypic_series_filepath,
-        outdir=outdir,
-        min_hpos=min_hpos,
-        min_entities=min_entities,
-        phenoseries_fraction=phenoseries_fraction,
-    )
+    ranksdf = make_rank_dataframe(pairwise_scores.values, mimdf, experiment_ps2mimids)
