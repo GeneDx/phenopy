@@ -20,7 +20,7 @@ def request_mimid_info(mimid):
     request mimid description from OMIM
     """
     access = "entry?"
-    api_key = os.getenv('OMIM_API_KEY')
+    api_key = os.getenv("OMIM_API_KEY")
     if api_key is None:
         api_key = config.get("omim", "omim_api_key")
     payload = {
@@ -83,9 +83,7 @@ def return_relevant_ranks(pairwise_sim, query_idx, other_mim_indices):
     return sorted(ranks[other_idxs])
 
 
-def phenoseries_ranks(
-    mimdf, pairwise_scores, ps2mimids, outdir=None
-):
+def phenoseries_ranks(mimdf, pairwise_scores, ps2mimids, outdir=None):
 
     if outdir is None:
         outdir = os.getcwd()
@@ -95,7 +93,7 @@ def phenoseries_ranks(
         os.path.join(outdir, "phenoseries.ranks.dataframe.txt"), sep="\t", index=False
     )
     # ranks = list(chain.from_iterable(rankdf["relevant_ranks"].tolist()))
-    return rankdf#, ranks
+    return rankdf  # , ranks
 
 
 if __name__ == "__main__":
@@ -132,16 +130,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--scoring-method",
         "-s",
-        default='HRSS',
+        default="HRSS",
         help="The scoring method to use",
         type=str,
     )
     parser.add_argument(
-        "--threads",
-        "-t",
-        default=4,
-        help="The number of threads to use",
-        type=int,
+        "--threads", "-t", default=4, help="The number of threads to use", type=int,
     )
     args = parser.parse_args()
 
@@ -306,15 +300,14 @@ if __name__ == "__main__":
     ]
 
     results = scorer.score_records(
-        records,
-        records,
-        half_product(len(records), len(records)),
-        threads=threads
+        records, records, half_product(len(records), len(records)), threads=threads
     )
 
-    pairwise_scores = pd.DataFrame(results, columns=['mimid1', 'mimid2', 'phenopy-score'])
+    pairwise_scores = pd.DataFrame(
+        results, columns=["mimid1", "mimid2", "phenopy-score"]
+    )
     # convert to square form
-    pairwise_scores = pairwise_scores.set_index(['mimid1', 'mimid2']).unstack()
+    pairwise_scores = pairwise_scores.set_index(["mimid1", "mimid2"]).unstack()
     # This pandas method chain fills in the missing scores of the square matrix with the values from the transpose of df.
     pairwise_scores = (
         pairwise_scores["phenopy-score"]
