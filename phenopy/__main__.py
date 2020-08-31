@@ -73,7 +73,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     if self:
         score_records = input_records
 
-        scoring_pairs = list(half_product(len(score_records), len(score_records)))
+        scoring_pairs = half_product(len(score_records), len(score_records))
     else:
         if records_file:
             score_records = parse_input(records_file, hpo_network, alt2prim)
@@ -86,27 +86,27 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         )
 
     # launch as many scoring process as requested
-    with Pool(threads) as p:
-        results = p.starmap(
-            scorer.score_records,
-            [
-                (
-                    input_records,  # a records
-                    score_records,  # b records
-                    scoring_pairs,  # pairs
-                    i,  # thread_index
-                    threads,  # threads
-                ) for i in range(threads)
-            ]
-        )
+    # with Pool(threads) as p:
+    #     results = p.starmap(
+    #         scorer.score_records,
+    #         [
+    #             (
+    #                 input_records,  # a records
+    #                 score_records,  # b records
+    #                 scoring_pairs,  # pairs
+    #                 i,  # thread_index
+    #                 threads,  # threads
+    #             ) for i in range(threads)
+    #         ]
+    #     )
+    results = scorer.score_records(input_records, score_records, scoring_pairs, threads)
 
     with open_or_stdout(output_file) as output_fh:
         output_fh.write('\t'.join(['#query', 'entity_id', 'score']))
         output_fh.write('\n')
         for r in results:
-            for s in r:
-                output_fh.write('\t'.join(s))
-                output_fh.write('\n')
+            output_fh.write('\t'.join(r))
+            output_fh.write('\n')
 
 
 def main():
