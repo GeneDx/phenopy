@@ -3,6 +3,7 @@ import logging
 import os
 import urllib.request
 import shutil
+from gensim.models import KeyedVectors
 
 from phenopy import __project__, __version__
 
@@ -98,6 +99,15 @@ except FileExistsError:
 logger.info(f'checking if config file exists: {config_directory}')
 if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
     config = configparser.ConfigParser()
+    w2v_path = os.path.join(os.path.dirname(__file__),
+                            'data/phenopy.wv.model.txt.gz')
+
+    w2v_vw_path = os.path.join(data_directory, 'phenopy.w2v.model')
+
+    wv = KeyedVectors.load_word2vec_format(w2v_path)
+    # save model in faster to load format in users directory
+    wv.save(w2v_vw_path)
+
     config['hpo'] = {
             'obo_file': os.path.join(
                 data_directory,
@@ -113,7 +123,11 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
                 data_directory,
                 'phenotype.hpoa',
             ),
+
         }
+
+    config['models'] = {'phenopy.wv.model': w2v_vw_path}
+    print(config.get('models', 'phenopy.wv.model'))
     config['age'] = {
         'open_access_phenotype_age': os.path.join(
             project_data_dir,

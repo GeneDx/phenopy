@@ -1,13 +1,12 @@
 import itertools
 import gensim
 import networkx as nx
-import os
 import numpy as np
 import pandas as pd
 
 from functools import lru_cache
 from phenopy.weights import calculate_age_weights
-from phenopy.config import data_directory
+from phenopy.config import config
 
 
 class Scorer:
@@ -23,9 +22,10 @@ class Scorer:
         self.scoring_method = scoring_method
         if scoring_method == 'word2vec':
             try:
-                model = gensim.models.Word2Vec.load(os.path.join(data_directory, "phenopy.w2v.model"))
-                self.word_vectors = model.wv
-                del model
+                print("---")
+                print(config.get('models', 'phenopy.wv.model'))
+                print("---")
+                self.word_vectors = gensim.models.KeyedVectors.load(config.get('models', 'phenopy.wv.model'))
             except FileNotFoundError:
                 raise ValueError("Please make sure that a word2vec model is in your project data directory.")
 
@@ -218,7 +218,15 @@ class Scorer:
             return float(intersection) / union
 
         elif self.scoring_method == 'word2vec':
-            return self.word_vectors.n_similarity(terms_a, terms_b)
+
+            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
+            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+
+            if in_vocab_terms_a and in_vocab_terms_b:
+
+                return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
+            else:
+                return 0.0
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
