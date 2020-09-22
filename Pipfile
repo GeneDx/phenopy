@@ -9,6 +9,7 @@ pytest = "*"
 pytest-cov = "*"
 
 [packages]
+gensim = "*"
 obonet = "*"
 fire = "*"
 pandas = "*"

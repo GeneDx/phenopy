@@ -1,10 +1,13 @@
 import itertools
+import gensim
 import networkx as nx
+import os
 import numpy as np
 import pandas as pd
 
 from functools import lru_cache
 from phenopy.weights import calculate_age_weights
+from phenopy.config import data_directory
 
 
 class Scorer:
@@ -15,9 +18,16 @@ class Scorer:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
         self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
-        if scoring_method not in ['HRSS', 'Resnik', 'Jaccard']:
-            raise ValueError('Unsupported semantic similarity scoring method, please choose from HRSS, Resnik, or Jaccard.')
+        if scoring_method not in ['HRSS', 'Resnik', 'Jaccard', 'word2vec']:
+            raise ValueError('Unsupported semantic similarity scoring method, please choose from HRSS, Resnik, Jaccard, or word2vec.')
         self.scoring_method = scoring_method
+        if scoring_method == 'word2vec':
+            try:
+                model = gensim.models.Word2Vec.load(os.path.join(data_directory, "phenopy.w2v.model"))
+                self.word_vectors = model.wv
+                del model
+            except FileNotFoundError:
+                raise ValueError("Please make sure that a word2vec model is in your project data directory.")
 
     def find_lca(self, term_a, term_b):
         """
@@ -159,6 +169,9 @@ class Scorer:
             union = (len(terms_a) + len(terms_b)) - intersection
             return float(intersection) / union
 
+        elif self.scoring_method == 'word2vec':
+            return self.word_vectors.n_similarity(terms_a, terms_b)
+
         # calculate weights for record_a and record_b
         weights_a = record_a['weights'].copy() if record_a['weights'] is not None else []
         weights_b = record_b['weights'].copy() if record_b['weights'] is not None else []
@@ -203,6 +216,9 @@ class Scorer:
             intersection = len(list(set(terms_a).intersection(terms_b)))
             union = (len(terms_a) + len(terms_b)) - intersection
             return float(intersection) / union
+
+        elif self.scoring_method == 'word2vec':
+            return self.word_vectors.n_similarity(terms_a, terms_b)
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
