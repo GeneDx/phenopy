@@ -127,7 +127,6 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
         }
 
     config['models'] = {'phenopy.wv.model': w2v_vw_path}
-    print(config.get('models', 'phenopy.wv.model'))
     config['age'] = {
         'open_access_phenotype_age': os.path.join(
             project_data_dir,

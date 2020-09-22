@@ -22,9 +22,6 @@ class Scorer:
         self.scoring_method = scoring_method
         if scoring_method == 'word2vec':
             try:
-                print("---")
-                print(config.get('models', 'phenopy.wv.model'))
-                print("---")
                 self.word_vectors = gensim.models.KeyedVectors.load(config.get('models', 'phenopy.wv.model'))
             except FileNotFoundError:
                 raise ValueError("Please make sure that a word2vec model is in your project data directory.")
