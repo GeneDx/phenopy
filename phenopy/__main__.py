@@ -3,12 +3,12 @@ import itertools
 import sys
 
 from configparser import NoOptionError, NoSectionError
-from multiprocessing import Pool
 
 from phenopy import open_or_stdout, generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.score import Scorer
 from phenopy.util import parse_input, half_product
+from phenoseries.experiment import run_phenoseries_experiment
 
 
 def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
@@ -85,20 +85,6 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
             range(len(score_records)),
         )
 
-    # launch as many scoring process as requested
-    # with Pool(threads) as p:
-    #     results = p.starmap(
-    #         scorer.score_records,
-    #         [
-    #             (
-    #                 input_records,  # a records
-    #                 score_records,  # b records
-    #                 scoring_pairs,  # pairs
-    #                 i,  # thread_index
-    #                 threads,  # threads
-    #             ) for i in range(threads)
-    #         ]
-    #     )
     results = scorer.score_records(input_records, score_records, scoring_pairs, threads)
 
     with open_or_stdout(output_file) as output_fh:
@@ -109,9 +95,40 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
             output_fh.write('\n')
 
 
+def validate_phenoseries(phenotypic_series_filepath, outdir=None, min_hpos=4, min_entities=2, phenoseries_fraction=1.0,
+                         scoring_method='HRSS', threads=1, omim_phenotypes_file="", pairwise_mim_scores_file=""):
+    """
+    This runs the phenoseries experiment for a fraction of the OMIM phenoseries (PSid's). It Outputs a file with each
+    row containing: PSid, MIMid, Python list of integers (ranks), and the length of the list.
+
+    :param phenotypic_series_filepath: The phenotypicSeries.txt file from OMIM API. This is required to run validation.
+    :param outdir: Directory where output files will be written.
+    :param min_hpos: The minimum number of HPO ids annotated to a MIM id for the MIM id to be included in the experiment.
+    :param min_entities: The minimum number of MIM ids for a phenoseries id to be included in the experiment.
+    :param phenoseries_fraction: The fraction of total phenoseries to evaluate.
+    :param socring_method: Either HRSS, Resnik, Jaccard, or word2vec
+    :param threads: Number of parallel processes to use. [default: 1]
+    :param omim_phenotypes_file: <Optional> Path to the file containing OMIM id in the first column and a Python
+     list of hpo ids in the second column.
+    :param pairwise_mim_scores_file: <Optional> Path to the file containing similarity scores for each of the
+    """
+    run_phenoseries_experiment(
+        outdir = outdir,
+        phenotypic_series_filepath=phenotypic_series_filepath,
+        min_hpos=min_hpos,
+        min_entities=min_entities,
+        phenoseries_fraction=phenoseries_fraction,
+        scoring_method=scoring_method,
+        threads=threads,
+        omim_phenotypes_file=omim_phenotypes_file,
+        pairwise_mim_scores_file=pairwise_mim_scores_file,
+        )
+
+
 def main():
     fire.Fire({
         'score': score,
+        'validate-phenoseries': validate_phenoseries,
     })
 
 
