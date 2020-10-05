@@ -432,3 +432,28 @@ class ScorerTestCase(unittest.TestCase):
         terms_b = ['HP:0001290', 'HP:0011351']
 
         self.assertAlmostEqual(0.33, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
+
+    def test_score_word2vec_basic(self):
+        """Test the scoring functionality"""
+        scorer = Scorer(self.hpo_network, scoring_method='word2vec')
+        terms_a = ['HP:0001290', 'HP:0000118']
+        terms_b = ['HP:0001290', 'HP:0011351']
+
+        self.assertAlmostEqual(0.16, scorer.score_term_sets_basic(terms_a, terms_b), 2)
+
+    def test_score_word2vec_out_of_vocab(self):
+        """Test the scoring functionality"""
+        scorer = Scorer(self.hpo_network, scoring_method='word2vec')
+        terms_a = ['HP:NOT_A_TERM', 'HP:0000118']
+        terms_b = ['HP:0001290', 'NOT_A_TERM']
+
+        self.assertAlmostEqual(0.06, scorer.score_term_sets_basic(terms_a, terms_b), 2)
+
+    def test_score_word2vec_empty(self):
+        """Test the scoring functionality"""
+        scorer = Scorer(self.hpo_network, scoring_method='word2vec')
+        terms_a = []
+        terms_b = ['HP:0001290', 'HP:0011351']
+
+        self.assertEqual(0.0, scorer.score_term_sets_basic(terms_a, terms_b), 2)
+
