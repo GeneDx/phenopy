@@ -11,7 +11,7 @@ from phenopy.score import Scorer
 from phenopy.util import parse_input, half_product
 
 
-def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
+def score(input_file, output_file='-', records_file=None, annotations_file=None, custom_dis_file_path=None, ages_distribution_file=None,
           self=False, summarization_method='BMWA', scoring_method='HRSS', threads=1):
     """
     Scores similarity of provided HPO annotated entries (see format below) against a set of HPO annotated dataset. By
@@ -41,15 +41,17 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         logger.critical(
             'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
         exit(1)
-
-    try:
-        disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
-    except (NoSectionError, NoOptionError):
-        logger.critical(
-            'No HPO annotated dataset file found in the configuration file.'
-            ' See "hpo:disease_to_phenotype_file" parameter.'
-        )
-        exit(1)
+    if custom_dis_file_path is None:
+        try:
+            disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
+        except (NoSectionError, NoOptionError):
+            logger.critical(
+                'No HPO annotated dataset file found in the configuration file.'
+                ' See "hpo:disease_to_phenotype_file" parameter.'
+            )
+            exit(1)
+    else:
+        disease_to_phenotype_file = custom_dis_file_path
 
     logger.info(f'Loading HPO OBO file: {obo_file}')
     hpo_network, alt2prim, disease_records = \
