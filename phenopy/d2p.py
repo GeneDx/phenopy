@@ -17,7 +17,6 @@ def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=Non
     :param phenotype_annotations_file: path to the phenotype.hpoa file
     :return: records
     """
-
     try:
         with open(phenotype_annotations_file, 'r') as tsv_fh:
             [next(tsv_fh) for _ in range(4)]
@@ -29,7 +28,6 @@ def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=Non
 
             for row in reader:
                 # phenotype term id
-                # convert alternate phenotype id to primary
                 term_id = row['HPO_ID']
                 if term_id not in hpo_network.nodes():
                     continue
@@ -86,9 +84,9 @@ def load(phenotype_annotations_file, hpo_network, alt2prim, default_frequency=0.
     :return: three dictionaries of disease to phenotypes, phenotypes to disease, and phenotypes to disease frequencies
     """
     if phenotype_annotations_file.endswith("hpoa"):
-        records = read_hpo_annotation_file(phenotype_annotations_file,hpo_network)
+        records = read_hpo_annotation_file(phenotype_annotations_file, hpo_network)
     else:
-        records = read_custom_annotation_file(phenotype_annotations_file,hpo_network)
+        records = read_custom_annotation_file(phenotype_annotations_file, hpo_network)
 
     disease_to_phenotypes = dict()
     phenotype_to_diseases = dict()
@@ -132,10 +130,11 @@ def load(phenotype_annotations_file, hpo_network, alt2prim, default_frequency=0.
     return disease_records, phenotype_to_diseases
 
 
-def frequency_converter(hpoa_frequency):
+def frequency_converter(hpoa_frequency, default_frequency=0.5):
     """convert the frequency column from the hpoa file to a float"""
     if 'HP:' in hpoa_frequency:
-        return hpo_id_to_float.get(hpoa_frequency, 0.5)
+        #TODO discuss the best default
+        return hpo_id_to_float.get(hpoa_frequency, default_frequency)
 
     elif '/' in hpoa_frequency:
         n, d = hpoa_frequency.split('/')
@@ -143,5 +142,7 @@ def frequency_converter(hpoa_frequency):
 
     elif '%' in hpoa_frequency:
         return float(hpoa_frequency.strip('%')) / 100
+
     # return 0.5 by default
-    return 0.5
+    #TODO discuss the best default
+    return default_frequency
