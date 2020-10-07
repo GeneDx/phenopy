@@ -94,8 +94,8 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     with open_or_stdout(output_file) as output_fh:
         output_fh.write('\t'.join(['#query', 'entity_id', 'score']))
         output_fh.write('\n')
-        for r in results:
-            output_fh.write('\t'.join(r))
+        for result in results:
+            output_fh.write('\t'.join(str(column) for column in result))
             output_fh.write('\n')
 
 

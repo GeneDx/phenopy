@@ -151,7 +151,8 @@ class Scorer:
 
         :param record_a: record A.
         :param record_b: record B.
-        :return: `float` (comparison score)
+        :return: record_a record id, record_b record id, `float` (comparison score)
+        :rtype: tuple
         """
         if self.summarization_method not in ['BMA', 'BMWA', 'maximum']:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
@@ -160,12 +161,12 @@ class Scorer:
         terms_a = record_a['terms']
         terms_b = record_b['terms']
         if not terms_a or not terms_b:
-            return record_a['record_id'], record_b['record_id'], '0.0'
+            return record_a['record_id'], record_b['record_id'], 0.0
 
         if self.scoring_method == 'Jaccard':
             intersection = len(list(set(terms_a).intersection(terms_b)))
             union = (len(terms_a) + len(terms_b)) - intersection
-            return record_a['record_id'], record_b['record_id'], str(float(intersection) / union)
+            return record_a['record_id'], record_b['record_id'], float(intersection) / union
 
         elif self.scoring_method == 'word2vec':
             in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
@@ -174,7 +175,7 @@ class Scorer:
             if in_vocab_terms_a and in_vocab_terms_b:
                 return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
             else:
-                return 0.0
+                return record_a['record_id'], record_b['record_id'], 0.0
 
 
         # calculate weights for record_a and record_b
@@ -200,11 +201,11 @@ class Scorer:
         ).unstack()
 
         if self.summarization_method == 'maximum':
-            return record_a['record_id'], record_b['record_id'], str(self.maximum(df))
+            return record_a['record_id'], record_b['record_id'], self.maximum(df)
         elif self.summarization_method == 'BMWA' and any([weights_a, weights_b]):
-            return record_a['record_id'], record_b['record_id'], str(self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b))
+            return record_a['record_id'], record_b['record_id'], self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
         else:
-            return record_a['record_id'], record_b['record_id'], str(self.best_match_average(df))
+            return record_a['record_id'], record_b['record_id'], self.best_match_average(df)
 
     def score_term_sets_basic(self, terms_a, terms_b):
         """
