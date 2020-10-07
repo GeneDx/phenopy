@@ -11,7 +11,7 @@ from phenopy.util import parse_input, half_product
 from phenoseries.experiment import run_phenoseries_experiment
 
 
-def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
+def score(input_file, output_file='-', records_file=None, annotations_file=None, custom_disease_file=None, ages_distribution_file=None,
           self=False, summarization_method='BMWA', scoring_method='HRSS', threads=1):
     """
     Scores similarity of provided HPO annotated entries (see format below) against a set of HPO annotated dataset. By
@@ -26,12 +26,13 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
      provided, is used to score entries in the "input_file" against entries here. [default: None]
     :param annotations_file: An entity-to-phenotype annotation file in the same format as "input_file". This file, if
      provided, is used to add information content to the network. [default: None]
+    :param custom_disease_file: entity Annotation for ranking diseases/genes
     :param ages_distribution_file: Phenotypes age summary stats file containing phenotype HPO id, mean_age, and std.
      [default: None]
     :param self: Score entries in the "input_file" against itself.
     :param summarization_method: The method used to summarize the HRSS matrix. Supported Values are best match average
     (BMA), best match weighted average (BMWA), and maximum (maximum). [default: BMWA]
-    :param socring_method: Either HRSS or Resnik
+    :param scoring_method: Either HRSS or Resnik
     :param threads: Number of parallel processes to use. [default: 1]
     """
 
@@ -41,15 +42,18 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         logger.critical(
             'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
         exit(1)
-
-    try:
-        disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
-    except (NoSectionError, NoOptionError):
-        logger.critical(
-            'No HPO annotated dataset file found in the configuration file.'
-            ' See "hpo:disease_to_phenotype_file" parameter.'
-        )
-        exit(1)
+    if custom_disease_file is None:
+        try:
+            disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
+        except (NoSectionError, NoOptionError):
+            logger.critical(
+                'No HPO annotated dataset file found in the configuration file.'
+                ' See "hpo:disease_to_phenotype_file" parameter.'
+            )
+            exit(1)
+    else:
+        logger.info(f"using custom disease annotation file: {custom_disease_file}")
+        disease_to_phenotype_file = custom_disease_file
 
     logger.info(f'Loading HPO OBO file: {obo_file}')
     hpo_network, alt2prim, disease_records = \

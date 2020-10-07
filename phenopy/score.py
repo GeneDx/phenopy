@@ -172,9 +172,10 @@ class Scorer:
             in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
 
             if in_vocab_terms_a and in_vocab_terms_b:
-                return record_a['record_id'], record_b['record_id'], self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
+                return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
             else:
-                return record_a['record_id'], record_b['record_id'], 0.0
+                return 0.0
+
 
         # calculate weights for record_a and record_b
         weights_a = record_a['weights'].copy() if record_a['weights'] is not None else []
