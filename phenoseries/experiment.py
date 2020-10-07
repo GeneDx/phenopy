@@ -103,7 +103,7 @@ def run_phenoseries_experiment(outdir=None, phenotypic_series_filepath=None,
     obo_file = os.path.join(phenopy_data_directory, "hp.obo")
     disease_to_phenotype_file = os.path.join(phenopy_data_directory, "phenotype.hpoa")
 
-    hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(
+    hpo_network, alt2prim, _ = generate_annotated_hpo_network(
         obo_file, disease_to_phenotype_file, ages_distribution_file=None
     )
 
