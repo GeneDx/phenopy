@@ -17,7 +17,7 @@ class Scorer:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
         self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
-        if scoring_method not in ['HRSS', 'Resnik', 'Jaccard', 'word2vec']:
+        if scoring_method not in ['HRSS', 'Resnik', 'Jaccard', 'word2vec', 'Lin']:
             raise ValueError('Unsupported semantic similarity scoring method, please choose from HRSS, Resnik, Jaccard, or word2vec.')
         self.scoring_method = scoring_method
         if scoring_method == 'word2vec':
@@ -135,7 +135,14 @@ class Scorer:
         alpha_ic = self.hpo_network.nodes[lca_node]['ic']
         if self.scoring_method == 'Resnik':
             return alpha_ic
-
+        
+        if self.scoring_method == 'Lin':
+            sum_ic = self.hpo_network.nodes[term_a]['ic'] + self.hpo_network.nodes[term_b]['ic']
+            if sum_ic > 0: #check if not division by zero
+                    return ((2*alpha_ic) / sum_ic)
+            else:
+                    return 1.0
+                
         if (alpha_ic == 0.0) and (beta_ic == 0.0):
             return 0.0
 
