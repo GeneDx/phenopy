@@ -182,11 +182,24 @@ def likelihood_moldx(input_file, output_file=None, k_phenotype_groups=1000):
         sys.exit("Something went wrong writing the probabilities to file")
 
 
+def cluster(input_file, method, *args, **kwargs):
+    """
+    :param input_file:
+    :param method:
+    :param args:
+    :param kwargs:
+    :return:
+    """
+
+
+
 def main():
     fire.Fire({
         'score': score,
         'likelihood': likelihood_moldx,
         'validate-phenoseries': validate_phenoseries,
+        'cluster': cluster
+
     })
 
 
