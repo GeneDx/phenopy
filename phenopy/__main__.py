@@ -1,5 +1,7 @@
+from operator import pos
 import fire
 import itertools
+import lightgbm as lgb
 import sys
 
 from configparser import NoOptionError, NoSectionError
@@ -7,12 +9,13 @@ from multiprocessing import Pool
 
 from phenopy import open_or_stdout, generate_annotated_hpo_network
 from phenopy.config import config, logger
+from phenopy.likelihood import predict_likelihood_moldx
 from phenopy.score import Scorer
 from phenopy.util import parse_input, half_product
 
 
-def score(input_file, output_file='-', records_file=None, annotations_file=None, ages_distribution_file=None,
-          self=False, summarization_method='BMWA', threads=1):
+def score(input_file, output_file='-', records_file=None, annotations_file=None, custom_disease_file=None, ages_distribution_file=None,
+          self=False, summarization_method='BMWA', scoring_method='HRSS', threads=1):
     """
     Scores similarity of provided HPO annotated entries (see format below) against a set of HPO annotated dataset. By
     default scoring happens against diseases annotated by the HPO group. See https://hpo.jax.org/app/download/annotation.
@@ -26,11 +29,13 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
      provided, is used to score entries in the "input_file" against entries here. [default: None]
     :param annotations_file: An entity-to-phenotype annotation file in the same format as "input_file". This file, if
      provided, is used to add information content to the network. [default: None]
+    :param custom_disease_file: entity Annotation for ranking diseases/genes
     :param ages_distribution_file: Phenotypes age summary stats file containing phenotype HPO id, mean_age, and std.
      [default: None]
     :param self: Score entries in the "input_file" against itself.
     :param summarization_method: The method used to summarize the HRSS matrix. Supported Values are best match average
     (BMA), best match weighted average (BMWA), and maximum (maximum). [default: BMWA]
+    :param scoring_method: Either HRSS or Resnik
     :param threads: Number of parallel processes to use. [default: 1]
     """
 
@@ -40,15 +45,18 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
         logger.critical(
             'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
         exit(1)
-
-    try:
-        disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
-    except (NoSectionError, NoOptionError):
-        logger.critical(
-            'No HPO annotated dataset file found in the configuration file.'
-            ' See "hpo:disease_to_phenotype_file" parameter.'
-        )
-        exit(1)
+    if custom_disease_file is None:
+        try:
+            disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
+        except (NoSectionError, NoOptionError):
+            logger.critical(
+                'No HPO annotated dataset file found in the configuration file.'
+                ' See "hpo:disease_to_phenotype_file" parameter.'
+            )
+            exit(1)
+    else:
+        logger.info(f"using custom disease annotation file: {custom_disease_file}")
+        disease_to_phenotype_file = custom_disease_file
 
     logger.info(f'Loading HPO OBO file: {obo_file}')
     hpo_network, alt2prim, disease_records = \
@@ -63,7 +71,8 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
 
     # create instance the scorer class
     try:
-        scorer = Scorer(hpo_network, summarization_method=summarization_method)
+        scorer = Scorer(hpo_network, summarization_method=summarization_method,
+                        scoring_method=scoring_method)
     except ValueError as e:
         logger.critical(f'Failed to initialize scoring class: {e}')
         sys.exit(1)
@@ -107,9 +116,56 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
                 output_fh.write('\n')
 
 
+def likelihood_moldx(model, input_file, output_file=None):
+    """
+    :param model: The file path to a serialized lightgbm model. 
+    :param input_file: The file path to a file containing three columns. [ID\tkey=value\thpodid,hpoid,hpoid]
+    :param output_file: The file path to an output file containing the predicted probabilities
+    """
+    try:
+        obo_file = config.get('hpo', 'obo_file')
+    except (NoSectionError, NoOptionError):
+        logger.critical(
+            'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
+        exit(1)
+    try:
+        disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
+    except (NoSectionError, NoOptionError):
+        logger.critical(
+            'No HPO annotated dataset file found in the configuration file.'
+            ' See "hpo:disease_to_phenotype_file" parameter.'
+        )
+        exit(1)
+
+    logger.info(f'Loading HPO OBO file: {obo_file}')
+    hpo_network, alt2prim, _ = \
+        generate_annotated_hpo_network(obo_file,
+                                       disease_to_phenotype_file,
+                                       )
+    # if input file is given, output the probability of molecular diagnosis as an additional column.
+
+    # parse input records
+    input_records = parse_input(input_file, hpo_network, alt2prim)
+    record_ids = [record["record_id"] for record in input_records]
+    phenotypes = [record["terms"] for record in input_records]
+
+    # predict likelihood of molecular diagnosis
+    positive_probabilities = predict_likelihood_moldx(phenotypes, hpo_network, alt2prim)
+
+    if output_file is not None:
+        output_file = "phenopy.likelihood_moldx.txt"
+    try:
+        with open(output_file, "w") as f:
+            for sample_id, probability in zip(record_ids, positive_probabilities):
+                f.write(f"{sample_id}\t{probability}\n")
+    except IOError:
+        sys.exit("Something went wrong writing the probabilities to file")
+
+
 def main():
     fire.Fire({
         'score': score,
+        'likelihood': likelihood_moldx,
     })
 
 
