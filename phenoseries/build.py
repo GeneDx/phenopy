@@ -6,7 +6,7 @@ import requests
 
 from phenopy import generate_annotated_hpo_network
 from phenopy.config import config, logger
-from phenopy.util import standardize_phenotypes
+from phenopy.util import standardize_phenotypes, remove_parents
 
 from txt2hpo.extract import Extractor
 
@@ -32,6 +32,15 @@ def request_mimid_info(mimid):
         return r
     else:
         logger.critical("Please set the omim_api_key in your phenopy.ini config file")
+
+
+def convert_and_filter_hpoids(terms, hpo, alt2prim):
+    """Given a list of HPO ids, first try to convert synonyms to primary ids,
+    then filter if terms are not in the ontology"""
+    terms = [alt2prim[term] if term in alt2prim else term for term in terms]
+    terms = list(filter(lambda term: term in hpo.nodes, terms))
+    terms = remove_parents(terms, hpo)
+    return terms
 
 
 def build_phenoseries_experiment(
