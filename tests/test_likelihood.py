@@ -1,3 +1,4 @@
+from configparser import NoOptionError, NoSectionError
 import os
 import unittest
 
@@ -12,6 +13,9 @@ class LikelihoodTestCase(unittest.TestCase):
     def setUp(cls):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
+        
+        if 'hpo' not in config.sections():
+            config.add_section('hpo')
         
         config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
         config.set('hpo', 'disease_to_phenotype_file', os.path.join(cls.parent_dir, 'data/phenotype.hpoa'))
@@ -61,3 +65,21 @@ class LikelihoodTestCase(unittest.TestCase):
         ]
         probabilities = predict_likelihood_moldx(phenotypes)
         self.assertAlmostEqual(probabilities[0], 0.33, places=2)
+
+    def test_no_hpo_config_section(self):
+        config.remove_section('hpo')
+        phenotypes = [
+            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
+            ['HP:0012759', 'HP:0003011'],
+        ]
+        with self.assertRaises(NoSectionError):
+            predict_likelihood_moldx(phenotypes)
+
+    def test_no_hpo_config_option(self):
+        config.remove_option('hpo', 'disease_to_phenotype_file')
+        phenotypes = [
+            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
+            ['HP:0012759', 'HP:0003011'],
+        ]
+        with self.assertRaises(NoOptionError):
+            predict_likelihood_moldx(phenotypes)        

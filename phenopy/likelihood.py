@@ -25,7 +25,7 @@ def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None
         except (NoSectionError, NoOptionError):
             logger.critical(
                 'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
-            exit(1)
+            raise
         try:
             disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
         except (NoSectionError, NoOptionError):
@@ -33,8 +33,7 @@ def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None
                 'No HPO annotated dataset file found in the configuration file.'
                 ' See "hpo:disease_to_phenotype_file" parameter.'
             )
-            exit(1)
-
+            raise 
         logger.info(f'Loading HPO OBO file: {obo_file}')
         hpo_network, alt2prim, _ = \
             generate_annotated_hpo_network(obo_file,
