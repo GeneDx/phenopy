@@ -6,7 +6,7 @@ import requests
 
 from phenopy import generate_annotated_hpo_network
 from phenopy.config import config, logger
-from phenopy.util import remove_parents, standardize_phenotypes
+from phenopy.util import standardize_phenotypes
 
 from txt2hpo.extract import Extractor
 

@@ -3,7 +3,7 @@ import os
 from configparser import NoOptionError, NoSectionError
 
 import joblib
-import lightgbm as lgb
+# import lightgbm as lgb
 
 from phenopy import generate_annotated_hpo_network
 from phenopy.config import config, logger, project_data_dir

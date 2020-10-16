@@ -1,4 +1,3 @@
-from operator import pos
 import fire
 import itertools
 import lightgbm as lgb
@@ -115,10 +114,8 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
                 output_fh.write('\t'.join(s))
                 output_fh.write('\n')
 
-
-def likelihood_moldx(model, input_file, output_file=None):
+def likelihood_moldx(input_file, output_file=None):
     """
-    :param model: The file path to a serialized lightgbm model. 
     :param input_file: The file path to a file containing three columns. [ID\tkey=value\thpodid,hpoid,hpoid]
     :param output_file: The file path to an output file containing the predicted probabilities
     """
