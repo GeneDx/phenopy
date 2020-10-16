@@ -20,6 +20,9 @@ numpy = "*"
 scipy = "*"
 joblib = "0.17"
 requests = "*"
+umap-learn = "*"
+scikit-learn = "*"
+matplotlib = "*"
 
 [requires]
 python_version = "3.7"
