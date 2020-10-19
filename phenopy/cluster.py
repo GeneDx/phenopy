@@ -89,25 +89,10 @@ def process_kfile(kfile, k=1000):
     return feature_to_hps, hp_to_feature, n_features
 
 
-def prep_cluster_data(input_file, kfile, weights="default"):
+def prep_cluster_data(df, hp_to_feature, weights="default"):
 
-    feature_to_hps, hp_to_feature, n_features = process_kfile(kfile)
-    df = pd.read_csv(input_file, sep="\t", header=None)
-    df.columns = "id info_field hpo_terms".split()
-    df["hpo_terms"] = df["hpo_terms"].str.split("|")
-    df["patient_age"] = df["info_field"].apply(lambda x: x.split(",")[0].split("=")[1])
-    df["gender"] = df["info_field"].apply(lambda x: x.split(",")[1].split("=")[1])
-    df["is_diagnosed"] = df["info_field"].apply(lambda x: x.split(",")[2].split("=")[1])
-
-    #TODO add functionality for filtering / removing terms
-    #TODO separate function
-    # if terms_to_remove:
-    #     terms_to_remove = [x for x in networkx.ancestors(hpo_network, hpid) if x not in terms_to_remove]
-    #     df['hpo_terms'] = df['hpo_terms'].apply(lambda x: [y for y in x if y in terms_to_remove])
-    #     df['hpo_terms'] = df['hpo_terms'].apply(len)
-
-    df['hp_features'] = df['hpo_terms'].apply(lambda hpos: [hp_to_feature[hp] for hp in hpos])
-    df['hp_weights'] = df['hpo_terms'].apply(lambda hpos: [hp_to_weight(hp, hp_to_feature, method=weights) for hp in hpos])
+    df['hp_features'] = df['terms'].apply(lambda hpos: [hp_to_feature[hp] for hp in hpos])
+    df['hp_weights'] = df['terms'].apply(lambda hpos: [hp_to_weight(hp, hp_to_feature, method=weights) for hp in hpos])
     df['hp_feature_counts'] = df['hp_features'].apply(Counter)
 
     return df
@@ -156,7 +141,7 @@ def compute_dx_yield(res_df):
 
 def compute_ages(res_df):
     # Median age per cluster in months
-    ages = res_df.groupby("cluster_id")['patient_age'].median().reset_index()
+    ages = res_df.groupby("cluster_id")['age'].median().reset_index()
     return ages
 
 
