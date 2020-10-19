@@ -9,13 +9,14 @@ from phenopy import generate_annotated_hpo_network
 from phenopy.config import config, logger, project_data_dir
 from phenopy.util import encode_phenotypes, read_phenotype_groups
 
-def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None, alt2prim=None):
+def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None, alt2prim=None, k_phenotype_groups=1000):
     """
     Predicts the likelihood of molecular diagnosis given a set of phenotypes.
     :param phenotypes: A list of phenotypes or a list of lists of phenotypes.
     :param phenotype_groups: <optionnal> A dictionary of phenotype to phenotype group mappings.
     :param hpo_network: <optional> The hpo networkx object.
     :param alt2prim: <optional> A dictionary of alternate phenotype ids to primary phenotype ids. (must be given if hpo_network is provided)
+    :param k_phenotype_groups <optional> An integer that represents the number of phenotype groups to use.
     :return: An array of probabilities for the positive class.
     """
     # detect if phenotypes is 1d or 2d
@@ -41,8 +42,14 @@ def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None
                                         )
     if phenotype_groups is None:
         phenotype_groups = read_phenotype_groups()
+    
+    try:
+        phenotype_groups[list(phenotype_groups)[0]][f"k{k_phenotype_groups}"]
+    except KeyError:
+        logger.critical("The value for k_phenotype_groups was not valid. Please use a valid k from the phenotype_groups dictionary.")
+        raise
 
-    encoded_phenotypes = encode_phenotypes(phenotypes, phenotype_groups, hpo_network, alt2prim)
+    encoded_phenotypes = encode_phenotypes(phenotypes, phenotype_groups, hpo_network, alt2prim, k=k_phenotype_groups)
     model_file = os.path.join(project_data_dir, 'lgb.model.pkl')
     model = joblib.load(model_file)
     probabilities = model.predict_proba(encoded_phenotypes)

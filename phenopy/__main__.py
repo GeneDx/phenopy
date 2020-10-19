@@ -114,10 +114,11 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
                 output_fh.write('\t'.join(s))
                 output_fh.write('\n')
 
-def likelihood_moldx(input_file, output_file=None):
+def likelihood_moldx(input_file, output_file=None, k_phenotype_groups=1000):
     """
     :param input_file: The file path to a file containing three columns. [ID\tkey=value\thpodid,hpoid,hpoid]
     :param output_file: The file path to an output file containing the predicted probabilities
+    :param k_phenotype_groups: The number of phenotype groups to use for encoding phenotypes. The CLI version of phenopy allows for one of [1000, 1500] 
     """
     try:
         obo_file = config.get('hpo', 'obo_file')
@@ -139,7 +140,6 @@ def likelihood_moldx(input_file, output_file=None):
         generate_annotated_hpo_network(obo_file,
                                        disease_to_phenotype_file,
                                        )
-    # if input file is given, output the probability of molecular diagnosis as an additional column.
 
     # parse input records
     input_records = parse_input(input_file, hpo_network, alt2prim)
@@ -147,7 +147,13 @@ def likelihood_moldx(input_file, output_file=None):
     phenotypes = [record["terms"] for record in input_records]
 
     # predict likelihood of molecular diagnosis
-    positive_probabilities = predict_likelihood_moldx(phenotypes, hpo_network, alt2prim)
+    positive_probabilities = predict_likelihood_moldx(
+        phenotypes,
+        phenotype_groups=None, 
+        hpo_network=hpo_network, 
+        alt2prim=alt2prim,
+        k_phenotype_groups=k_phenotype_groups,
+        )
 
     if output_file is not None:
         output_file = "phenopy.likelihood_moldx.txt"
