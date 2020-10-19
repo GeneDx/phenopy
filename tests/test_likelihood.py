@@ -76,7 +76,7 @@ class LikelihoodTestCase(unittest.TestCase):
             ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
             ['HP:0012759', 'HP:0003011'],
         ]
-        with self.assertRaises(ValueError):
+        with self.assertRaises(KeyError):
             predict_likelihood_moldx(
                 phenotypes, 
                 self.phenotype_groups,
