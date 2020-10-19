@@ -34,3 +34,4 @@ class PlotTestCase(unittest.TestCase):
         labels, core_samples_mask, stats = dbscan(umap_result)
         result = plot_basic_dbscan(umap_result, core_samples_mask, labels)
         result.savefig(self.save_basic_dbscan_plot)
+        # TODO assert file exist

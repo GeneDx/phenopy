@@ -32,20 +32,20 @@ class ClusterTestCase(unittest.TestCase):
 
     def test_prep_cluster_data(self):
         result = prep_cluster_data(self.input_file, self.kfile)
-        self.assertEqual(result.shape[0], 397)
+        self.assertEqual(result.shape[0], 398)
 
     def test_prep_feature_array(self):
         feature_to_hps, hp_to_feature, n_features = process_kfile(self.kfile, k=1000)
         test_df = prep_cluster_data(self.input_file, self.kfile)
         X_vect = prep_feature_array(test_df, n_features)
-        self.assertEqual(X_vect.shape[0], 397)
+        self.assertEqual(X_vect.shape[0], 398)
 
     def test_apply_umap(self):
         feature_to_hps, hp_to_feature, n_features = process_kfile(self.kfile, k=1000)
         test_df = prep_cluster_data(self.input_file, self.kfile)
         X_vect = prep_feature_array(test_df, n_features)
         umap_result = apply_umap(X_vect)
-        self.assertEqual(umap_result.shape[0], 397)
+        self.assertEqual(umap_result.shape[0], 398)
 
     def test_dbscan(self):
         feature_to_hps, hp_to_feature, n_features = process_kfile(self.kfile, k=1000)
@@ -53,9 +53,7 @@ class ClusterTestCase(unittest.TestCase):
         X_vect = prep_feature_array(test_df, n_features)
         umap_result = apply_umap(X_vect)
         labels, core_samples_mask, stats = dbscan(umap_result)
-        print(len(labels))
-        print(stats)
-        self.assertEqual(len(labels), 397)
+        self.assertEqual(len(labels), 398)
         self.assertEqual(stats['n_clusters'], 2)
         self.assertLess(stats['n_noise'], 10)
         self.assertAlmostEqual(stats['silhouette_score'], 0.619, 1)

@@ -1,6 +1,7 @@
-
+import os
 import umap
 
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn.feature_selection import SelectKBest, chi2
@@ -11,10 +12,8 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 
-from sklearn.preprocessing import MinMaxScaler
 
-
-import os
+from phenopy.config import logger
 from phenopy import generate_annotated_hpo_network
 
 phenopy_data_directory = os.path.join(os.getenv('HOME'), '.phenopy/data')
@@ -72,7 +71,12 @@ def hp_to_weight(term, hp_to_feature, method="ic"):
 
 
 def process_kfile(kfile, k=1000):
-    kdf = pd.read_csv(kfile, sep="\t")
+    try:
+        kdf = pd.read_csv(kfile, sep="\t")
+    except FileNotFoundError:
+        logger.critical(
+            'Phenotype groups file not found')
+        exit(1)
     if k == 1000:
         feature_to_hps = dict(zip(kdf['phenotype_group_k1000'],kdf['HPO_id']))
         hp_to_feature = dict(zip(kdf['HPO_id'],kdf['phenotype_group_k1000']))
@@ -88,7 +92,7 @@ def process_kfile(kfile, k=1000):
 def prep_cluster_data(input_file, kfile, weights="default"):
 
     feature_to_hps, hp_to_feature, n_features = process_kfile(kfile)
-    df = pd.read_csv(input_file, sep="\t")
+    df = pd.read_csv(input_file, sep="\t", header=None)
     df.columns = "id info_field hpo_terms".split()
     df["hpo_terms"] = df["hpo_terms"].str.split("|")
     df["patient_age"] = df["info_field"].apply(lambda x: x.split(",")[0].split("=")[1])
@@ -96,6 +100,7 @@ def prep_cluster_data(input_file, kfile, weights="default"):
     df["is_diagnosed"] = df["info_field"].apply(lambda x: x.split(",")[2].split("=")[1])
 
     #TODO add functionality for filtering / removing terms
+    #TODO separate function
     # if terms_to_remove:
     #     terms_to_remove = [x for x in networkx.ancestors(hpo_network, hpid) if x not in terms_to_remove]
     #     df['hpo_terms'] = df['hpo_terms'].apply(lambda x: [y for y in x if y in terms_to_remove])
@@ -125,14 +130,14 @@ def feature_array(cntr, weights=None, n_features=None, multiplier=1.0, superweig
     return f_array
 
 
-def prep_feature_array(res_df, n_features, superweighted_features=None, scaler=MinMaxScaler()):
+def prep_feature_array(res_df, n_features, superweighted_features=None, multiplier=1.0, scaler=MinMaxScaler()):
     if not superweighted_features:
         superweighted_features = []
     X = res_df.apply(lambda x:
                     feature_array(x['hp_feature_counts'],
                                         weights=x['hp_weights'],
                                         n_features=n_features,
-                                        multiplier=1,
+                                        multiplier=multiplier,
                                         superweighted_features=superweighted_features),
                     axis=1).tolist()
 
@@ -161,16 +166,16 @@ def compute_genes(res_df):
     genes = genes.groupby('cluster_id')['gene_name'].sum().reset_index()
 
     # Most common genes per cluster
-    genes['gene'] = genes.apply(lambda x: str(Counter(x['gene_name']).most_common(5)), axis=1)
+    genes['gene'] = genes.apply(lambda x: str(Counter(x['gene_name']).most_common()), axis=1)
     return genes
 
 
-def apply_umap(X_vects):
-    xa_sub_vectors_embedded = umap.UMAP(n_neighbors=30,
-                                        n_components=2,
-                                        min_dist=0.01,
+def apply_umap(X_vects, n_neighbors=30, n_components=2, min_dist=0.01, metric='euclidean'):
+    xa_sub_vectors_embedded = umap.UMAP(n_neighbors=n_neighbors,
+                                        n_components=n_components,
+                                        min_dist=min_dist,
                                         random_state=123,
-                                        metric='euclidean',
+                                        metric=metric,
                                         ).fit_transform(X_vects)
     #xa_sub_vectors_embedded_df = pd.DataFrame(xa_sub_vectors_embedded, columns=['umap1', 'umap2'])
     return xa_sub_vectors_embedded
@@ -193,8 +198,8 @@ def tfidf(term_i, cluster_j, df):
 #X = xa_sub_vectors_embedded_df[['umap1', 'umap2']].values
 
 
-def dbscan(X):
-    db = DBSCAN(eps=0.40, min_samples=10).fit(X)
+def dbscan(X, eps=0.40, min_samples=10):
+    db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels = db.labels_

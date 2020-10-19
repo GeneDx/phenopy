@@ -2,6 +2,7 @@ import fire
 import itertools
 import lightgbm as lgb
 import sys
+import os
 
 from configparser import NoOptionError, NoSectionError
 
@@ -182,15 +183,56 @@ def likelihood_moldx(input_file, output_file=None, k_phenotype_groups=1000):
         sys.exit("Something went wrong writing the probabilities to file")
 
 
-def cluster(input_file, method, *args, **kwargs):
+def cluster(input_file, kfile=None, k=1000, n_neighbors=30, n_components=2, min_dist=0.01, metric='euclidean', eps=0.40, min_samples=10):
     """
-    :param input_file:
-    :param method:
-    :param args:
-    :param kwargs:
-    :return:
+    :param input_file: file containing phenotypes encoded in HPO ids
+    :param kfile: phenotype to group id conversion (optional)
+    :param k: number of phenotype features
+    :param n_neighbors: UMAP num neightbors
+    :param n_components: UMAP num components
+    :param min_dist: UMAP min distances
+    :param metric: UMAP metric
+    :param eps: DBSCAN eps
+    :param min_samples: DBSCAN min_samples
+    :return: None
     """
 
+    if kfile is None:
+            kfile = os.path.join(project_data_dir, "phenotype_groups.txt")
+
+    feature_to_hps, hp_to_feature, n_features = process_kfile(kfile, k=k)
+    results_df = prep_cluster_data(input_file, kfile)
+    logger.info(f"Loading: {input_file}")
+    X_vect = prep_feature_array(results_df, n_features)
+    logger.info("Performing UMAP dimensionality reduction")
+
+    umap_result = apply_umap(X_vect,
+                             n_neighbors=n_neighbors,
+                             n_components=n_components,
+                             min_dist=min_dist,
+                             metric=metric)
+
+    logger.info("Clustering using DBSCAN")
+
+    labels, core_samples_mask, stats = dbscan(umap_result,
+                                              eps=eps,
+                                              min_samples=min_samples)
+
+    logger.info(f"Num. Clusters: {stats['n_clusters']}")
+    logger.info(f"Num. noise points: {stats['n_noise']}")
+    logger.info(f"Silhouette_score: {stats['silhouette_score']}")
+
+    output_df = results_df.copy()[['id']]
+    output_df['cluster_id'] = labels
+    dbscan_plot = plot_basic_dbscan(umap_result, core_samples_mask, labels)
+
+    input_file_name, extension = os.path.splitext(input_file)
+    output_data_name = input_file_name + ".clusters.tsv"
+    output_plot_name = input_file_name + ".clusters.png"
+    logger.info(f"Writing results to {output_data_name}")
+    output_df.to_csv(output_data_name, index=None, header=None, sep="\t")
+    logger.info(f"Saving plot {output_plot_name}")
+    dbscan_plot.savefig(output_plot_name)
 
 
 def main():
