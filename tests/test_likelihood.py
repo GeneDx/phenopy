@@ -4,7 +4,7 @@ import unittest
 
 from phenopy.config import config
 from phenopy import generate_annotated_hpo_network
-from phenopy.util import read_phenotype_groups, encode_phenotypes
+from phenopy.util import read_phenotype_groups
 from phenopy.likelihood import predict_likelihood_moldx
 
 

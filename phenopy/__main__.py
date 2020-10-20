@@ -155,7 +155,7 @@ def likelihood_moldx(input_file, output_file=None, k_phenotype_groups=1000):
         k_phenotype_groups=k_phenotype_groups,
         )
 
-    if output_file is not None:
+    if output_file is None:
         output_file = "phenopy.likelihood_moldx.txt"
     try:
         with open(output_file, "w") as f:
