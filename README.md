@@ -123,7 +123,7 @@ using `--output-file=/path/to/output_file.txt`
    ```
 
 ### likelihood
-Phenopy can be used to predict the likelihood of a molecular diagnosis given an input set of HPO phenotypes. This functionality takes the same input records file as the `score` functionality. The likelhood command outputs a probability of finding a moleular diagnosis using a model trained on 46,674 probands primarily with neurodevelopmental delay phenotypes.
+Phenopy can be used to predict the likelihood of a molecular diagnosis given an input set of HPO phenotypes. This functionality takes the same input records file as the `score` functionality. The likelhood command outputs a probability of finding a moleular diagnosis using a model trained on 46,674 probands primarily with the majority of them having a neurodevelopmental delay phenotype.
 
 To score a list of records with phenotypes:
 
@@ -212,10 +212,11 @@ terms_b = ['HP:0001263', 'HP:0000252']
 print(scorer.score_term_sets_basic(terms_a, terms_b))
 ```
 
-```
 Output:
+
 ```
 0.11213185474495047
+```
 
 ### likelihood
 
