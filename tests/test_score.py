@@ -112,15 +112,15 @@ class ScorerTestCase(unittest.TestCase):
 
         # if no terms in one set, return 0.0
         score0 = self.scorer.score(record_a, record_b)
-        self.assertEqual(score0, 0.0)
+        self.assertEqual(score0[2], 0.0)
         record_b['terms'] = ['HP:0001249', 'HP:0012758']
 
         # test BMA
         score_bma = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bma, 0.207, places=2)
+        self.assertAlmostEqual(score_bma[2], 0.207, places=2)
         self.scorer.summarization_method = 'maximum'
         score_max = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_max, 0.25, places=4)
+        self.assertAlmostEqual(score_max[2], 0.25, places=4)
 
         # test wrong method
         self.scorer.summarization_method = 'not_a_method'
@@ -140,7 +140,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.summarization_method = 'BMWA'
         self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bmwa, 0.6239, places=4)
+        self.assertAlmostEqual(score_bmwa[2], 0.6239, places=4)
 
         record_a.update({
             'terms': ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322'], # ATAX, DD,  HYP, SS, AbnSocBeh
@@ -156,13 +156,13 @@ class ScorerTestCase(unittest.TestCase):
 
         # test with two weights
         score_bwma_both_weights = scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bwma_both_weights, 0.6901, 4)
+        self.assertAlmostEqual(score_bwma_both_weights[2], 0.6901, 4)
 
         # test with one weight array
         scorer.min_score_mask = None
         record_a['weights'].pop('age', None)
         score_bwma_one_weights = scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bwma_one_weights, 0.6026, 4)
+        self.assertAlmostEqual(score_bwma_one_weights[2], 0.6026, 4)
 
     def test_score_records(self,):
         query_name = 'SAMPLE'
@@ -182,7 +182,6 @@ class ScorerTestCase(unittest.TestCase):
             input_records,
             score_records,
             itertools.product(range(len(input_records)), range(len(score_records))),
-            thread_index=0,
             threads=1,
         )
         self.assertEqual(1184, len(results))
@@ -194,7 +193,6 @@ class ScorerTestCase(unittest.TestCase):
             input_records,
             score_records,
             itertools.product(range(len(input_records)), range(len(score_records))),
-            thread_index=0,
             threads=1,
         )
         self.assertEqual(1184, len(results))
