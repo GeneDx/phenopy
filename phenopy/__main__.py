@@ -43,7 +43,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     except (NoSectionError, NoOptionError):
         logger.critical(
             'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
-        exit(1)
+        sys.exit(1)
     if custom_disease_file is None:
         try:
             disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
@@ -52,7 +52,7 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
                 'No HPO annotated dataset file found in the configuration file.'
                 ' See "hpo:disease_to_phenotype_file" parameter.'
             )
-            exit(1)
+            sys.exit(1)
     else:
         logger.info(f"using custom disease annotation file: {custom_disease_file}")
         disease_to_phenotype_file = custom_disease_file
@@ -125,7 +125,7 @@ def likelihood_moldx(input_file, output_file=None, k_phenotype_groups=1000):
     except (NoSectionError, NoOptionError):
         logger.critical(
             'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
-        exit(1)
+        sys.exit(1)
     try:
         disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
     except (NoSectionError, NoOptionError):
@@ -133,7 +133,7 @@ def likelihood_moldx(input_file, output_file=None, k_phenotype_groups=1000):
             'No HPO annotated dataset file found in the configuration file.'
             ' See "hpo:disease_to_phenotype_file" parameter.'
         )
-        exit(1)
+        sys.exit(1)
 
     logger.info(f'Loading HPO OBO file: {obo_file}')
     hpo_network, alt2prim, _ = \
