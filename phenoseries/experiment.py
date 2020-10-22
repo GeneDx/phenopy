@@ -13,6 +13,9 @@ from phenopy.util import remove_parents, half_product
 
 from txt2hpo.extract import Extractor
 
+## TODO: fix the bug in this script before merging to master.
+
+
 OMIM_API_URL = "https://api.omim.org/api/"
 OMIM_DOWNLOADS_URL = "https://data.omim.org/downloads/"
 
