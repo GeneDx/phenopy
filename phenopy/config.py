@@ -108,6 +108,12 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
     # save model in faster to load format in users directory
     wv.save(w2v_vw_path)
 
+    # copy the lmd model to the data directory
+    lmd_path = os.path.join(os.path.dirname(__file__),
+                            'data/lgb.model.pkl')
+    lmd_data_path = os.path.join(data_directory, 'lgb.model.pkl')
+    shutil.copyfile(lmd_path, lmd_data_path)
+
     config['hpo'] = {
             'obo_file': os.path.join(
                 data_directory,
@@ -126,7 +132,10 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
 
         }
 
-    config['models'] = {'phenopy.wv.model': w2v_vw_path}
+    config['models'] = {
+        'phenopy.wv.model': w2v_vw_path,
+        'likelihood.model': lmd_data_path,
+        }
     config['age'] = {
         'open_access_phenotype_age': os.path.join(
             project_data_dir,
@@ -135,6 +144,13 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
     }
     config['omim'] = {
         'omim_api_key': '',
+
+    }
+    config['phenotype_groups'] = {
+        'phenotype_groups_file': os.path.join(
+            project_data_dir, 
+            "phenotype_groups.txt"
+        )
     }
 
     with open(os.path.join(config_directory, 'phenopy.ini'), 'w') as configfile:

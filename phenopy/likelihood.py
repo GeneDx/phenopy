@@ -6,7 +6,7 @@ import joblib
 # import lightgbm as lgb
 
 from phenopy import generate_annotated_hpo_network
-from phenopy.config import config, logger, project_data_dir
+from phenopy.config import config, logger
 from phenopy.util import encode_phenotypes, read_phenotype_groups
 
 def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None, alt2prim=None, k_phenotype_groups=1000):
@@ -50,7 +50,6 @@ def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None
         raise
 
     encoded_phenotypes = encode_phenotypes(phenotypes, phenotype_groups, hpo_network, alt2prim, k=k_phenotype_groups)
-    model_file = os.path.join(project_data_dir, 'lgb.model.pkl')
-    model = joblib.load(model_file)
+    model = joblib.load(config['models']['likelihood.model'])
     probabilities = model.predict_proba(encoded_phenotypes)
     return probabilities[:, 1]

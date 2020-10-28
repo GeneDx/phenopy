@@ -6,11 +6,7 @@ import pandas as pd
 
 from collections import Counter
 
-from phenopy.config import logger, project_data_dir
-
-
-# path to phenotype groups
-PHENOTYPE_GROUP_FILE = os.path.join(project_data_dir, "phenotype_groups.txt")
+from phenopy.config import config, logger, project_data_dir
 
 
 def half_product(num_rows, num_columns):
@@ -223,7 +219,7 @@ def read_phenotype_groups(phenotype_group_file=None):
     :param phenotype_group_file: Filepath to the phenotype group file.
     """
     if phenotype_group_file is None:
-        phenotype_group_file = PHENOTYPE_GROUP_FILE
+        phenotype_group_file = config["phenotype_groups"]["phenotype_groups_file"]
     
     hp_to_pg = {}
     with open(phenotype_group_file, "r") as f:
