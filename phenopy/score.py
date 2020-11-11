@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from functools import lru_cache
+from multiprocessing import Pool
 from phenopy.weights import calculate_age_weights
 from phenopy.config import config
 
@@ -150,7 +151,8 @@ class Scorer:
 
         :param record_a: record A.
         :param record_b: record B.
-        :return: `float` (comparison score)
+        :return: record_a record id, record_b record id, `float` (comparison score)
+        :rtype: tuple
         """
         if self.summarization_method not in ['BMA', 'BMWA', 'maximum']:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
@@ -159,23 +161,21 @@ class Scorer:
         terms_a = record_a['terms']
         terms_b = record_b['terms']
         if not terms_a or not terms_b:
-            return 0.0
+            return record_a['record_id'], record_b['record_id'], 0.0
 
         if self.scoring_method == 'Jaccard':
             intersection = len(list(set(terms_a).intersection(terms_b)))
             union = (len(terms_a) + len(terms_b)) - intersection
-            return float(intersection) / union
+            return record_a['record_id'], record_b['record_id'], float(intersection) / union
 
         elif self.scoring_method == 'word2vec':
-
             in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
             in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
 
             if in_vocab_terms_a and in_vocab_terms_b:
-
                 return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
             else:
-                return 0.0
+                return record_a['record_id'], record_b['record_id'], 0.0
 
 
         # calculate weights for record_a and record_b
@@ -201,11 +201,11 @@ class Scorer:
         ).unstack()
 
         if self.summarization_method == 'maximum':
-            return self.maximum(df)
+            return record_a['record_id'], record_b['record_id'], self.maximum(df)
         elif self.summarization_method == 'BMWA' and any([weights_a, weights_b]):
-            return self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
+            return record_a['record_id'], record_b['record_id'], self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
         else:
-            return self.best_match_average(df)
+            return record_a['record_id'], record_b['record_id'], self.best_match_average(df)
 
     def score_term_sets_basic(self, terms_a, terms_b):
         """
@@ -248,29 +248,26 @@ class Scorer:
         else:
             return self.best_match_average(df)
 
-    def score_records(self, a_records, b_records, record_pairs, thread_index=0, threads=1):
+
+    def score_records(self, a_records, b_records, record_pairs, threads=1):
         """
-        Score list pair of records.
+            Score list pair of records.
         :param a_records: Input records dictionary.
-        :param b_records: Score against records. If not provided both pairs members are pulled from "a_records".
-        :param record_pairs: List of record pairs to score.
-        :param thread_index: Thread index for multiprocessing.
+        :param b_records: Score against records.
+        :param record_pairs: iterable of record pairs to score.
         :param threads: Total number of threads for multiprocessing.
         """
-        results = []
-        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
-        for record_a, record_b in itertools.islice(record_pairs, thread_index, None, threads):
-
-            score = self.score(
-                a_records[record_a],
-                b_records[record_b],
+        with Pool(processes=threads) as p:
+            results = p.starmap(
+                self.score,
+                [
+                    (
+                        a_records[record_a],  # a records
+                        b_records[record_b],  # b records
+                    ) for (record_a, record_b) in record_pairs
+                ]
             )
 
-            results.append((
-                a_records[record_a]['record_id'],
-                b_records[record_b]['record_id'],
-                str(score),
-            ))
         return results
 
     @staticmethod

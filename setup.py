@@ -29,7 +29,8 @@ setup(
         'numpy',
         'obonet',
         'pandas',
+        'joblib',
         'scipy',
-
+        'lightgbm',
     ]
 )
