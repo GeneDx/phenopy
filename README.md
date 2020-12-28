@@ -24,18 +24,7 @@ python setup.py install
 ```
 
 ## Command Line Usage
-### Initial setup
-phenopy is designed to run with minimal setup from the user, to run phenopy with default parameters (recommended), skip ahead
-to the [Commands overview](#Commands-overview).  
-
-This section provides details about where phenopy stores data resources and config files. The following occurs when
-you run phenopy for the first time.
- 1. phenopy creates a `.phenopy/` directory in your home folder and downloads external resources from HPO into the
-  `$HOME/.phenopy/data/` directory.
- 2. phenopy creates a `$HOME/.phenopy/phenopy.ini` config file where users can set variables for phenopy to use
- at runtime.
-
-### Commands overview
+### score
 `phenopy` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or
 disease, but could be any concept that warrants annotation of phenotype terms. 
 
@@ -133,8 +122,33 @@ using `--output-file=/path/to/output_file.txt`
     phenopy score tests/data/test.score-short.txt  --summarization-method BMWA --threads 4
    ```
 
+### likelihood
+Phenopy can be used to predict the likelihood of a molecular diagnosis given an input set of HPO phenotypes. This functionality takes the same input records file as the `score` functionality. The likelhood command outputs a probability of finding a moleular diagnosis using a model trained on 46,674 probands primarily with the majority of them having a neurodevelopmental delay phenotype.
 
-## Parameters
+To score a list of records with phenotypes:
+
+```bash
+phenopy likelihood tests/data/test.score-long.txt
+```
+
+If the `output_file` argument is not set, this command writes a file, `phenopy.likelihood_moldx.txt` to your current working directory. 
+Look at the predicted probabilities for the first five records:
+
+```bash
+$ head -5 phenopy.likelihood_moldx.txt
+```
+
+The columns are `record_id` and `probability_of_molecular_diagnosis`:
+
+```bash
+118200	0.34306641357469214
+118210	0.47593450032769
+118220	0.385742949333819
+118230	0.5833031588175435
+118300	0.5220058151734898
+```
+
+#### Parameters
 For a full list of command arguments use `phenopy [subcommand] --help`:
 ```bash
 phenopy score --help
@@ -156,8 +170,14 @@ Output:
     --threads=THREADS
         Number of parallel processes to use. [default: 1]
 ```
+
 ## Library Usage
+
 The `phenopy` library can be used as a `Python` module, allowing more control for advanced users.   
+
+### score
+
+**Generate the hpo network and supporting objects**:
 
 ```python
 import os
@@ -179,7 +199,11 @@ hpo_network, alt2prim, disease_records = \
                                    disease_to_phenotype_file,
                                    ages_distribution_file=ages_distribution_file
                                    )
+```
 
+**Then, instantiate the `Scorer` class and score hpo term lists.**
+
+```python
 scorer = Scorer(hpo_network)
 
 terms_a = ['HP:0001263', 'HP:0011839']
@@ -187,12 +211,64 @@ terms_b = ['HP:0001263', 'HP:0000252']
 
 print(scorer.score_term_sets_basic(terms_a, terms_b))
 ```
+
 Output:
+
 ```
 0.11213185474495047
 ```
 
-The library can be used to prune parent phenotypes from the `phenotype.hpoa` and store pruned annotations as a file.
+### likelihood
+
+**Generate the hpo network and supporting objects**:
+
+```python
+import os
+from phenopy import generate_annotated_hpo_network
+from phenopy.util import read_phenotype_groups
+
+# data directory
+phenopy_data_directory = os.path.join(os.getenv('HOME'), '.phenopy/data')
+
+# files used in building the annotated HPO network
+obo_file = os.path.join(phenopy_data_directory, 'hp.obo')
+disease_to_phenotype_file = os.path.join(phenopy_data_directory, 'phenotype.hpoa')
+
+hpo_network, alt2prim, disease_records = \
+    generate_annotated_hpo_network(obo_file, disease_to_phenotype_file)
+```
+
+**Read the phenotype_groups file and the records file into a pandas DataFrame:**
+
+```python
+import pandas as pd
+
+phenotype_groups = read_phenotype_groups()
+
+df = pd.read_csv(
+    "tests/data/test.score-long.txt", 
+    sep="\t",
+    header=None,
+    names=["record_id", "info", "phenotypes"]
+)
+
+df["phenotypes"] = df["phenotypes"].apply(lambda row: row.split("|"))
+```
+
+**Predict probabilities from the phenotypes in the DataFrame:**
+
+```python
+from phenopy.likelihood import predict_likelihood_moldx
+
+probabilities = predict_likelihood_moldx(df["phenotypes"])
+print(probabilities[:5])
+[0.34306641 0.4759345  0.38574295 0.58330316 0.52200582]
+```
+
+### miscellaneous
+
+The library can be used to prune parent phenotypes from the `phenotype.hpoa` and store pruned annotations as a file
+
 ```python
 from phenopy.util import export_phenotype_hpoa_with_no_parents
 # saves a new file of phenotype disease annotations with parent HPO terms removed from phenotype lists.
@@ -200,7 +276,19 @@ disease_to_phenotype_no_parents_file = os.path.join(phenopy_data_directory, 'phe
 export_phenotype_hpoa_with_no_parents(disease_to_phenotype_file, disease_to_phenotype_no_parents_file, hpo_network)
 ```
 
-### Config
+
+## Initial setup
+phenopy is designed to run with minimal setup from the user, to run phenopy with default parameters (recommended), skip ahead
+to the [Commands overview](#Commands-overview).  
+
+This section provides details about where phenopy stores data resources and config files. The following occurs when
+you run phenopy for the first time.
+ 1. phenopy creates a `.phenopy/` directory in your home folder and downloads external resources from HPO into the
+  `$HOME/.phenopy/data/` directory.
+ 2. phenopy creates a `$HOME/.phenopy/phenopy.ini` config file where users can set variables for phenopy to use
+ at runtime.
+
+## Config
 While we recommend using the default settings for most users, the config file *can be* modified: `$HOME/.phenopy/phenopy.ini`.
 
 To run phenopy with a different version of `hp.obo`, set the path of `obo_file` in `$HOME/.phenopy/phenopy.ini`.
@@ -220,7 +308,6 @@ coverage report -m
 
 ## References
 The underlying algorithm which determines the semantic similarity for any two HPO terms is based on an implementation of HRSS, [published here](https://www.ncbi.nlm.nih.gov/pubmed/23741529).
-
 
 ## Citing Phenopy
 Please use the following Bibtex to cite this software.

@@ -1,19 +1,31 @@
 import itertools
+import gensim
 import networkx as nx
 import numpy as np
 import pandas as pd
 
 from functools import lru_cache
+from multiprocessing import Pool
 from phenopy.weights import calculate_age_weights
+from phenopy.config import config
 
 
 class Scorer:
-    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05):
+    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05,
+                 scoring_method='HRSS'):
         self.hpo_network = hpo_network
         if summarization_method not in ['BMA', 'BMWA', 'maximum']:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
         self.summarization_method = summarization_method
         self.min_score_mask = min_score_mask
+        if scoring_method not in ['HRSS', 'Resnik', 'Jaccard', 'word2vec']:
+            raise ValueError('Unsupported semantic similarity scoring method, please choose from HRSS, Resnik, Jaccard, or word2vec.')
+        self.scoring_method = scoring_method
+        if scoring_method == 'word2vec':
+            try:
+                self.word_vectors = gensim.models.KeyedVectors.load(config.get('models', 'phenopy.wv.model'))
+            except FileNotFoundError:
+                raise ValueError("Please make sure that a word2vec model is in your project data directory.")
 
     def find_lca(self, term_a, term_b):
         """
@@ -122,6 +134,8 @@ class Scorer:
 
         # calculate alpha_ic
         alpha_ic = self.hpo_network.nodes[lca_node]['ic']
+        if self.scoring_method == 'Resnik':
+            return alpha_ic
 
         if (alpha_ic == 0.0) and (beta_ic == 0.0):
             return 0.0
@@ -137,7 +151,8 @@ class Scorer:
 
         :param record_a: record A.
         :param record_b: record B.
-        :return: `float` (comparison score)
+        :return: record_a record id, record_b record id, `float` (comparison score)
+        :rtype: tuple
         """
         if self.summarization_method not in ['BMA', 'BMWA', 'maximum']:
             raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
@@ -146,7 +161,22 @@ class Scorer:
         terms_a = record_a['terms']
         terms_b = record_b['terms']
         if not terms_a or not terms_b:
-            return 0.0
+            return record_a['record_id'], record_b['record_id'], 0.0
+
+        if self.scoring_method == 'Jaccard':
+            intersection = len(list(set(terms_a).intersection(terms_b)))
+            union = (len(terms_a) + len(terms_b)) - intersection
+            return record_a['record_id'], record_b['record_id'], float(intersection) / union
+
+        elif self.scoring_method == 'word2vec':
+            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
+            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+
+            if in_vocab_terms_a and in_vocab_terms_b:
+                return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
+            else:
+                return record_a['record_id'], record_b['record_id'], 0.0
+
 
         # calculate weights for record_a and record_b
         weights_a = record_a['weights'].copy() if record_a['weights'] is not None else []
@@ -171,11 +201,11 @@ class Scorer:
         ).unstack()
 
         if self.summarization_method == 'maximum':
-            return self.maximum(df)
+            return record_a['record_id'], record_b['record_id'], self.maximum(df)
         elif self.summarization_method == 'BMWA' and any([weights_a, weights_b]):
-            return self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
+            return record_a['record_id'], record_b['record_id'], self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
         else:
-            return self.best_match_average(df)
+            return record_a['record_id'], record_b['record_id'], self.best_match_average(df)
 
     def score_term_sets_basic(self, terms_a, terms_b):
         """
@@ -187,6 +217,22 @@ class Scorer:
         """
         terms_a = set(terms_a)
         terms_b = set(terms_b)
+
+        if self.scoring_method == 'Jaccard':
+            intersection = len(list(set(terms_a).intersection(terms_b)))
+            union = (len(terms_a) + len(terms_b)) - intersection
+            return float(intersection) / union
+
+        elif self.scoring_method == 'word2vec':
+
+            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
+            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+
+            if in_vocab_terms_a and in_vocab_terms_b:
+
+                return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
+            else:
+                return 0.0
 
         term_pairs = itertools.product(terms_a, terms_b)
         df = pd.DataFrame(
@@ -202,29 +248,26 @@ class Scorer:
         else:
             return self.best_match_average(df)
 
-    def score_records(self, a_records, b_records, record_pairs, thread_index=0, threads=1):
+
+    def score_records(self, a_records, b_records, record_pairs, threads=1):
         """
-        Score list pair of records.
+            Score list pair of records.
         :param a_records: Input records dictionary.
-        :param b_records: Score against records. If not provided both pairs members are pulled from "a_records".
-        :param record_pairs: List of record pairs to score.
-        :param thread_index: Thread index for multiprocessing.
+        :param b_records: Score against records.
+        :param record_pairs: iterable of record pairs to score.
         :param threads: Total number of threads for multiprocessing.
         """
-        results = []
-        # iterate over record pairs starting, stopping, stepping taking multiprocessing threads in consideration
-        for record_a, record_b in itertools.islice(record_pairs, thread_index, None, threads):
-
-            score = self.score(
-                a_records[record_a],
-                b_records[record_b],
+        with Pool(processes=threads) as p:
+            results = p.starmap(
+                self.score,
+                [
+                    (
+                        a_records[record_a],  # a records
+                        b_records[record_b],  # b records
+                    ) for (record_a, record_b) in record_pairs
+                ]
             )
 
-            results.append((
-                a_records[record_a]['record_id'],
-                b_records[record_b]['record_id'],
-                str(score),
-            ))
         return results
 
     @staticmethod

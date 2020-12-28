@@ -12,7 +12,11 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
-        config.set('hpo', 'data_directory', os.path.join(cls.parent_dir, 'data'))
+        if 'hpo' not in config.sections():
+            config.add_section('hpo')
+        
+        config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
+        config.set('hpo', 'disease_to_phenotype_file', os.path.join(cls.parent_dir, 'data/phenotype.hpoa'))
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
 
     def test_load_network(self):

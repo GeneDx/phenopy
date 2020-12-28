@@ -1,9 +1,12 @@
 import csv
+import os
 import sys
 import networkx as nx
 import pandas as pd
 
-from phenopy.config import logger
+from collections import Counter
+
+from phenopy.config import config, logger, project_data_dir
 
 
 def half_product(num_rows, num_columns):
@@ -208,3 +211,55 @@ def parse_input(input_file, hpo_network, alt2prim):
         exit(1)
 
     return records
+
+
+def read_phenotype_groups(phenotype_group_file=None):
+    """
+    Reads the phenotype group mappping file into a dictionary.
+    :param phenotype_group_file: Filepath to the phenotype group file.
+    """
+    if phenotype_group_file is None:
+        phenotype_group_file = config["phenotype_groups"]["phenotype_groups_file"]
+    
+    hp_to_pg = {}
+    with open(phenotype_group_file, "r") as f:
+        header = f.readline()
+        for line in f:
+            hpid, phenotype_group_1000, phenotype_group_1500 = line.strip("\n").split("\t")
+            hp_to_pg[hpid] = {
+                'k1000': int(phenotype_group_1000),
+                'k1500': int(phenotype_group_1500),
+            }
+    return hp_to_pg
+
+
+def standardize_phenotypes(terms, hpo_network, alt2prim):
+    """Given a list of HPO ids, first try to convert synonyms to primary ids,
+    then filter if terms are not in the ontology"""
+    terms = [alt2prim[term] if term in alt2prim else term for term in terms]
+    terms = list(filter(lambda term: term in hpo_network.nodes, terms))
+    terms = remove_parents(terms, hpo_network)
+    return terms
+
+
+def encode_phenotypes(phenotypes, phenotype_groups, hpo_network, alt2prim, k=1000):
+    """
+    :param phenotypes:
+    :param phenotype_groups: A dictionary 
+    :return: a numpy array of one-hot encoded feature counts
+    """
+
+    def build_feature_array(cntr, n_features=k):
+        a = [0] * (n_features)
+        for feature_index, count in cntr.items():
+            a[feature_index] = count
+        return a
+
+    nested = all(isinstance(element, list) for element in phenotypes)
+
+    encode = lambda hpo_ids: Counter(hpo_ids)
+    if nested:
+        return [build_feature_array(encode([phenotype_groups[hpoid][f'k{k}'] for hpoid in standardize_phenotypes(phenotypes_, hpo_network, alt2prim)])) for phenotypes_ in phenotypes]
+    
+    return build_feature_array(encode([phenotype_groups[hpoid][f'k{k}'] for hpoid in standardize_phenotypes(phenotypes, hpo_network, alt2prim)]))
+
