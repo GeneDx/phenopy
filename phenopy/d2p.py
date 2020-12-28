@@ -49,7 +49,7 @@ def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=Non
             logger.critical(hpoa_file_error_msg)
         else:
             sys.stderr.write(hpoa_file_error_msg)
-        exit(1)
+        sys.exit(1)
 
 
 def read_custom_annotation_file(custom_annotation_file_path, hpo_network, logger=None):
@@ -75,7 +75,7 @@ def read_custom_annotation_file(custom_annotation_file_path, hpo_network, logger
             logger.critical(hpoa_file_error_msg)
         else:
             sys.stderr.write(hpoa_file_error_msg)
-        exit(1)
+        sys.exit(1)
 
 
 def load(phenotype_annotations_file, hpo_network, alt2prim, default_frequency=0.5):
