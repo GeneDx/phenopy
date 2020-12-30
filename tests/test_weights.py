@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import unittest
 
-from phenopy.util import generate_annotated_hpo_network
+from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.config import logger
 from phenopy.weights import get_truncated_normal, hpo_age_to_weight, make_age_distributions
 

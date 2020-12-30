@@ -3,7 +3,8 @@ import os
 import unittest
 
 from phenopy.config import config
-from phenopy.util import read_phenotype_groups, generate_annotated_hpo_network
+from phenopy.util import read_phenotype_groups
+from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.likelihood import predict_likelihood_moldx
 
 

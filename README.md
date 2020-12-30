@@ -181,7 +181,7 @@ The `phenopy` library can be used as a `Python` module, allowing more control fo
 
 ```python
 import os
-from phenopy.util import generate_annotated_hpo_network
+from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.score import Scorer
 
 # data directory
@@ -224,7 +224,7 @@ Output:
 
 ```python
 import os
-from phenopy.util import generate_annotated_hpo_network
+from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.util import read_phenotype_groups
 
 # data directory
