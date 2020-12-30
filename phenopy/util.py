@@ -12,7 +12,6 @@ from phenopy.config import config, logger
 from phenopy.d2p import load as load_d2p
 from phenopy.network import load as load_network
 from phenopy.network import annotate
-from phenopy.util import generate_alternate_ids
 
 
 
