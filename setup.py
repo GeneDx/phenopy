@@ -24,13 +24,14 @@ setup(
     },
     install_requires=[
         'fire',
-        'gensim',
+        'gensim==3.*',
         'networkx',
         'numpy',
         'obonet',
         'pandas',
         'joblib',
         'scipy',
+        'txt2hpo',
         'lightgbm',
     ]
 )
