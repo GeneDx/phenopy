@@ -24,7 +24,7 @@ setup(
     },
     install_requires=[
         'fire',
-        'gensim==3.*',
+        'gensim<4.0 ',
         'networkx',
         'numpy',
         'obonet',
