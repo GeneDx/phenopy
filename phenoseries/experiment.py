@@ -6,7 +6,7 @@ import requests
 import sys
 
 from ast import literal_eval
-from phenopy import generate_annotated_hpo_network
+from phenopy.util import generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, half_product

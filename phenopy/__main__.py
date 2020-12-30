@@ -5,7 +5,7 @@ import sys
 
 from configparser import NoOptionError, NoSectionError
 
-from phenopy import open_or_stdout, generate_annotated_hpo_network
+from phenopy.util import open_or_stdout, generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.likelihood import predict_likelihood_moldx
 from phenopy.score import Scorer

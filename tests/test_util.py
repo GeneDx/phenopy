@@ -4,8 +4,7 @@ import unittest
 from phenopy.util import parse, read_records_file
 
 from phenopy.config import config
-from phenopy import generate_annotated_hpo_network
-from phenopy.util import read_phenotype_groups, encode_phenotypes, parse_input
+from phenopy.util import read_phenotype_groups, encode_phenotypes, parse_input, generate_annotated_hpo_network
 
 
 class UtilTestCase(unittest.TestCase):
