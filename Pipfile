@@ -19,7 +19,6 @@ pandas = "*"
 numpy = "*"
 scipy = "*"
 joblib = "0.17"
-txt2hpo = "*"
 
 [requires]
 python_version = "3.7"

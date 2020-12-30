@@ -31,7 +31,6 @@ setup(
         'pandas',
         'joblib',
         'scipy',
-        'txt2hpo',
         'lightgbm',
     ]
 )
