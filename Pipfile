@@ -11,7 +11,7 @@ pylint = "*"
 twine = "*"
 
 [packages]
-gensim = "*"
+gensim = "<4.0"
 obonet = "*"
 fire = "*"
 lightgbm = "*"

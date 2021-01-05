@@ -6,12 +6,16 @@ import requests
 import sys
 
 from ast import literal_eval
-from phenopy import generate_annotated_hpo_network
+from phenopy.config import logger
+from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, half_product
 
-from txt2hpo.extract import Extractor
+try:
+    from txt2hpo.extract import Extractor
+except ModuleNotFoundError:
+    logger.warning("txt2hpo is not installed. This is only used in the validate-phenoseries command.\nTo use this command, please install txt2hpo: pip install txt2hpo")
 
 ## TODO: fix the bug in this script before merging to master.
 

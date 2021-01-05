@@ -2,12 +2,10 @@ import numpy as np
 import os
 import unittest
 
-from phenopy import generate_alternate_ids
-from phenopy.ic import calculate_information_content
 from phenopy.network import annotate
 from phenopy.network import load as load_network
 from phenopy.d2p import load as load_d2p
-from phenopy.util import export_phenotype_hpoa_with_no_parents
+from phenopy.util import export_phenotype_hpoa_with_no_parents, generate_alternate_ids
 
 
 class ICTestCase(unittest.TestCase):
