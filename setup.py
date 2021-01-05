@@ -33,5 +33,6 @@ setup(
         'joblib',
         'scipy',
         'lightgbm',
+        'requests',
     ]
 )

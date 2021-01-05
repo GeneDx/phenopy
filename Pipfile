@@ -19,6 +19,7 @@ pandas = "*"
 numpy = "*"
 scipy = "*"
 joblib = "0.17"
+requests = "*"
 
 [requires]
 python_version = "3.7"
