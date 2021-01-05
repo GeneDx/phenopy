@@ -37,6 +37,6 @@ jobs:
         flags: unittests
     - name: Was phenopy (cli) installed correctly?
       run: |
-        pipenv install .
-        pipenv run phenopy
+        pip install .
+        phenopy
       continue-on-error: false
