@@ -8,9 +8,10 @@ flake8 = "*"
 pytest = "*"
 pytest-cov = "*"
 pylint = "*"
+twine = "*"
 
 [packages]
-gensim = "*"
+gensim = "<4.0"
 obonet = "*"
 fire = "*"
 lightgbm = "*"
@@ -18,6 +19,7 @@ pandas = "*"
 numpy = "*"
 scipy = "*"
 joblib = "0.17"
+requests = "*"
 
 [requires]
 python_version = "3.7"

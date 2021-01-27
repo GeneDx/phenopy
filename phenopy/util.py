@@ -5,8 +5,9 @@ import networkx as nx
 import pandas as pd
 
 from collections import Counter
+from contextlib import contextmanager
 
-from phenopy.config import config, logger, project_data_dir
+from phenopy.config import config, logger
 
 
 def half_product(num_rows, num_columns):
@@ -263,3 +264,11 @@ def encode_phenotypes(phenotypes, phenotype_groups, hpo_network, alt2prim, k=100
     
     return build_feature_array(encode([phenotype_groups[hpoid][f'k{k}'] for hpoid in standardize_phenotypes(phenotypes, hpo_network, alt2prim)]))
 
+
+@contextmanager
+def open_or_stdout(filename):
+    if filename != '-':
+        with open(filename, 'w') as f:
+            yield f
+    else:
+        yield sys.stdout
