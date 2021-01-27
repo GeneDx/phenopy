@@ -6,16 +6,18 @@ import os
 
 from configparser import NoOptionError, NoSectionError
 
-from multiprocessing import Pool
 import pandas as pd
 
 from phenopy.util import open_or_stdout
 from phenopy.build_hpo import generate_annotated_hpo_network
-from phenopy.config import config, logger
+from phenopy.config import config, logger, project_data_dir
 from phenopy.likelihood import predict_likelihood_moldx
 from phenopy.score import Scorer
 from phenopy.util import parse_input, half_product
 from phenoseries.experiment import run_phenoseries_experiment
+
+from phenopy.cluster import process_kfile, prep_cluster_data, prep_feature_array, apply_umap, dbscan
+from phenopy.plot import plot_basic_dbscan
 
 
 def score(input_file, output_file='-', records_file=None, annotations_file=None, custom_disease_file=None, ages_distribution_file=None,
