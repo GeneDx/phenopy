@@ -14,7 +14,7 @@ import numpy as np
 
 
 from phenopy.config import logger
-from phenopy import generate_annotated_hpo_network
+from phenopy.build_hpo import generate_annotated_hpo_network
 
 phenopy_data_directory = os.path.join(os.getenv('HOME'), '.phenopy/data')
 obo_file = os.path.join(phenopy_data_directory, 'hp.obo')
