@@ -3,7 +3,7 @@ import os
 import unittest
 import pandas as pd
 
-from phenopy import generate_annotated_hpo_network
+from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.cluster import prep_cluster_data, process_kfile, prep_feature_array, apply_umap, dbscan
 from phenopy.plot import plot_basic_dbscan
 from phenopy.util import parse_input
