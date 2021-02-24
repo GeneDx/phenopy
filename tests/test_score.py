@@ -82,7 +82,7 @@ class ScorerTestCase(unittest.TestCase):
         t1 = 'HP:0001344'
         t2 = 'HP:0012759'
         beta = self.scorer.calculate_beta(t1, t2)
-        self.assertAlmostEqual(beta, 3.51, places=2)
+        self.assertAlmostEqual(beta, 3.83, places=2)
 
     def test_score_hpo_pair_hrss(self):
         t1 = 'HP:0011351'
@@ -117,7 +117,7 @@ class ScorerTestCase(unittest.TestCase):
 
         # test BMA
         score_bma = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bma[2], 0.207, places=2)
+        self.assertAlmostEqual(score_bma[2], 0.19, places=2)
         self.scorer.summarization_method = 'maximum'
         score_max = self.scorer.score(record_a, record_b)
         self.assertAlmostEqual(score_max[2], 0.25, places=4)
@@ -184,8 +184,8 @@ class ScorerTestCase(unittest.TestCase):
             itertools.product(range(len(input_records)), range(len(score_records))),
             threads=1,
         )
-        self.assertEqual(1184, len(results))
-        self.assertAlmostEqual(float(results[0][2]), 0.1325, 2)
+        self.assertEqual(2983, len(results))
+        self.assertAlmostEqual(float(results[0][2]), 0.069, 2)
 
         # without weights -- defaults to best match average (BMA)
         [record['weights'].pop('disease_frequency') for record in score_records]
@@ -195,8 +195,8 @@ class ScorerTestCase(unittest.TestCase):
             itertools.product(range(len(input_records)), range(len(score_records))),
             threads=1,
         )
-        self.assertEqual(1184, len(results))
-        self.assertAlmostEqual(float(results[0][2]), 0.1387, 2)
+        self.assertEqual(2983, len(results))
+        self.assertAlmostEqual(float(results[0][2]), 0.063, 2)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -421,7 +421,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.scoring_method = 'Resnik'
         terms_a = ['HP:0001290', 'HP:0000118']
         terms_b = ['HP:0001290', 'HP:0011351']
-        self.assertAlmostEqual(3.54, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
+        self.assertAlmostEqual(0.57, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
 
     def test_score_jaccard_basic(self):
         """Test the scoring functionality"""
