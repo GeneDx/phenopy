@@ -32,7 +32,7 @@ def export_phenotype_hpoa_with_no_parents(phenotype_hpoa_file, phenotype_hpoa_no
     try:
         with open(phenotype_hpoa_file, 'r') as tsv_fh:
             # skip the comment lines
-            #[next(tsv_fh) for _ in range(4)]
+            [next(tsv_fh) for _ in range(4)]
             df = pd.read_csv(
                 tsv_fh,
                 sep='\t',
@@ -45,10 +45,10 @@ def export_phenotype_hpoa_with_no_parents(phenotype_hpoa_file, phenotype_hpoa_no
         exit(1)
 
     no_parents_df = df.copy()
-    for gene, annotations in df.groupby("disease-identifier"):
-        termlist = [node for node in annotations['HPO-ID'].tolist() if node in hpo_network.nodes()]
+    for gene, annotations in df.groupby('#DatabaseID'):
+        termlist = [node for node in annotations['HPO_ID'].tolist() if node in hpo_network.nodes()]
         termlist = remove_parents(termlist, hpo_network)
-        parent_idx = annotations.loc[~annotations['HPO-ID'].isin(termlist)].index
+        parent_idx = annotations.loc[~annotations['HPO_ID'].isin(termlist)].index
         no_parents_df.drop(parent_idx, inplace=True)
 
     try:

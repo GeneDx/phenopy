@@ -19,26 +19,27 @@ def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=Non
     """
     try:
         with open(phenotype_annotations_file, 'r') as tsv_fh:
-            #[next(tsv_fh) for _ in range(3)]
+            [next(tsv_fh) for _ in range(4)]
             reader = csv.DictReader(tsv_fh, delimiter='\t')
             # this removes the leading hash
-            reader.fieldnames[0] = 'disease-db'
+            reader.fieldnames[0] = 'DatabaseID'
 
             records = []
 
             for row in reader:
                 # phenotype term id
-                term_id = row['HPO-ID']
+                term_id = row['HPO_ID']
                 if term_id not in hpo_network.nodes():
                     continue
                 # parse disease id, currently only supports omim entries
-                if row['disease-db'] not in ['OMIM']:
+                db, disease_accession = row['DatabaseID'].split(':')
+                if db not in ['OMIM']:
                     continue
                 # For now, skip negative phenotype annotations
-                if row['negation'] == 'NOT':
+                if row['Qualifier'] == 'NOT':
                     continue
 
-                records.append((term_id, row["disease-identifier"], frequency_converter(row['frequencyHPO'])))
+                records.append((term_id, disease_accession, frequency_converter(row['Frequency'])))
 
         return records
 
