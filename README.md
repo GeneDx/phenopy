@@ -23,6 +23,13 @@ cd phenopy
 python setup.py install
 ```
 
+**To complete installation on macOS please install lightgbm using brew**
+```bash
+brew install lightgbm
+```
+
+or by following macOS installation instructions from [lightgbm documentation](https://lightgbm.readthedocs.io/en/latest/Installation-Guide.html#macos).
+
 ## Command Line Usage
 ### score
 `phenopy` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or
