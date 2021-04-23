@@ -45,6 +45,51 @@ def hpo2ic(term):
         return np.nan
 
 
+def extract_tfidf_features(df, labels, drop_duplicates=True):
+    input_df = df.copy()
+    input_df['cluster_id'] = labels
+    if drop_duplicates:
+        input_df['hp_features'] = input_df['hp_features'].apply(lambda x: list(set(x)))
+    tfidf_feat = input_df.groupby('cluster_id')['hp_features'].sum().reset_index()
+    tfidf_feat = tfidf_feat.explode('hp_features')
+    tfidf_feat = pd.DataFrame(
+        tfidf_feat.groupby(['cluster_id', 'hp_features'])['hp_features'] \
+            .count()
+    ).rename(columns={'hp_features': 'n'}).reset_index()
+
+    tfidf_feat = tfidf_feat.sort_values(by=['cluster_id'], ascending=False).reset_index(drop=True)
+    tfidf_feat = tfidf_feat \
+        .merge(
+        tfidf_feat \
+            .groupby("hp_features")["cluster_id"] \
+            .nunique() \
+            .reset_index() \
+            .rename(columns={"cluster_id": "tf_i"})
+        , on="hp_features", how="left"
+    )
+    n_clusters = tfidf_feat['cluster_id'].nunique()
+    tfidf_feat['tfidf_n'] = tfidf_feat \
+        .apply(
+        lambda x: x["n"] * np.log(n_clusters / x['tf_i']), axis=1)
+
+    tfidf_feat = tfidf_feat \
+        .merge(
+        tfidf_feat \
+            .groupby("cluster_id")['n'] \
+            .max() \
+            .reset_index() \
+            .rename(
+            columns={"n": "max_tf"}
+        )
+        , how='left')
+
+    tfidf_feat['norm_tfidf'] = tfidf_feat \
+        .apply(
+        lambda x: 0.4 + (1 - 0.4) * (x['n'] / x['max_tf']) * np.log(n_clusters / x['tf_i'])
+        , axis=1)
+    tfidf_feat = tfidf_feat.sort_values("cluster_id").reset_index(drop=True)
+    return tfidf_feat
+
 #dipr_tfidf = pd.read_pickle("dipr_tfidf.pkl")
 
 
