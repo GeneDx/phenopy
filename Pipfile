@@ -23,6 +23,7 @@ requests = "*"
 umap-learn = "*"
 scikit-learn = "*"
 matplotlib = "*"
+hdbscan = "*"
 
 [requires]
 python_version = "3.7"
