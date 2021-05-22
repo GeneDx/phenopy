@@ -293,7 +293,7 @@ class Cluster:
         plt.ylabel("UMAP2")
         if color_by is not None:
             axs.legend(title=color_by, bbox_to_anchor=(1.05, 1), loc='upper left')
-        return plt.show()
+        return plt
 
     def extract_tfidf_features(self, drop_duplicates=True):
         input_df = self.data.copy()
