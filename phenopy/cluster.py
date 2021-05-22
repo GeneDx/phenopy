@@ -28,7 +28,7 @@ hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(obo_file
 
 
 class Cluster:
-    def __init__(self, data, scoring_method, kfile=None):
+    def __init__(self, data, scoring_method, kfile=None, k=1000):
 
         terms_columns = {'hpo_terms', 'terms', 'txt2hpo'}
         terms_column = set(data.columns).intersection(terms_columns)
@@ -37,7 +37,7 @@ class Cluster:
         id_columns = {'record_id', 'id', 'accession_num', 'case_id'}
         id_column = set(data.columns).intersection(id_columns)
         self.id_column = list(id_column)[0]
-
+        self.k = k
         self.scoring_method = scoring_method
         self.alt2prim = alt2prim
         self.data = self.prep_data(data)
@@ -86,7 +86,7 @@ class Cluster:
         df = df.drop(columns=[self.terms_column]).merge(df_, on=self.id_column)
         return df
 
-    def process_kfile(self, k=1000):
+    def process_kfile(self):
         try:
             kdf = pd.read_table(self.kfile)
         except FileNotFoundError:
@@ -94,12 +94,12 @@ class Cluster:
                 'Phenotype groups file not found')
             exit(1)
 
-        if k in [1000, 1500]:
-            df_k = kdf.groupby(f"phenotype_group_k{k}")["HPO_id"].apply(list).reset_index()
-            self.feature_to_hps = dict(zip(df_k[f"phenotype_group_k{k}"], df_k["HPO_id"]))
-            self.hp_to_feature = dict(zip(kdf['HPO_id'], kdf[f"phenotype_group_k{k}"]))
+        if self.k in [1000, 1500]:
+            df_k = kdf.groupby(f"phenotype_group_k{self.k}")["HPO_id"].apply(list).reset_index()
+            self.feature_to_hps = dict(zip(df_k[f"phenotype_group_k{self.k}"], df_k["HPO_id"]))
+            self.hp_to_feature = dict(zip(kdf['HPO_id'], kdf[f"phenotype_group_k{self.k}"]))
         else:
-            print(f"No features computed for k={k}")
+            print(f"No features computed for k={self.k}")
 
         self.n_features = len(self.feature_to_hps.keys())
 

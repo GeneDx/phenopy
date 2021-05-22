@@ -26,11 +26,11 @@ class PlotTestCase(unittest.TestCase):
         cls.kfile = os.path.join(cls.parent_dir, 'data/phenotype_groups_4.txt')
         data = pd.read_table(cls.input_file, names=['record_id', 'info', 'hpo_terms'])
         data['hpo_terms'] = data['hpo_terms'].str.split("|")
-        cls.cluster = Cluster(data, scoring_method='Jaccard', kfile=cls.kfile, )
+        cls.cluster = Cluster(data, scoring_method='Jaccard', kfile=cls.kfile, k=1000)
         cls.save_basic_dbscan_plot = os.path.join(cls.parent_dir, 'data/basic_dbscan_plot.png')
 
     def test_plot_basic_dbscan(self):
-        self.cluster.process_kfile(k=1000)
+        self.cluster.process_kfile()
         self.cluster.prep_cluster_data()
         self.cluster.prep_feature_array()
         self.cluster.umap()
