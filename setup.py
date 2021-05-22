@@ -36,6 +36,7 @@ setup(
         'requests',
         'umap-learn',
         'scikit-learn',
+        'hdbscan',
         'matplotlib'
 
     ]
