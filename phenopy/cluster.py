@@ -213,13 +213,16 @@ class Cluster:
             n_neighbors=n_neighbors,
             metric=metric,
             min_dist=min_dist,
+            random_state=42,
             n_components=n_components
         )
         # is 1 - sim a valid distance metric
         if metric == 'precomputed':
+            values = self.compute_sim()
             X = umap.fit_transform(1 - values.values)
             df_umap = pd.DataFrame(X, index=values.columns.tolist(), columns=['umap1', 'umap2'])
             df_umap[self.id_column] = df_umap.index
+            self.data = self.data.drop(['umap1', 'umap2'], axis=1, errors='ignore')
             self.data = self.data.merge(df_umap, on=self.id_column)
 
         else:
@@ -228,7 +231,7 @@ class Cluster:
                 self.data[f"umap{i + 1}"] = X[:, i]
 
     def hdbscan(self, min_samples=9, min_cluster_size=10):
-        clusterer = hdbscan.HDBSCAN(metric='euclidean')
+        clusterer = hdbscan.HDBSCAN(metric='euclidean', min_samples=min_samples, min_cluster_size=min_cluster_size)
         clusterer.fit(self.data[['umap1', 'umap2']].values)
         self.data['cluster_id'] = clusterer.labels_.tolist()
 

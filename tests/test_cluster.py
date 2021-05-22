@@ -25,7 +25,7 @@ class ClusterTestCase(unittest.TestCase):
         cls.kfile = os.path.join(cls.parent_dir, 'data/phenotype_groups_4.txt')
         data = pd.read_table(cls.input_file, names=['record_id', 'info', 'hpo_terms'])
         data['hpo_terms'] = data['hpo_terms'].str.split("|")
-        cls.cluster = Cluster(data, scoring_method='word2vec', kfile=cls.kfile, )
+        cls.cluster = Cluster(data, scoring_method='Jaccard', kfile=cls.kfile, )
 
     def test_process_kfile(self):
 
@@ -62,7 +62,14 @@ class ClusterTestCase(unittest.TestCase):
         self.assertEqual(self.cluster.data['cluster_id'].shape[0], 398)
         self.assertEqual(self.cluster.dbscan_stats['n_clusters'], 2)
         self.assertLess(self.cluster.dbscan_stats['n_noise'], 10)
-        self.assertAlmostEqual(self.cluster.dbscan_stats['silhouette_score'], 0.669, 1)
+        self.assertAlmostEqual(self.cluster.dbscan_stats['silhouette_score'], 0.615, 1)
+
+    def test_hdbscan(self):
+
+        self.cluster.umap(metric='precomputed')
+        self.cluster.hdbscan()
+        self.assertEqual(self.cluster.data['cluster_id'].shape[0], 398)
+
 
 
 
