@@ -22,7 +22,7 @@ import hdbscan
 phenopy_data_directory = os.path.join(os.getenv('HOME'), '.phenopy/data')
 obo_file = os.path.join(phenopy_data_directory, 'hp.obo')
 disease_to_phenotype_file = os.path.join(phenopy_data_directory, 'phenotype.hpoa')
-hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(obo_file, \
+hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(obo_file,
                                                                         disease_to_phenotype_file,
                                                                         ages_distribution_file=None)
 
@@ -130,10 +130,10 @@ class Cluster:
             superweighted_features = []
         X = self.data.apply(lambda x:
                             self.make_feature_array(x['hp_feature_counts'],
-                                               weights=x['hp_weights'],
-                                               n_features=self.n_features,
-                                               multiplier=multiplier,
-                                               superweighted_features=superweighted_features),
+                                                    weights=x['hp_weights'],
+                                                    n_features=self.n_features,
+                                                    multiplier=multiplier,
+                                                    superweighted_features=superweighted_features),
                             axis=1).tolist()
         self.feature_array = scaler.fit_transform(np.array(X))
 
@@ -208,7 +208,17 @@ class Cluster:
         values.index = names
         return values
 
-    def umap(self, metric='braycurtis', n_neighbors=15, min_dist=0.0, n_components=2):
+    def umap(self, metric=None, n_neighbors=15, min_dist=0.0, n_components=2):
+        if metric is None:
+            # check for features dictionary
+            if not self.hp_to_feature:
+                metric = 'precomputed'
+            # check for semantic dimentionality reduction
+            elif len(self.feature_to_hps.keys()) != len(self.feature_to_hps.values()):
+                metric = 'braycurtis'
+            else:
+                metric = 'euclidean'
+
         umap = UMAP(
             n_neighbors=n_neighbors,
             metric=metric,
@@ -267,7 +277,7 @@ class Cluster:
         self.umap(self.feature_array, metric="braycurtis")
         self.hdbscan()
 
-    def visualize(self, title='', color_by=None):
+    def visualize(self, title='', color_by=None, annotate_with=None, show_quads=False):
         if 'umap1' not in self.data.columns or 'umap2' not in self.data.columns:
             print("No results to cluster")
             return None
@@ -283,16 +293,38 @@ class Cluster:
                     return None
 
         fig, axs = plt.subplots()
+
         if color_by is not None:
             for name, grp in self.data.groupby(color_by):
                 axs.scatter(x=grp["umap1"], y=grp["umap2"], label=name, s=120)
         else:
             axs.scatter(x=self.data["umap1"], y=self.data["umap2"], s=120)
+
+        if annotate_with and annotate_with in self.data.columns:
+            for x, y, label in self.data[["umap1", "umap2", annotate_with]].values:
+                axs.text(x, y, label, fontsize=10)
+
+        if show_quads:
+            umap1_range = (self.data['umap1'].min(), self.data['umap1'].max())
+            umap2_range = (self.data['umap2'].min(), self.data['umap2'].max())
+            umap1_half = umap1_range[0] + (umap1_range[1] - umap1_range[0]) / 2
+            umap2_half = umap2_range[0] + (umap2_range[1] - umap2_range[0]) / 2
+            umap1_offset = (umap1_range[1] - umap1_half) / 50
+            umap2_offset = (umap2_range[1] - umap2_half) / 50
+
+            axs.text(umap1_range[0] + umap1_offset, umap2_range[1] - umap2_offset, 'A', fontsize=30)
+            axs.text(umap1_range[1] - umap1_offset, umap2_range[1] - umap2_offset, 'B', fontsize=30)
+            axs.text(umap1_range[0] + umap1_offset, umap2_range[0] + umap2_offset, 'C', fontsize=30)
+            axs.text(umap1_range[1] - umap1_offset, umap2_range[0] + umap2_offset, 'D', fontsize=30)
+            plt.axhline(umap2_half)
+            plt.axvline(umap1_half)
+
         plt.title(f"{title}", size=20)
         plt.xlabel("UMAP1")
         plt.ylabel("UMAP2")
         if color_by is not None:
             axs.legend(title=color_by, bbox_to_anchor=(1.05, 1), loc='upper left')
+
         return plt
 
     def extract_tfidf_features(self, drop_duplicates=True):
@@ -309,12 +341,12 @@ class Cluster:
         tfidf_feat = tfidf_feat.sort_values(by=['cluster_id'], ascending=False).reset_index(drop=True)
         tfidf_feat = tfidf_feat.merge(
             tfidf_feat
-            .groupby("hp_features")["cluster_id"]
-            .nunique()
-            .reset_index()
-            .rename(columns={"cluster_id": "tf_i"})
+                .groupby("hp_features")["cluster_id"]
+                .nunique()
+                .reset_index()
+                .rename(columns={"cluster_id": "tf_i"})
             , on="hp_features", how="left"
-                   )
+        )
         n_clusters = tfidf_feat['cluster_id'].nunique()
         tfidf_feat['tfidf_n'] = tfidf_feat \
             .apply(
@@ -322,10 +354,10 @@ class Cluster:
 
         tfidf_feat = tfidf_feat.merge(
             tfidf_feat
-            .groupby("cluster_id")['n']
-            .max()
-            .reset_index()
-            .rename(
+                .groupby("cluster_id")['n']
+                .max()
+                .reset_index()
+                .rename(
                 columns={"n": "max_tf"}
             )
             , how='left')
@@ -337,6 +369,28 @@ class Cluster:
         tfidf_feat = tfidf_feat.sort_values("cluster_id").reset_index(drop=True)
         tfidf_feat['index'] = tfidf_feat.index
         self.tfidf_features = tfidf_feat
+
+    def to_quad(self, umap1, umap2, umap1_range, umap2_range):
+        umap2_half = umap2_range[0] + (umap2_range[1] - umap2_range[0]) / 2
+        umap1_half = umap1_range[0] + (umap1_range[1] - umap1_range[0]) / 2
+        if umap2 > umap2_half and umap1 < umap1_half:
+            return 'A'
+        if umap2 > umap2_half and umap1_half >= 0:
+            return 'B'
+        if umap2 <= umap2_half and umap1 >= umap1_half:
+            return 'D'
+        if umap2 <= umap2_half and umap1 <= umap1_half:
+            return 'C'
+
+    def label_quads(self):
+        umap1_range = (self.data['umap1'].min(), self.data['umap1'].max())
+        umap2_range = (self.data['umap2'].min(), self.data['umap2'].max())
+        self.data['quad'] = self.data.apply(
+            lambda x: self.to_quad(
+                x['umap1'],
+                x['umap2'],
+                umap1_range,
+                umap2_range), axis=1)
 
     def cluster_stats(self):
 
@@ -350,10 +404,10 @@ class Cluster:
         scores = -np.log10(selector.pvalues_)
 
         #
-        #top_k_feature_indices = selector.get_support()
+        # top_k_feature_indices = selector.get_support()
         #
         #
-        #indx_features = np.where(top_k_feature_indices == True)
+        # indx_features = np.where(top_k_feature_indices == True)
 
         df_pvals = pd.DataFrame(p_values, columns=['pval']).reset_index()
         df_pvals['-log(p_val)'] = scores
@@ -448,5 +502,4 @@ class Cluster:
         plt.xticks(rotation=0, size=20)
         plt.yticks(rotation=0, size=10)
         return plt
-
 
