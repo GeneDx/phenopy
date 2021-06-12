@@ -27,8 +27,11 @@ hpo_network, alt2prim, disease_records = generate_annotated_hpo_network(obo_file
                                                                         ages_distribution_file=None)
 
 
+plt.rcParams["figure.figsize"] = (10, 10)
+
+
 class Cluster:
-    def __init__(self, data, scoring_method, kfile=None, k=1000):
+    def __init__(self, data, scoring_method='HRSS', use_pdr=True, kfile=None, k=1000):
 
         terms_columns = {'hpo_terms', 'terms', 'txt2hpo'}
         terms_column = set(data.columns).intersection(terms_columns)
@@ -37,6 +40,7 @@ class Cluster:
         id_columns = {'record_id', 'id', 'accession_num', 'case_id'}
         id_column = set(data.columns).intersection(id_columns)
         self.id_column = list(id_column)[0]
+        self.use_pdr = use_pdr
         self.k = k
         self.scoring_method = scoring_method
         self.alt2prim = alt2prim
@@ -45,6 +49,7 @@ class Cluster:
         self.n_cpus = os.cpu_count()
         self.feature_to_hps = {}
         self.hp_to_feature = {}
+        self.n_components = None
         self.n_features = None
         self.feature_array = None
         self.tfidf_features = None
@@ -209,40 +214,40 @@ class Cluster:
         return values
 
     def umap(self, metric=None, n_neighbors=15, min_dist=0.0, n_components=2):
-        if metric is None:
-            # check for features dictionary
-            if not self.hp_to_feature:
-                metric = 'precomputed'
-            # check for semantic dimentionality reduction
-            elif len(self.feature_to_hps.keys()) != len(self.feature_to_hps.values()):
-                metric = 'braycurtis'
-            else:
-                metric = 'euclidean'
-
-        umap = UMAP(
-            n_neighbors=n_neighbors,
-            metric=metric,
-            min_dist=min_dist,
-            random_state=42,
-            n_components=n_components
-        )
+        self.n_components = n_components
         # is 1 - sim a valid distance metric
-        if metric == 'precomputed':
-            values = self.compute_sim()
-            X = umap.fit_transform(1 - values.values)
-            df_umap = pd.DataFrame(X, index=values.columns.tolist(), columns=['umap1', 'umap2'])
-            df_umap[self.id_column] = df_umap.index
-            self.data = self.data.drop(['umap1', 'umap2'], axis=1, errors='ignore')
-            self.data = self.data.merge(df_umap, on=self.id_column)
-
-        else:
+        self.dimention_labels = [f'umap{x}' for x in range(1, n_components + 1)]
+        if self.use_pdr:
+            self.process_kfile()
+            self.prep_cluster_data()
+            self.prep_feature_array()
+            if metric is None:
+                # check for semantic dimentionality reduction
+                if len(self.feature_to_hps.keys()) != len(self.feature_to_hps.values()):
+                    metric = 'braycurtis'
+                else:
+                    metric = 'euclidean'
+            umap = UMAP(
+                n_neighbors=n_neighbors,
+                metric=metric,
+                min_dist=min_dist,
+                random_state=42,
+                n_components=n_components
+            )
             X = umap.fit_transform(self.feature_array)
-            for i in range(n_components):
-                self.data[f"umap{i + 1}"] = X[:, i]
+            self.data[self.dimention_labels] = X[:, :]
+        else:
+            values = self.compute_sim()
+            X = UMAP(metric="precomputed").fit_transform(1 - values.values)
+            df_umap = pd.DataFrame(X, index=values.columns.tolist(), columns=self.dimention_labels)
+            df_umap[self.id_column] = df_umap.index
+            self.data = self.data.drop(self.dimention_labels, axis=1, errors='ignore')
+            self.data = self.data.merge(df_umap, on=self.id_column)
+            # for d in enumerate(self.dimention_labels):
 
     def hdbscan(self, min_samples=9, min_cluster_size=10):
         clusterer = hdbscan.HDBSCAN(metric='euclidean', min_samples=min_samples, min_cluster_size=min_cluster_size)
-        clusterer.fit(self.data[['umap1', 'umap2']].values)
+        clusterer.fit(self.data[[f"umap{x}" for x in range(1, self.n_components + 1)]].values)
         self.data['cluster_id'] = clusterer.labels_.tolist()
 
     def dbscan(self, eps=0.40, min_samples=10):
@@ -270,16 +275,16 @@ class Cluster:
         self.umap(self.compute_sim(), metric='precomputed')
         self.hdbscan()
 
-    def features_umap(self, k=1000):
+    def features_umap(self, metric, k=1000):
         self.process_kfile(k=k)
         self.prep_cluster_data()
         self.prep_feature_array()
-        self.umap(self.feature_array, metric="braycurtis")
+        self.umap(self.feature_array, metric=metric)
         self.hdbscan()
 
     def visualize(self, title='', color_by=None, annotate_with=None, show_quads=False):
-        if 'umap1' not in self.data.columns or 'umap2' not in self.data.columns:
-            print("No results to cluster")
+        if 'umap1' not in self.data.columns and 'umap2' not in self.data.columns:
+            print("At least 2 dimentions expected")
             return None
 
         if isinstance(color_by, str):
@@ -502,4 +507,5 @@ class Cluster:
         plt.xticks(rotation=0, size=20)
         plt.yticks(rotation=0, size=10)
         return plt
+
 

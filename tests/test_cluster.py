@@ -23,12 +23,11 @@ class ClusterTestCase(unittest.TestCase):
                                            )
         cls.input_file = os.path.join(cls.parent_dir, 'data/cluster_two_groups.txt')
         cls.kfile = os.path.join(cls.parent_dir, 'data/phenotype_groups_4.txt')
-        data = pd.read_table(cls.input_file, names=['record_id', 'info', 'hpo_terms'])
-        data['hpo_terms'] = data['hpo_terms'].str.split("|")
-        cls.cluster = Cluster(data, scoring_method='Jaccard', kfile=cls.kfile, k=1000)
+        cls.data = pd.read_table(cls.input_file, names=['record_id', 'info', 'hpo_terms'])
+        cls.data['hpo_terms'] = cls.data['hpo_terms'].str.split("|")
+        cls.cluster = Cluster(cls.data, scoring_method='Jaccard', use_pdr=True, kfile=cls.kfile, k=1000)
 
     def test_process_kfile(self):
-
         self.cluster.process_kfile()
         self.assertEqual(self.cluster.n_features, 4)
         self.assertEqual(self.cluster.feature_to_hps, {0: ['HP:0003011'], 1: ['HP:0001263'], 2: ['HP:0001290'], 3: ['HP:0001251']})
@@ -45,28 +44,25 @@ class ClusterTestCase(unittest.TestCase):
         self.cluster.prep_feature_array()
         self.assertEqual(self.cluster.feature_array.shape[0], 398)
 
-    def test_apply_umap(self):
-        self.cluster.process_kfile()
-        self.cluster.prep_cluster_data()
-        self.cluster.prep_feature_array()
-        self.cluster.umap()
+    def test_apply_umap_two_components(self):
+        self.cluster.umap(n_components=2)
         self.assertEqual(self.cluster.data[['umap1','umap2']].values.shape[0], 398)
 
+    def test_apply_umap_one_component(self):
+        self.cluster.umap(n_components=1)
+        self.assertEqual(self.cluster.data[['umap1']].values.shape[0], 398)
+        self.assertFalse('umap2' in self.cluster.data)
+
     def test_dbscan(self):
-        self.cluster.process_kfile()
-        self.cluster.prep_cluster_data()
-        self.cluster.prep_feature_array()
         self.cluster.umap()
         self.cluster.dbscan()
-
         self.assertEqual(self.cluster.data['cluster_id'].shape[0], 398)
         self.assertEqual(self.cluster.dbscan_stats['n_clusters'], 2)
         self.assertLess(self.cluster.dbscan_stats['n_noise'], 10)
         self.assertGreater(self.cluster.dbscan_stats['silhouette_score'], 0.4, 1)
 
     def test_hdbscan(self):
-
-        self.cluster.umap(metric='precomputed')
+        self.cluster.umap()
         self.cluster.hdbscan()
         self.assertEqual(self.cluster.data['cluster_id'].shape[0], 398)
 
