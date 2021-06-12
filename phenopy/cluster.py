@@ -56,7 +56,7 @@ class Cluster:
         self.pairwise_map = None
 
         if kfile is None:
-            self.kfile = config['phenotype_groups']['phenotype_groups_file']
+            self.kfile = config['phenotype_groups']['cluster_phenotype_groups_file']
         else:
             self.kfile = kfile
 

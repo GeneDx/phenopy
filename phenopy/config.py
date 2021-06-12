@@ -149,7 +149,11 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
     config['phenotype_groups'] = {
         'phenotype_groups_file': os.path.join(
             project_data_dir, 
-            "phenotype_groups.txt"
+            "lmd_phenotype_groups.txt"
+        ),
+        'cluster_phenotype_groups_file': os.path.join(
+            project_data_dir,
+            "cluster_phenotype_groups.txt"
         )
     }
 

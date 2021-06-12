@@ -9,6 +9,7 @@ from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.util import encode_phenotypes, read_phenotype_groups
 
+
 def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None, alt2prim=None, k_phenotype_groups=1000):
     """
     Predicts the likelihood of molecular diagnosis given a set of phenotypes.
