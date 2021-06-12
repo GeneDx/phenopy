@@ -31,7 +31,7 @@ plt.rcParams["figure.figsize"] = (10, 10)
 
 
 class Cluster:
-    def __init__(self, data, scoring_method='HRSS', use_pdr=True, kfile=None, k=1000):
+    def __init__(self, data, scoring_method='HRSS', use_pdr=True, kfile=None, k=1733):
 
         terms_columns = {'hpo_terms', 'terms', 'txt2hpo'}
         terms_column = set(data.columns).intersection(terms_columns)
@@ -41,7 +41,7 @@ class Cluster:
         id_column = set(data.columns).intersection(id_columns)
         self.id_column = list(id_column)[0]
         self.use_pdr = use_pdr
-        self.k = k
+        self.k = str(k)
         self.scoring_method = scoring_method
         self.alt2prim = alt2prim
         self.data = self.prep_data(data)
@@ -99,10 +99,10 @@ class Cluster:
                 'Phenotype groups file not found')
             exit(1)
 
-        if self.k in [1000, 1500]:
-            df_k = kdf.groupby(f"phenotype_group_k{self.k}")["HPO_id"].apply(list).reset_index()
-            self.feature_to_hps = dict(zip(df_k[f"phenotype_group_k{self.k}"], df_k["HPO_id"]))
-            self.hp_to_feature = dict(zip(kdf['HPO_id'], kdf[f"phenotype_group_k{self.k}"]))
+        if self.k in kdf.columns[1:]:
+            df_k = kdf.groupby(self.k)["hpid"].apply(list).reset_index()
+            self.feature_to_hps = dict(zip(df_k[self.k], df_k["hpid"]))
+            self.hp_to_feature = dict(zip(kdf["hpid"], kdf[self.k]))
         else:
             print(f"No features computed for k={self.k}")
 

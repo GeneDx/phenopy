@@ -1,4 +1,4 @@
-HPO_id	phenotype_group_k1000	phenotype_group_k1500
+hpid	1000	1500
 HP:0003011	0	0
 HP:0001263	1	1
 HP:0001290	2	2
