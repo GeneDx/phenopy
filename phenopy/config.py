@@ -80,7 +80,10 @@ logger.addHandler(ch)
 config = configparser.ConfigParser()
 
 # create config directory if it doesn't exist
-config_directory = os.path.join(os.environ.get('HOME'), f'.{__project__}')
+try:
+    config_directory = os.path.join(os.environ.get('HOME'), f'.{__project__}')
+except:
+    config_directory = os.path.join(os.environ.get('CONDA_PREFIX'), f'.{__project__}')
 project_directory = Path(__file__).parent
 project_data_dir = os.path.join(project_directory, 'data')
 try:
