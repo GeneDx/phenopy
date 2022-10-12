@@ -80,7 +80,7 @@ logger.addHandler(ch)
 config = configparser.ConfigParser()
 
 # create config directory if it doesn't exist
-config_directory = os.path.join(os.environ.get('HOME'), f'.{__project__}')
+config_directory = os.path.join(os.path.expanduser('~'), f'.{__project__}')
 project_directory = os.path.abspath(__project__)
 project_data_dir = os.path.join(project_directory, 'data')
 try:
