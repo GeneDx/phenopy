@@ -169,8 +169,8 @@ class Scorer:
             return record_a['record_id'], record_b['record_id'], float(intersection) / union
 
         elif self.scoring_method == 'word2vec':
-            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
-            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.key_to_index]
+            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.key_to_index]
 
             if in_vocab_terms_a and in_vocab_terms_b:
                 return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
