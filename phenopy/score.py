@@ -225,8 +225,8 @@ class Scorer:
 
         elif self.scoring_method == 'word2vec':
 
-            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
-            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.key_to_index]
+            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.key_to_index]
 
             if in_vocab_terms_a and in_vocab_terms_b:
 
