@@ -36,7 +36,7 @@ class ICTestCase(unittest.TestCase):
 
     def test_ic_d2p(self):
         """Calculate the information content of a phenotype"""
-        self.assertAlmostEqual(self.hpo_network.nodes[self.hpo_id]['ic'], 5.69, 2)
+        self.assertAlmostEqual(self.hpo_network.nodes[self.hpo_id]['ic'], 7.21, 2)
 
     def test_ic_custom(self):
         """Calculate the information content of a phenotype when multiple annotations are present"""
