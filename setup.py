@@ -30,7 +30,7 @@ setup(
         'numpy',
         'obonet',
         'pandas',
-        'importlib_metadata<=5.0',
+        'importlib_metadata<5.0',
         'joblib',
         'scipy',
         'lightgbm',
