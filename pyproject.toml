@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "phenopy"
+version = "0.5.3"
+description = "Phenotype comparison scoring by semantic similarity."
+authors = [
+    {name = "Kevin Arvai", email = "karvai@genedx.com"},
+    {name = "Kyle Retterer", email = "retterer@genedx.com"},
+    {name = "Carlos Borroto", email = "cborroto@genedx.com"},
+    {name = "Vlad Gainullin", email = "vgainullin@genedx.com"},
+    {name = "Vincent Ustach", email = "vustach@genedx.com"}
+]
+maintainers = [{email = "datascience@genedx.com"}]
+readme = "README.md"
+license = ""
+
+[project.scripts]
+phenopy = "phenopy.__main__:main"
+
+[project.urls]
+homepage = "https://github.com/GeneDx/phenopy"
+"Bug Tracker" = "https://github.com/GeneDx/phenopy/issues"
+
+
+[project.dependencies]
+fire = "*"
+gensim = "*"
+networkx = "*"
+numpy = "*"
+obonet = "*"
+pandas = "*"
+importlib-metadata = "<5.0"
+joblib = "*"
+scipy = "*"
+lightgbm = "*"
+requests = "*"
+
+[project.optional-dependencies]
+
+[project.build-dependencies]
+
+[project.packages]
+include = ["phenopy/*"]
+
+[project.entry-points]
+
+[tool.poetry-dev-dependencies]

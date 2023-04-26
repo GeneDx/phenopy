@@ -2,7 +2,7 @@ certifi==2022.12.7
 charset-normalizer
 cryptography==39.0.1
 fire
-gensim>=4.0.0
+gensim>4.0.0
 idna
 joblib==1.2.0
 lightgbm
@@ -21,3 +21,10 @@ termcolor
 threadpoolctl
 urllib3==1.26.5
 wheel==0.38.1
+
+# dev-packages
+flake8
+pytest
+pytest-cov
+pylint
+twine

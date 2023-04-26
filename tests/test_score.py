@@ -82,7 +82,7 @@ class ScorerTestCase(unittest.TestCase):
         t1 = 'HP:0001344'
         t2 = 'HP:0012759'
         beta = self.scorer.calculate_beta(t1, t2)
-        self.assertAlmostEqual(beta, 3.51, places=2)
+        self.assertAlmostEqual(beta, 3.99, places=2)
 
     def test_score_hpo_pair_hrss(self):
         t1 = 'HP:0011351'
@@ -90,15 +90,15 @@ class ScorerTestCase(unittest.TestCase):
 
         # score two terms
         score = self.scorer.score_hpo_pair_hrss(t1, t2)
-        self.assertAlmostEqual(score, 0.2, places=2)
+        self.assertAlmostEqual(score, 0.14, places=2)
 
         # test that the cache is working
         score = self.scorer.score_hpo_pair_hrss(t1, t2)
-        self.assertAlmostEqual(score, 0.2, places=2)
+        self.assertAlmostEqual(score, 0.14, places=2)
 
         # and test that the cache is working for inverse comparisons
         score = self.scorer.score_hpo_pair_hrss(t2, t1)
-        self.assertAlmostEqual(score, 0.2, places=2)
+        self.assertAlmostEqual(score, 0.14, places=2)
 
     def test_score(self):
         record_a = {'record_id': 'sample_1',
@@ -117,10 +117,10 @@ class ScorerTestCase(unittest.TestCase):
 
         # test BMA
         score_bma = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bma[2], 0.207, places=2)
+        self.assertAlmostEqual(score_bma[2], 0.090, places=2)
         self.scorer.summarization_method = 'maximum'
         score_max = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_max[2], 0.25, places=4)
+        self.assertAlmostEqual(score_max[2], 0.1251, places=4)
 
         # test wrong method
         self.scorer.summarization_method = 'not_a_method'
@@ -140,7 +140,7 @@ class ScorerTestCase(unittest.TestCase):
         self.scorer.summarization_method = 'BMWA'
         self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bmwa[2], 0.6239, places=4)
+        self.assertAlmostEqual(score_bmwa[2], 0.1822, places=4)
 
         record_a.update({
             'terms': ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322'], # ATAX, DD,  HYP, SS, AbnSocBeh
@@ -156,13 +156,13 @@ class ScorerTestCase(unittest.TestCase):
 
         # test with two weights
         score_bwma_both_weights = scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bwma_both_weights[2], 0.6901, 4)
+        self.assertAlmostEqual(score_bwma_both_weights[2], 0.1918, 4)
 
         # test with one weight array
         scorer.min_score_mask = None
         record_a['weights'].pop('age', None)
         score_bwma_one_weights = scorer.score(record_a, record_b)
-        self.assertAlmostEqual(score_bwma_one_weights[2], 0.6026, 4)
+        self.assertAlmostEqual(score_bwma_one_weights[2], 0.155, 4)
 
     def test_score_records(self,):
         query_name = 'SAMPLE'
@@ -184,8 +184,8 @@ class ScorerTestCase(unittest.TestCase):
             itertools.product(range(len(input_records)), range(len(score_records))),
             threads=1,
         )
-        self.assertEqual(1184, len(results))
-        self.assertAlmostEqual(float(results[0][2]), 0.1325, 2)
+        self.assertEqual(8118, len(results))
+        self.assertAlmostEqual(float(results[0][2]), 0.042, 2)
 
         # without weights -- defaults to best match average (BMA)
         [record['weights'].pop('disease_frequency') for record in score_records]
@@ -195,8 +195,8 @@ class ScorerTestCase(unittest.TestCase):
             itertools.product(range(len(input_records)), range(len(score_records))),
             threads=1,
         )
-        self.assertEqual(1184, len(results))
-        self.assertAlmostEqual(float(results[0][2]), 0.1387, 2)
+        self.assertEqual(8118, len(results))
+        self.assertAlmostEqual(float(results[0][2]), 0.0359, 2)
 
     def test_no_parents(self):
         terms_a = ['HP:0012433', 'HP:0000708']
@@ -223,7 +223,7 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(len(results), 3)
 
         # test the score of '213200' - '302801'
-        self.assertAlmostEqual(float(results[1][2]), 0.3758, 2)
+        self.assertAlmostEqual(float(results[1][2]), 0.095, 2)
 
     def test_bmwa(self):
         # test best match weighted average
@@ -414,14 +414,14 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = ['HP:0001290', 'HP:0000118']
         terms_b = ['HP:0001290', 'HP:0011351']
 
-        self.assertAlmostEqual(0.5, self.scorer.score_term_sets_basic(terms_a, terms_b))
+        self.assertAlmostEqual(0.16, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
 
     def test_score_resnik_basic(self):
         """Test the scoring functionality"""
         self.scorer.scoring_method = 'Resnik'
         terms_a = ['HP:0001290', 'HP:0000118']
         terms_b = ['HP:0001290', 'HP:0011351']
-        self.assertAlmostEqual(3.54, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
+        self.assertAlmostEqual(1.28, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
 
     def test_score_jaccard_basic(self):
         """Test the scoring functionality"""

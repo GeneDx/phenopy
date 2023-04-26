@@ -28,10 +28,7 @@ def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=Non
 
             for row in reader:
                 # phenotype term id
-                try:
-                     term_id = row['HPO_ID']
-                except KeyError as e:
-                      term_id = row['hpo_id']      
+                term_id = row.get('HPO_ID') if 'HPO_ID' in row else row.get('hpo_id')
                 if term_id not in hpo_network.nodes():
                     continue
                 # parse disease id, currently only supports omim entries

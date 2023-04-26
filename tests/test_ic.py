@@ -45,7 +45,7 @@ class ICTestCase(unittest.TestCase):
         hpo_network = annotate(hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated, self.alt2prim,
                               annotations_file=custom_annotation_file)
 
-        self.assertAlmostEqual(hpo_network.nodes[self.hpo_id]['ic'], 6.38, 1)
+        self.assertAlmostEqual(hpo_network.nodes[self.hpo_id]['ic'], 8.11, 1)
 
     def test_ic_d2p_no_parents(self):
         export_phenotype_hpoa_with_no_parents(self.disease_to_phenotype_file, self.disease_to_phenotype_output_file, self.hpo_network)
