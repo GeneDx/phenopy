@@ -6,11 +6,11 @@ name = "phenopy"
 version = "0.5.3"
 description = "Phenotype comparison scoring by semantic similarity."
 authors = [
-    {name = "Kevin Arvai", email = "karvai@genedx.com"},
-    {name = "Kyle Retterer", email = "retterer@genedx.com"},
-    {name = "Carlos Borroto", email = "cborroto@genedx.com"},
-    {name = "Vlad Gainullin", email = "vgainullin@genedx.com"},
-    {name = "Vincent Ustach", email = "vustach@genedx.com"}
+    "Kevin Arvai <karvai@genedx.com>",
+    "Kyle Retterer <retterer@genedx.com>",
+    "Carlos Borroto <cborroto@genedx.com>",
+    "Vlad Gainullin <vgainullin@genedx.com>",
+    "Vincent Ustach <vustach@genedx.com>"
 ]
 maintainers = [{email = "datascience@genedx.com"}]
 readme = "README.md"
