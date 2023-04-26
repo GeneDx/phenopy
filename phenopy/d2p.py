@@ -28,18 +28,18 @@ def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=Non
 
             for row in reader:
                 # phenotype term id
-                term_id = row['HPO_ID']
+                term_id = row['hpo_id']
                 if term_id not in hpo_network.nodes():
                     continue
                 # parse disease id, currently only supports omim entries
-                db, disease_accession = row['DatabaseID'].split(':')
+                db, disease_accession = row['database_id'].split(':')
                 if db not in ['OMIM']:
                     continue
                 # For now, skip negative phenotype annotations
                 if row['Qualifier'] == 'NOT':
                     continue
 
-                records.append((term_id, disease_accession, frequency_converter(row['Frequency'])))
+                records.append((term_id, disease_accession, frequency_converter(row['frequency'])))
 
         return records
 
