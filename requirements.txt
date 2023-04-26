@@ -1,0 +1,6 @@
+numpy
+gensim
+networkx
+obonet
+pandas
+scipy
