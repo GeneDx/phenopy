@@ -4,6 +4,10 @@ from phenopy import __project__, __version__
 
 from os import path
 this_directory = path.abspath(path.dirname(__file__))
+
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
@@ -11,6 +15,7 @@ setup(
     name=__project__,
     packages=find_packages(),
     version=__version__,
+    install_requires=requirements,
     description='Phenotype comparison scoring by semantic similarity.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -21,15 +26,5 @@ setup(
         'console_scripts': [
             f'{__project__} = {__project__}.__main__:main',
         ]
-    },
-    install_requires=[
-        'numpy',
-        'fire',
-        'gensim',
-        'networkx',
-        'obonet',
-        'pandas',
-        'scipy',
-
-    ]
+    }
 )
