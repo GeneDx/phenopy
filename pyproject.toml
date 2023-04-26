@@ -47,3 +47,5 @@ include = ["phenopy/*"]
 [project.entry-points]
 
 [tool.poetry-dev-dependencies]
+
+[tool.poetry]
