@@ -36,7 +36,7 @@ def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=Non
                 if db not in ['OMIM']:
                     continue
                 # For now, skip negative phenotype annotations
-                if row['Qualifier'] == 'NOT':
+                if row['qualifier'] == 'NOT':
                     continue
 
                 records.append((term_id, disease_accession, frequency_converter(row['frequency'])))
