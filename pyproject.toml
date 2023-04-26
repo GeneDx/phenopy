@@ -13,7 +13,6 @@ authors = [
     "Vlad Gainullin <vgainullin@genedx.com>",
     "Vincent Ustach <vustach@genedx.com>"
 ]
-maintainers = [{email = "datascience@genedx.com"}]
 readme = "README.md"
 license = ""
 
