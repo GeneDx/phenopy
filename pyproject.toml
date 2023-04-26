@@ -1,7 +1,8 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "phenopy"
 version = "0.5.3"
 description = "Phenotype comparison scoring by semantic similarity."
@@ -16,15 +17,14 @@ maintainers = [{email = "datascience@genedx.com"}]
 readme = "README.md"
 license = ""
 
-[project.scripts]
+[tool.poetry.scripts]
 phenopy = "phenopy.__main__:main"
 
-[project.urls]
+[tool.poetry.urls]
 homepage = "https://github.com/GeneDx/phenopy"
 "Bug Tracker" = "https://github.com/GeneDx/phenopy/issues"
 
-
-[project.dependencies]
+[tool.poetry.dependencies]
 fire = "*"
 gensim = "*"
 networkx = "*"
@@ -36,26 +36,3 @@ joblib = "*"
 scipy = "*"
 lightgbm = "*"
 requests = "*"
-
-[project.optional-dependencies]
-
-[project.build-dependencies]
-
-[project.packages]
-include = ["phenopy/*"]
-
-[project.entry-points]
-
-[tool.poetry-dev-dependencies]
-
-[tool.poetry]
-name = "phenopy"
-version = "0.5.3"
-description = "Phenotype comparison scoring by semantic similarity."
-authors = [
-    "Kevin Arvai <karvai@genedx.com>",
-    "Kyle Retterer <retterer@genedx.com>",
-    "Carlos Borroto <cborroto@genedx.com>",
-    "Vlad Gainullin <vgainullin@genedx.com>",
-    "Vincent Ustach <vustach@genedx.com>"
-]
