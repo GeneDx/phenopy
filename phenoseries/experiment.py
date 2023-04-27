@@ -114,13 +114,15 @@ def return_relevant_ranks(
     return sorted(ranks[other_idxs])
 
 
-def run_phenoseries_experiment(outdir=None, phenotypic_series_filepath=None,
-    min_hpos=2, min_entities=4, phenoseries_fraction=1.0,
-    scoring_method="HRSS", threads=1, omim_phenotypes_file=None, pairwise_mim_scores_file=None):
-    
+def run_phenoseries_experiment(
+        outdir=None, phenotypic_series_filepath=None,
+        min_hpos=2, min_entities=4, phenoseries_fraction=1.0,
+        scoring_method="HRSS", threads=1,
+        omim_phenotypes_file=None, pairwise_mim_scores_file=None):
+
     if outdir is None:
         outdir = os.getcwd
-    
+
     # load HPO network
     # data directory
     phenopy_data_directory = os.path.join(os.getenv("HOME"), ".phenopy/data")
@@ -181,11 +183,15 @@ def run_phenoseries_experiment(outdir=None, phenotypic_series_filepath=None,
                 section_name = text_section["textSection"]["textSectionName"]
                 if section_name in fields_to_use:
                     # unique_section_names.add(section_name)
-                    all_mim_text += " " + text_section["textSection"]["textSectionContent"]
+                    added_text = text_section["textSection"]["textSectionContent"]
+                    all_mim_text += f" {added_text}"
 
             mim_texts[mim_id] = all_mim_text
         # instantiate txt2hpo's Exctractor class to perform named entity recognition
-        extractor = Extractor(remove_negated=True, max_neighbors=3, correct_spelling=False)
+        extractor = Extractor(
+            remove_negated=True,
+            max_neighbors=3,
+            correct_spelling=False)
 
         # loop over the MIM ids and extract hpo ids from each MIM's text fields
         mim_hpos = {}
@@ -206,9 +212,6 @@ def run_phenoseries_experiment(outdir=None, phenotypic_series_filepath=None,
             mim_hpos = dict(zip(mimdf["omim_id"], mimdf["hpo_terms"]))
         except FileNotFoundError:
             sys.exit("Please provide a valid file path")
-
-    # do we need this?
-    # mim_hpos = {mim_id: hpos for mim_id, hpos in mim_hpos.items()}
 
     # clean up HPO ids in lists
     for mim_id, hpo_ids in mim_hpos.items():
@@ -271,7 +274,8 @@ def run_phenoseries_experiment(outdir=None, phenotypic_series_filepath=None,
         )
         # convert to square form
         pairwise_scores = pairwise_scores.set_index(["mimid1", "mimid2"]).unstack()
-        # This pandas method chain fills in the missing scores of the square matrix with the values from the transpose of df.
+        # This pandas method chain fills in the missing scores of the square matrix
+        # with the values from the transpose of df.
         pairwise_scores = (
             pairwise_scores["phenopy-score"]
             .reset_index(drop=True)
@@ -281,12 +285,16 @@ def run_phenoseries_experiment(outdir=None, phenotypic_series_filepath=None,
         # reindex with the mimdf index
         pairwise_scores = pairwise_scores.reindex(mimdf["omim_id"].tolist())
         pairwise_scores = pairwise_scores[mimdf["omim_id"].tolist()]
-        pd.DataFrame(pairwise_scores).to_csv(os.path.join(outdir, 'phenoseries.psim_matrix.txt'),
-                                          sep='\t')
+        pd.DataFrame(pairwise_scores).to_csv(
+            os.path.join(outdir, 'phenoseries.psim_matrix.txt'),
+            sep='\t'
+        )
     else:
         pairwise_scores = pd.read_csv(pairwise_mim_scores_file, sep='\t')
 
-    ranksdf = make_rank_dataframe(pairwise_scores.astype(float).values, mimdf, experiment_ps2mimids)
+    ranksdf = make_rank_dataframe(
+        pairwise_scores.astype(float).values, mimdf, experiment_ps2mimids
+    )
     ranksdf.to_csv(os.path.join(outdir, "phenoseries.rankdf.txt"), sep="\t")
 
 
@@ -305,14 +313,16 @@ if __name__ == "__main__":
         "-n",
         default=4,
         type=int,
-        help="The minimum number of hpo ids per entity (mim id, for example) to be considered for the experiment",
+        help="The minimum number of hpo ids per entity (mim id, for example) to"
+             "be considered for the experiment",
     )
     parser.add_argument(
         "--min-entities",
         "-m",
         default=2,
         type=int,
-        help="The minimum number of entities (mim id, for example) per series to be considered for the experiment",
+        help="The minimum number of entities (mim id, for example) per series to"
+             "be considered for the experiment",
     )
     parser.add_argument(
         "--phenoseries-fraction",
@@ -342,7 +352,8 @@ if __name__ == "__main__":
         "--pairwise-mim-scores-file",
         "-b",
         default="",
-        help="The full path to a pre-generated file with all the pairwise scores for each omim id in the experiment.",
+        help="The full path to a pre-generated file with all the pairwise scores for"
+             "each omim id in the experiment.",
         type=str,
     )
 
@@ -359,13 +370,13 @@ if __name__ == "__main__":
     pairwise_mim_scores_file = args.pairwise_mim_scores_file
 
     run_phenoseries_experiment(
-        outdir = outdir,
-        phenotypic_series_filepath = phenotypic_series_filepath,
-        min_hpos = min_hpos,
-        min_entities = min_entities,
-        phenoseries_fraction = phenoseries_fraction,
-        scoring_method = scoring_method,
-        threads = threads,
-        omim_phenotypes_file = omim_phenotypes_file,
-        pairwise_mim_scores_file = pairwise_mim_scores_file,
+        outdir=outdir,
+        phenotypic_series_filepath=phenotypic_series_filepath,
+        min_hpos=min_hpos,
+        min_entities=min_entities,
+        phenoseries_fraction=phenoseries_fraction,
+        scoring_method=scoring_method,
+        threads=threads,
+        omim_phenotypes_file=omim_phenotypes_file,
+        pairwise_mim_scores_file=pairwise_mim_scores_file,
         )
