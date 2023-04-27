@@ -13,10 +13,10 @@ class UtilTestCase(unittest.TestCase):
     def setUp(cls):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
-        
+
         if 'hpo' not in config.sections():
             config.add_section('hpo')
-        
+
         config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
         config.set(
             'hpo', 'disease_to_phenotype_file', os.path.join(
@@ -129,7 +129,7 @@ class UtilTestCase(unittest.TestCase):
 
     def test_encode_2d_phenotypes(self):
         phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
+            ['HP:0012759', 'HP:0003011', 'HP:0011442'],
             ['HP:0012759', 'HP:0003011'],
         ]
         encoded_phenotypes = encode_phenotypes(

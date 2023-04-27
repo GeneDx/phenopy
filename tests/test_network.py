@@ -14,7 +14,7 @@ class NetworkTestCase(unittest.TestCase):
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
         if 'hpo' not in config.sections():
             config.add_section('hpo')
-        
+
         config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
         config.set(
             'hpo',

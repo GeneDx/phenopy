@@ -13,10 +13,10 @@ class LikelihoodTestCase(unittest.TestCase):
     def setUp(cls):
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
-        
+
         if 'hpo' not in config.sections():
             config.add_section('hpo')
-        
+
         config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
         config.set('hpo', 'disease_to_phenotype_file', os.path.join(
             cls.parent_dir, 'data/phenotype.hpoa')
@@ -42,7 +42,7 @@ class LikelihoodTestCase(unittest.TestCase):
 
     def test_predict_likelihood(self):
         phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
+            ['HP:0012759', 'HP:0003011', 'HP:0011442'],
             ['HP:0012759', 'HP:0003011'],
         ]
         probabilities = predict_likelihood_moldx(
@@ -52,7 +52,7 @@ class LikelihoodTestCase(unittest.TestCase):
 
     def test_predict_likelihood_phenotypes_only(self):
         phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
+            ['HP:0012759', 'HP:0003011', 'HP:0011442'],
             ['HP:0012759', 'HP:0003011'],
         ]
         probabilities = predict_likelihood_moldx(phenotypes)
@@ -61,7 +61,7 @@ class LikelihoodTestCase(unittest.TestCase):
     def test_no_hpo_config_section(self):
         config.remove_section('hpo')
         phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
+            ['HP:0012759', 'HP:0003011', 'HP:0011442'],
             ['HP:0012759', 'HP:0003011'],
         ]
         with self.assertRaises(NoSectionError):
@@ -70,22 +70,22 @@ class LikelihoodTestCase(unittest.TestCase):
     def test_no_hpo_config_option(self):
         config.remove_option('hpo', 'disease_to_phenotype_file')
         phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
+            ['HP:0012759', 'HP:0003011', 'HP:0011442'],
             ['HP:0012759', 'HP:0003011'],
         ]
         with self.assertRaises(NoOptionError):
-            predict_likelihood_moldx(phenotypes)   
+            predict_likelihood_moldx(phenotypes)
 
     def test_bad_k(self):
         phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
+            ['HP:0012759', 'HP:0003011', 'HP:0011442'],
             ['HP:0012759', 'HP:0003011'],
         ]
         with self.assertRaises(KeyError):
             predict_likelihood_moldx(
-                phenotypes, 
+                phenotypes,
                 self.phenotype_groups,
                 self.hpo_network,
-                self.alt2prim, 
+                self.alt2prim,
                 k_phenotype_groups=500
                 )

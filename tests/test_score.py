@@ -8,7 +8,12 @@ from phenopy.d2p import load as load_d2p
 from phenopy.network import annotate
 from phenopy.network import load as load_network
 from phenopy.score import Scorer
-from phenopy.util import remove_parents, parse_input, generate_alternate_ids, half_product
+from phenopy.util import (
+    remove_parents,
+    parse_input,
+    generate_alternate_ids,
+    half_product,
+)
 from phenopy.weights import calculate_age_weights
 
 
@@ -420,7 +425,7 @@ class ScorerTestCase(unittest.TestCase):
         """the root term should contain all diseases therefore the IC should be zero"""
 
         root_term_ic = self.hpo_network.nodes['HP:0000118']['ic']
-        self.assertEqual(0.0,root_term_ic)
+        self.assertEqual(0.0, root_term_ic)
 
     def test_leaves_diff_branches_score_zero(self):
         """two leaves in different branches
@@ -434,7 +439,7 @@ class ScorerTestCase(unittest.TestCase):
         # moderate receptive langage delay
         term_b = 'HP:0011351'
 
-        score_two_leaves_diff_branches = self.scorer.score_hpo_pair_hrss(term_a,term_b)
+        score_two_leaves_diff_branches = self.scorer.score_hpo_pair_hrss(term_a, term_b)
         self.assertEqual(0.0, score_two_leaves_diff_branches)
 
     def test_score_hrss_basic(self):
@@ -491,5 +496,3 @@ class ScorerTestCase(unittest.TestCase):
         terms_b = ['HP:0001290', 'HP:0011351']
 
         self.assertEqual(0.0, scorer.score_term_sets_basic(terms_a, terms_b), 2)
-
-\

@@ -183,8 +183,8 @@ def likelihood_moldx(input_file, output_file=None, k_phenotype_groups=1000):
     # predict likelihood of molecular diagnosis
     positive_probabilities = predict_likelihood_moldx(
         phenotypes,
-        phenotype_groups=None, 
-        hpo_network=hpo_network, 
+        phenotype_groups=None,
+        hpo_network=hpo_network,
         alt2prim=alt2prim,
         k_phenotype_groups=k_phenotype_groups,
         )

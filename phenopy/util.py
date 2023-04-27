@@ -244,7 +244,7 @@ def read_phenotype_groups(
     """
     if phenotype_group_file is None:
         phenotype_group_file = config["phenotype_groups"]["phenotype_groups_file"]
-    
+
     hp_to_pg = {}
     with open(phenotype_group_file, "r") as f:
         f.readline()
@@ -301,7 +301,7 @@ def encode_phenotypes(
                      ]
                 )
             ) for phenotypes_ in phenotypes]
-    
+
     return build_feature_array(
         encode(
             [phenotype_groups[hpoid][f'k{k}']
