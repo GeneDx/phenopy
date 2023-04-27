@@ -51,7 +51,7 @@ def read_hpo_annotation_file(phenotype_annotations_file: str,
 
         return records
 
-    except (FileNotFoundError, PermissionError) as e:
+    except (FileNotFoundError, PermissionError):
         hpoa_file_error_msg = f"{phenotype_annotations_file} " \
                               f"not found or incorrect permissions"
         if logger is not None:
@@ -81,7 +81,7 @@ def read_custom_annotation_file(
 
         return records
 
-    except (FileNotFoundError, PermissionError) as e:
+    except (FileNotFoundError, PermissionError):
         hpoa_file_error_msg = f"{custom_annotation_file_path} " \
                               f"not found or incorrect permissions"
         if logger is not None:

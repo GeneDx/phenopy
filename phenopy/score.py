@@ -145,9 +145,9 @@ class Scorer:
             return 0.0
 
         gamma = self.calculate_gamma(term_a, term_b, lca_node)
-        I = (alpha_ic / (alpha_ic + beta_ic))
-        D = (1.0 / (1.0 + gamma))
-        return I * D
+        i_variable = (alpha_ic / (alpha_ic + beta_ic))
+        d_variable = (1.0 / (1.0 + gamma))
+        return i_variable * d_variable
 
     def score(self, record_a: str, record_b: str) -> Tuple[str, str, float]:
         """

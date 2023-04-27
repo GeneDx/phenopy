@@ -16,7 +16,11 @@ class NetworkTestCase(unittest.TestCase):
             config.add_section('hpo')
         
         config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
-        config.set('hpo', 'disease_to_phenotype_file', os.path.join(cls.parent_dir, 'data/phenotype.hpoa'))
+        config.set(
+            'hpo',
+            'disease_to_phenotype_file',
+            os.path.join(cls.parent_dir, 'data/phenotype.hpoa')
+        )
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
 
     def test_load_network(self):
@@ -29,9 +33,13 @@ class NetworkTestCase(unittest.TestCase):
 
         # load phenotypes to diseases associations
         disease_to_phenotype_file = os.path.join(self.parent_dir, 'data/phenotype.hpoa')
-        disease_records, phenotype_to_diseases = load_d2p(disease_to_phenotype_file, hpo_network, alt2prim)
+        disease_records, phenotype_to_diseases = load_d2p(
+            disease_to_phenotype_file, hpo_network, alt2prim
+        )
 
         num_diseases_annotated = len(disease_records)
-        hpo_network = annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2prim)
+        hpo_network = annotate(
+            hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2prim
+        )
 
         self.assertAlmostEqual(hpo_network.nodes['HP:0010863']['ic'], 7.21, 2)

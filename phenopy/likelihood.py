@@ -46,7 +46,7 @@ def predict_likelihood_moldx(
                 'No HPO annotated dataset file found in the configuration file.'
                 ' See "hpo:disease_to_phenotype_file" parameter.'
             )
-            raise 
+            raise
         logger.info(f'Loading HPO OBO file: {obo_file}')
         hpo_network, alt2prim, _ = \
             generate_annotated_hpo_network(
@@ -54,7 +54,7 @@ def predict_likelihood_moldx(
             )
     if phenotype_groups is None:
         phenotype_groups = read_phenotype_groups()
-    
+
     try:
         phenotype_groups[list(phenotype_groups)[0]][f"k{k_phenotype_groups}"]
     except KeyError:

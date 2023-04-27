@@ -18,14 +18,17 @@ class LikelihoodTestCase(unittest.TestCase):
             config.add_section('hpo')
         
         config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
-        config.set('hpo', 'disease_to_phenotype_file', os.path.join(cls.parent_dir, 'data/phenotype.hpoa'))
+        config.set('hpo', 'disease_to_phenotype_file', os.path.join(
+            cls.parent_dir, 'data/phenotype.hpoa')
+                   )
 
         cls.obo_file = config.get('hpo', 'obo_file')
         cls.disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
 
-        cls.hpo_network, cls.alt2prim, cls.disease_records = generate_annotated_hpo_network(
-            cls.obo_file,
-            cls.disease_to_phenotype_file,
+        cls.hpo_network, cls.alt2prim, cls.disease_records = \
+            generate_annotated_hpo_network(
+                cls.obo_file,
+                cls.disease_to_phenotype_file,
             )
         cls.phenotype_groups = read_phenotype_groups()
 
@@ -42,7 +45,9 @@ class LikelihoodTestCase(unittest.TestCase):
             ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
             ['HP:0012759', 'HP:0003011'],
         ]
-        probabilities = predict_likelihood_moldx(phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim)
+        probabilities = predict_likelihood_moldx(
+            phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim
+        )
         self.assertAlmostEqual(probabilities[0], 0.33, places=2)
 
     def test_predict_likelihood_phenotypes_only(self):

@@ -120,13 +120,13 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
                 'hp.obo',
             ),
             'obo_file_url':
-                'http://purl.obolibrary.org/obo/hp/releases/2023-04-05/hp.obo',
+            'http://purl.obolibrary.org/obo/hp/releases/2023-04-05/hp.obo',
             'hpo_network_file': os.path.join(
                 data_directory,
                 'hpo_network.pickle',
             ),
             'disease_to_phenotype_file_url':
-                'http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa',
+            'http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa',
             'disease_to_phenotype_file': os.path.join(
                 data_directory,
                 'phenotype.hpoa',
@@ -156,7 +156,7 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
     }
 
     with open(os.path.join(config_directory, 'phenopy.ini'), 'w') as configfile:
-        logger.info('writing config file to: %s '%config_directory)
+        logger.info('writing config file to: %s ' % config_directory)
         config.write(configfile)
 
 # log project and version

@@ -135,7 +135,8 @@ class ScorerTestCase(unittest.TestCase):
 
         # test BMWA with age weights
         record_a.update({
-            'terms': ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322', 'HP:0012433'], # ATAX, DD,  HYP, SS, AbnSocBeh
+            'terms': ['HP:0001251', 'HP:0001263', 'HP:0001290',
+                      'HP:0004322', 'HP:0012433'],  # ATAX, DD,  HYP, SS, AbnSocBeh
             'weights': {'age': [0.67, 1., 1., 0.4, 0.4]},
         })
         record_b.update({
@@ -208,7 +209,10 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = ['HP:0012433', 'HP:0000708']
         terms_b = ['HP:0001249', 'HP:0012758']
 
-        self.assertEqual('HP:0012433', list(remove_parents(terms_a, self.scorer.hpo_network))[0])
+        self.assertEqual(
+            'HP:0012433',
+            list(remove_parents(terms_a, self.scorer.hpo_network))[0]
+        )
         self.assertEqual(len(remove_parents(terms_b, self.scorer.hpo_network)), 2)
 
     def test_score_self(self):
@@ -218,7 +222,8 @@ class ScorerTestCase(unittest.TestCase):
                               self.alt2prim
                               )
 
-        # limit to records with HPO terms since many test cases don't have the sub-graph terms from tests/data/hp.obo
+        # limit to records with HPO terms since many test cases don't have the
+        # sub-graph terms from tests/data/hp.obo
         input_records = [x for x in records if x['record_id'] in ['213200', '302801']]
 
         results = self.scorer.score_records(
@@ -235,7 +240,8 @@ class ScorerTestCase(unittest.TestCase):
         # test best match weighted average
         # load and annotate the network
 
-        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
+        terms_a = ['HP:0001251', 'HP:0001263',
+                   'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
 
         terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
         weights_a = {'age': [0.67, 1., 1., 0.4]}
@@ -273,7 +279,8 @@ class ScorerTestCase(unittest.TestCase):
         # Patient A age = 9.0 years
         # Patient B age = 4.0 years
 
-        terms_a = ['HP:0001251', 'HP:0001249', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, ID, DD, HYP, SS
+        terms_a = ['HP:0001251', 'HP:0001249', 'HP:0001263',
+                   'HP:0001290', 'HP:0004322']  # ATAX, ID, DD, HYP, SS
         terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
 
         df = pd.DataFrame(
@@ -289,7 +296,8 @@ class ScorerTestCase(unittest.TestCase):
 
         # calculate weights based on patients age
 
-        weights_a = {'age': [0.67, .4, 1., 1., 0.4]}  # patient_b is too young to have ataxia, ID and short stature
+        # patient_b is too young to have ataxia, ID and short stature
+        weights_a = {'age': [0.67, .4, 1., 1., 0.4]}
         weights_b = {'age': [1., 1., 1.]}
 
         # compute pairwise best match weighted average
@@ -298,9 +306,9 @@ class ScorerTestCase(unittest.TestCase):
 
         self.assertAlmostEqual(score_bmwa, 0.352, 4)
 
-        # because both patients were described to have ID, but only patient a has ataxia and ss
-        # we mask good phenotype matches from being weighted down by default
-        # we expect to get a better similarity score
+        # because both patients were described to have ID, but only patient a
+        # has ataxia and ss we mask good phenotype matches from being weighted
+        # down by default we expect to get a better similarity score
         self.scorer.min_score_mask = 0.05
         score_bmwa = self.scorer.best_match_weighted_average(df, weights_a, weights_b)
 
@@ -309,11 +317,14 @@ class ScorerTestCase(unittest.TestCase):
     def test_age_weight(self):
         # Test age based weight distribution and best_match_weighted_average calculation
 
-        terms_a = ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
+        terms_a = ['HP:0001251', 'HP:0001263',
+                   'HP:0001290', 'HP:0004322']  # ATAX, DD, HYP, SS
         terms_b = ['HP:0001263', 'HP:0001249', 'HP:0001290']  # DD, ID, HYP
 
-        self.hpo_network = annotate(self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated,
-                                    self.alt2prim, ages_distribution_file=self.ages_distribution_file)
+        self.hpo_network = annotate(
+            self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated,
+            self.alt2prim, ages_distribution_file=self.ages_distribution_file
+        )
 
         age_a = 9.0
         age_b = 4.0
@@ -357,14 +368,23 @@ class ScorerTestCase(unittest.TestCase):
     def test_score_pairs_age(self):
         # Test reading in records files and calculating pairwise scores
         # read in records
-        self.hpo_network = annotate(self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated,
-                                    self.alt2prim, ages_distribution_file=self.ages_distribution_file)
+        self.hpo_network = annotate(
+            self.hpo_network, self.phenotype_to_diseases, self.num_diseases_annotated,
+            self.alt2prim, ages_distribution_file=self.ages_distribution_file
+        )
 
-        records = parse_input(os.path.join(self.parent_dir, 'data/test.score-short.txt'), self.hpo_network,
-                              self.alt2prim)
+        records = parse_input(
+            os.path.join(self.parent_dir, 'data/test.score-short.txt'),
+            self.hpo_network,
+            self.alt2prim
+        )
 
         # create instance the scorer class
-        scorer = Scorer(self.hpo_network, summarization_method='BMWA', min_score_mask=None)
+        scorer = Scorer(
+            self.hpo_network,
+            summarization_method='BMWA',
+            min_score_mask=None
+        )
 
         # select which patients to test in pairwise best_match_weighted_average
         input_records = [x for x in records if x['record_id'] in ['118200', '118210']]
@@ -377,7 +397,10 @@ class ScorerTestCase(unittest.TestCase):
         self.assertEqual(len(results), 1)
 
         # the right answer =
-        answer = np.average([0.166, 1.0, 1.0, 0.125, 0.25, 1.0, 1.0], weights=[0.481, 1.0, 1.0, 0.0446, 1.0, 1.0, 1.0])
+        answer = np.average(
+            [0.166, 1.0, 1.0, 0.125, 0.25, 1.0, 1.0],
+            weights=[0.481, 1.0, 1.0, 0.0446, 1.0, 1.0, 1.0]
+        )
 
         self.assertAlmostEqual(float(results[0][2]), answer, 2)
 
@@ -420,14 +443,18 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = ['HP:0001290', 'HP:0000118']
         terms_b = ['HP:0001290', 'HP:0011351']
 
-        self.assertAlmostEqual(0.16, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
+        self.assertAlmostEqual(
+            0.16, self.scorer.score_term_sets_basic(terms_a, terms_b), 2
+        )
 
     def test_score_resnik_basic(self):
         """Test the scoring functionality"""
         self.scorer.scoring_method = 'Resnik'
         terms_a = ['HP:0001290', 'HP:0000118']
         terms_b = ['HP:0001290', 'HP:0011351']
-        self.assertAlmostEqual(1.28, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
+        self.assertAlmostEqual(
+            1.28, self.scorer.score_term_sets_basic(terms_a, terms_b), 2
+        )
 
     def test_score_jaccard_basic(self):
         """Test the scoring functionality"""
@@ -435,7 +462,9 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = ['HP:0001290', 'HP:0000118']
         terms_b = ['HP:0001290', 'HP:0011351']
 
-        self.assertAlmostEqual(0.33, self.scorer.score_term_sets_basic(terms_a, terms_b), 2)
+        self.assertAlmostEqual(
+            0.33, self.scorer.score_term_sets_basic(terms_a, terms_b), 2
+        )
 
     def test_score_word2vec_basic(self):
         """Test the scoring functionality"""
@@ -443,7 +472,9 @@ class ScorerTestCase(unittest.TestCase):
         terms_a = ['HP:0001290', 'HP:0000118']
         terms_b = ['HP:0001290', 'HP:0011351']
 
-        self.assertAlmostEqual(0.16, scorer.score_term_sets_basic(terms_a, terms_b), 2)
+        self.assertAlmostEqual(
+            0.16, scorer.score_term_sets_basic(terms_a, terms_b), 2
+        )
 
     def test_score_word2vec_out_of_vocab(self):
         """Test the scoring functionality"""
@@ -461,3 +492,4 @@ class ScorerTestCase(unittest.TestCase):
 
         self.assertEqual(0.0, scorer.score_term_sets_basic(terms_a, terms_b), 2)
 
+\

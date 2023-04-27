@@ -247,7 +247,7 @@ def read_phenotype_groups(
     
     hp_to_pg = {}
     with open(phenotype_group_file, "r") as f:
-        header = f.readline()
+        f.readline()
         for line in f:
             hpid, phenotype_group_1000, phenotype_group_1500 = \
                 line.strip("\n").split("\t")
@@ -279,9 +279,7 @@ def encode_phenotypes(
         alt2prim: Dict[str, str],
         k: int = 1000) -> np.ndarray:
     """
-    :param phenotypes:
-    :param phenotype_groups: A dictionary 
-    :return: a numpy array of one-hot encoded feature counts
+    Encode phenotypes into a feature array.
     """
 
     def build_feature_array(cntr: Counter, n_features: int = k) -> List[int]:

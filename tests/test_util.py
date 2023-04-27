@@ -8,7 +8,6 @@ from phenopy.util import read_phenotype_groups, encode_phenotypes, parse_input
 from phenopy.build_hpo import generate_annotated_hpo_network
 
 
-
 class UtilTestCase(unittest.TestCase):
     @classmethod
     def setUp(cls):
@@ -19,17 +18,21 @@ class UtilTestCase(unittest.TestCase):
             config.add_section('hpo')
         
         config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
-        config.set('hpo', 'disease_to_phenotype_file', os.path.join(cls.parent_dir, 'data/phenotype.hpoa'))
+        config.set(
+            'hpo', 'disease_to_phenotype_file', os.path.join(
+                cls.parent_dir, 'data/phenotype.hpoa'
+            )
+        )
 
         cls.obo_file = config.get('hpo', 'obo_file')
         cls.disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
 
-        cls.hpo_network, cls.alt2prim, cls.disease_records = generate_annotated_hpo_network(
-            cls.obo_file,
-            cls.disease_to_phenotype_file,
+        cls.hpo_network, cls.alt2prim, cls.disease_records = \
+            generate_annotated_hpo_network(
+                cls.obo_file,
+                cls.disease_to_phenotype_file,
             )
         cls.phenotype_groups = read_phenotype_groups()
-
 
     def test_read_records_file(self):
         with self.assertRaises(SystemExit) as se:
@@ -57,10 +60,11 @@ class UtilTestCase(unittest.TestCase):
                 'terms': 'HP:0001249|HP:0001263|HP:0001290'.split('|')
             }
         ]
-        records_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/test.score-short.txt')
+        records_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), 'data/test.score-short.txt'
+        )
         records = read_records_file(records_path, no_parents=False)
-        self.assertEqual(records,records_truth)
-
+        self.assertEqual(records, records_truth)
 
     def test_parse(self):
         string = 'age=13;sex=Male'
@@ -105,7 +109,6 @@ class UtilTestCase(unittest.TestCase):
         string = 'sex=Unknown'
         self.assertEqual(parse(string, what='sex'), None)
 
-
     def test_encode_phenotypes_file(self):
         input_file = os.path.join(self.parent_dir, "data/test.score-short.txt")
         records = parse_input(input_file, self.hpo_network, self.alt2prim)
@@ -117,17 +120,19 @@ class UtilTestCase(unittest.TestCase):
         )
         self.assertEqual(sum(encoded_phenotypes[0]), 4)
 
-    
     def test_encode_1d_phenotypes(self):
         phenotypes = ['HP:0012759', 'HP:0003011', 'HP:0011442']
-        encoded_phenotypes = encode_phenotypes(phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim, k=1000)
+        encoded_phenotypes = encode_phenotypes(
+            phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim, k=1000
+        )
         self.assertEqual(sum(encoded_phenotypes), 3)
-
 
     def test_encode_2d_phenotypes(self):
         phenotypes = [
             ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
             ['HP:0012759', 'HP:0003011'],
         ]
-        encoded_phenotypes = encode_phenotypes(phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim, k=1000)
+        encoded_phenotypes = encode_phenotypes(
+            phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim, k=1000
+        )
         self.assertEqual(sum(encoded_phenotypes[1]), 2)

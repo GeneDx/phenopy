@@ -26,11 +26,11 @@ def score(input_file, output_file='-', records_file=None, annotations_file=None,
     :param output_file: File path where to store the results. [default: - (stdout)]
     :param records_file: An entity-to-phenotype annotation file in the same format as
         "input_file". This file, if
-     provided, is used to score entries in the "input_file" against entries here.
+    provided, is used to score entries in the "input_file" against entries here.
         [default: None]
     :param annotations_file: An entity-to-phenotype annotation file in the same format
         as "input_file". This file, if
-     provided, is used to add information content to the network. [default: None]
+    provided, is used to add information content to the network. [default: None]
     :param custom_disease_file: entity Annotation for ranking diseases/genes
     :param ages_distribution_file: Phenotypes age summary stats file containing
         phenotype HPO id, mean_age, and std. [default: None]
