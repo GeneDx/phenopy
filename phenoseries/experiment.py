@@ -1,5 +1,7 @@
 import argparse
 import os
+
+import networkx as nx
 import numpy as np
 import pandas as pd
 import requests
@@ -11,20 +13,25 @@ from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, half_product
+from typing import (
+    List,
+    Dict,
+)
 
 try:
     from txt2hpo.extract import Extractor
 except ModuleNotFoundError:
-    logger.warning("txt2hpo is not installed. This is only used in the validate-phenoseries command.\nTo use this command, please install txt2hpo: pip install txt2hpo")
+    logger.warning("txt2hpo is not installed. This is only used in the "
+                   "validate-phenoseries command.\nTo use this command, please "
+                   "install txt2hpo: pip install txt2hpo")
 
-## TODO: fix the bug in this script before merging to master.
-
+# TODO: fix the bug in this script before merging to master.
 
 OMIM_API_URL = "https://api.omim.org/api/"
 OMIM_DOWNLOADS_URL = "https://data.omim.org/downloads/"
 
 
-def request_mimid_info(mimid):
+def request_mimid_info(mimid: str) -> requests.Response:
     """
     request mimid description from OMIM
     """
@@ -46,16 +53,24 @@ def request_mimid_info(mimid):
         logger.critical("Please set the omim_api_key in your phenopy.ini config file")
 
 
-def convert_and_filter_hpoids(terms, hpo, alt2prim):
-    """Given a list of HPO ids, first try to convert synonyms to primary ids,
-    then filter if terms are not in the ontology"""
+def convert_and_filter_hpoids(
+        terms: List,
+        hpo: nx.MultiDiGraph,
+        alt2prim: Dict[str, str]) -> List:
+    """
+    Given a list of HPO ids, first try to convert synonyms to primary ids,
+    then filter if terms are not in the ontology
+    """
     terms = [alt2prim[term] if term in alt2prim else term for term in terms]
     terms = list(filter(lambda term: term in hpo.nodes, terms))
     terms = remove_parents(terms, hpo)
     return terms
 
 
-def make_rank_dataframe(pairwise_sim_matrix, mimdf, ps2mimids):
+def make_rank_dataframe(
+        pairwise_sim_matrix: np.ndarray,
+        mimdf: pd.DataFrame,
+        ps2mimids: Dict[str, List[str]]) -> pd.DataFrame:
     relevant_ranks_results = []
     for psid, ps_mim_ids in ps2mimids.items():
         # Grab the index of the "relevant" mim ids
@@ -78,8 +93,12 @@ def make_rank_dataframe(pairwise_sim_matrix, mimdf, ps2mimids):
     return rankdf
 
 
-def return_relevant_ranks(pairwise_sim, query_idx, other_mim_indices):
-    """Given a pairwise similarity matrix, compute the rank of the similarity between
+def return_relevant_ranks(
+        pairwise_sim: np.ndarray,
+        query_idx: int,
+        other_mim_indices: List[int]) -> List[int]:
+    """
+    Given a pairwise similarity matrix, compute the rank of the similarity between
     a query mim and another mim disease from the same PS.
     """
     other_idxs = other_mim_indices.copy()

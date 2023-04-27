@@ -30,8 +30,8 @@ def download_resource_files():
         except urllib.error.URLError as e:
             if hasattr(e, 'reason'):
                 logger.info(f'Incorrect url specified for HPO files: {url}')
-                raise
                 logger.info('Reason: ', e.reason)
+                raise
             elif hasattr(e, 'code'):
                 logger.info('The server could not fulfill the request')
                 logger.info('Reason: ', e.code)
@@ -119,12 +119,14 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
                 data_directory,
                 'hp.obo',
             ),
-            'obo_file_url':'http://purl.obolibrary.org/obo/hp/releases/2023-04-05/hp.obo',
+            'obo_file_url':
+                'http://purl.obolibrary.org/obo/hp/releases/2023-04-05/hp.obo',
             'hpo_network_file': os.path.join(
                 data_directory,
                 'hpo_network.pickle',
             ),
-            'disease_to_phenotype_file_url': 'http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa',
+            'disease_to_phenotype_file_url':
+                'http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa',
             'disease_to_phenotype_file': os.path.join(
                 data_directory,
                 'phenotype.hpoa',
@@ -170,4 +172,3 @@ logger.info(f'Using configuration file: {config_file}')
 
 # download resource files if necessary
 download_resource_files()
-

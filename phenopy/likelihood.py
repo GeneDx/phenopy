@@ -1,22 +1,33 @@
-import os
-
 from configparser import NoOptionError, NoSectionError
-
 import joblib
+import networkx as nx
 # import lightgbm as lgb
 
 from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.util import encode_phenotypes, read_phenotype_groups
+from typing import (
+    List,
+    Dict,
+)
 
-def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None, alt2prim=None, k_phenotype_groups=1000):
+
+def predict_likelihood_moldx(
+        phenotypes: List,
+        phenotype_groups: Dict = None,
+        hpo_network: nx.MultiDiGraph = None,
+        alt2prim: Dict = None,
+        k_phenotype_groups: int = 1000) -> List[float]:
     """
     Predicts the likelihood of molecular diagnosis given a set of phenotypes.
     :param phenotypes: A list of phenotypes or a list of lists of phenotypes.
-    :param phenotype_groups: <optionnal> A dictionary of phenotype to phenotype group mappings.
+    :param phenotype_groups: <optional> A dictionary of phenotype to phenotype
+        group mappings.
     :param hpo_network: <optional> The hpo networkx object.
-    :param alt2prim: <optional> A dictionary of alternate phenotype ids to primary phenotype ids. (must be given if hpo_network is provided)
-    :param k_phenotype_groups <optional> An integer that represents the number of phenotype groups to use.
+    :param alt2prim: <optional> A dictionary of alternate phenotype ids to primary
+        phenotype ids. (must be given if hpo_network is provided)
+    :param k_phenotype_groups <optional> An integer that represents the number of
+        phenotype groups to use.
     :return: An array of probabilities for the positive class.
     """
     # detect if phenotypes is 1d or 2d
@@ -25,7 +36,8 @@ def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None
             obo_file = config.get('hpo', 'obo_file')
         except (NoSectionError, NoOptionError):
             logger.critical(
-                'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
+                'No HPO OBO file found in the configuration file. '
+                'See "hpo:obo_file" parameter.')
             raise
         try:
             disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
@@ -37,19 +49,22 @@ def predict_likelihood_moldx(phenotypes, phenotype_groups=None, hpo_network=None
             raise 
         logger.info(f'Loading HPO OBO file: {obo_file}')
         hpo_network, alt2prim, _ = \
-            generate_annotated_hpo_network(obo_file,
-                                        disease_to_phenotype_file,
-                                        )
+            generate_annotated_hpo_network(
+                obo_file, disease_to_phenotype_file,
+            )
     if phenotype_groups is None:
         phenotype_groups = read_phenotype_groups()
     
     try:
         phenotype_groups[list(phenotype_groups)[0]][f"k{k_phenotype_groups}"]
     except KeyError:
-        logger.critical("The value for k_phenotype_groups was not valid. Please use a valid k from the phenotype_groups dictionary.")
+        logger.critical("The value for k_phenotype_groups was not valid. "
+                        "Please use a valid k from the phenotype_groups dictionary.")
         raise
 
-    encoded_phenotypes = encode_phenotypes(phenotypes, phenotype_groups, hpo_network, alt2prim, k=k_phenotype_groups)
+    encoded_phenotypes = encode_phenotypes(
+        phenotypes,  phenotype_groups,  hpo_network,
+        alt2prim,   k=k_phenotype_groups)
     model = joblib.load(config['models']['likelihood.model'])
     probabilities = model.predict_proba(encoded_phenotypes)
     return probabilities[:, 1]

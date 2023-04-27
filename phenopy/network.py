@@ -7,19 +7,18 @@ from phenopy.config import logger
 from phenopy.ic import calculate_information_content
 from phenopy.weights import make_age_distributions
 from phenopy.util import parse_input
+from typing import (
+    Dict,
+    List,
+)
 
 
-def load(obo_file):
+def load(obo_file: str) -> nx.MultiDiGraph:
     """
     Load OBO file into a networkx graph.
-
-    :param obo_file: OBO definition file.
-    :param logger: Python `logging` logger instance.
-    :return: `networkx.MultiDiGraph`
     """
     try:
         hpo_network = obonet.read_obo(obo_file)
-        #return nx.MultiDiGraph(hpo_network.subgraph(['HP:0000118'] + list(nx.ancestors(hpo_network, 'HP:0000118'))))
     except (FileNotFoundError, PermissionError) as e:
         if logger is not None:
             logger.critical(e)
@@ -45,8 +44,14 @@ def load(obo_file):
     return hpo_network
 
 
-def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2prim, annotations_file=None, ages_distribution_file=None,
-            phenotype_disease_frequencies=None):
+def annotate(
+        hpo_network: nx.MultiDiGraph,
+        phenotype_to_diseases: Dict,
+        num_diseases_annotated: int,
+        alt2prim: Dict,
+        annotations_file: List = None,
+        ages_distribution_file: str = None,
+        phenotype_disease_frequencies: Dict = None) -> nx.MultiDiGraph:
     """
     Cleans the HPO network.
 
@@ -56,10 +61,9 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2pri
     :param phenotype_to_diseases: Dictionary mapping HPO terms to diseases.
     :param num_diseases_annotated: Number of diseases with HPO annotations.
     :param alt2prim: The dict of alternate terms to canonical terms.
-    :param annotations_file: A list of custom annotation files, in the same format as tests/data/test.score-long.txt
-    :param ages: age distributions object
+    :param annotations_file: A list of custom annotation files, in the same format
+        as tests/data/test.score-long.txt
     :param phenotype_disease_frequencies: dictionary of phenotype to disease frequencies
-    :param logger: Python `logging` logger instance.
     :param ages_distribution_file: Path to phenotypes ages distribution file.
     :return: `networkx.MultiDiGraph`
     """
@@ -80,12 +84,14 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2pri
         try:
             ages = make_age_distributions(ages_distribution_file)
             logger.info(
-                f'Adding custom phenotype age distributions to HPO nodes from file: {ages_distribution_file}'
+                f'Adding custom phenotype age distributions to HPO nodes '
+                f'from file: {ages_distribution_file}'
             )
         except (FileNotFoundError, PermissionError) as e:
             logger.critical(e)
             logger.critical(
-                f'Specified phenotype ages file could not be loaded or does not exist: {e}'
+                f'Specified phenotype ages file could not be loaded or '
+                f'does not exist: {e}'
             )
             exit(1)
 
@@ -107,8 +113,10 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2pri
         # add the disease_frequency weights as attributes to the node
         if phenotype_disease_frequencies is not None:
             if node_id in phenotype_disease_frequencies:
-                for disease_id, frequency in phenotype_disease_frequencies[node_id].items():
-                    hpo_network.nodes[node_id]['weights']['disease_frequency'][disease_id] = frequency
+                for dis_id, freq in \
+                        phenotype_disease_frequencies[node_id].items():
+                    hpo_network.nodes[node_id]['weights']['disease_frequency'][dis_id] \
+                        = freq
 
         # annotate with depth value
         # hard-coding origin node for now
@@ -124,7 +132,8 @@ def annotate(hpo_network, phenotype_to_diseases, num_diseases_annotated, alt2pri
         try:
             for synonym in data['synonym']:
                 synonyms.append(synonym)
-            hpo_network.nodes[node_id]['synonyms'] = re.findall(r'"(.*?)"', ','.join(synonyms))
+            hpo_network.nodes[node_id]['synonyms'] = \
+                re.findall(r'"(.*?)"', ','.join(synonyms))
         except KeyError:
             # pass if no synonym tags in the node
             pass

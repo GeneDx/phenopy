@@ -14,7 +14,7 @@ from phenopy.weights import calculate_age_weights
 
 class ScorerTestCase(unittest.TestCase):
     @classmethod
-    def setUp(cls):
+    def setUp(cls: unittest.TestCase) -> None:
         # parent dir
         cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -22,19 +22,25 @@ class ScorerTestCase(unittest.TestCase):
         cls.obo_file = os.path.join(cls.parent_dir, 'data/hp.obo')
         cls.hpo_network = load_network(cls.obo_file)
         cls.alt2prim = generate_alternate_ids(cls.hpo_network)
-        cls.ages_distribution_file = os.path.join(cls.parent_dir, 'data/phenotype_age.tsv')
+        cls.ages_distribution_file = os.path.join(cls.parent_dir,
+                                                  'data/phenotype_age.tsv')
 
         # load phenotypes to genes associations
-        cls.disease_to_phenotype_file = os.path.join(cls.parent_dir, 'data/phenotype.hpoa')
-        cls.disease_records, cls.phenotype_to_diseases = load_d2p(cls.disease_to_phenotype_file, cls.hpo_network, cls.alt2prim)
+        cls.disease_to_phenotype_file = os.path.join(
+            cls.parent_dir, 'data/phenotype.hpoa'
+        )
+        cls.disease_records, cls.phenotype_to_diseases = load_d2p(
+            cls.disease_to_phenotype_file, cls.hpo_network, cls.alt2prim
+        )
 
         cls.num_diseases_annotated = len(cls.disease_records)
-        cls.hpo_network = annotate(cls.hpo_network, cls.phenotype_to_diseases, cls.num_diseases_annotated, cls.alt2prim)
+        cls.hpo_network = annotate(cls.hpo_network, cls.phenotype_to_diseases,
+                                   cls.num_diseases_annotated, cls.alt2prim)
 
         # create instance the scorer class
         cls.scorer = Scorer(cls.hpo_network, min_score_mask=None)
 
-    def test_find_lca(self):
+    def test_find_lca(self) -> None:
         # find the lowest common ancestor between glaucoma and myopia
         lca = self.scorer.find_lca('HP:0001249', 'HP:0012434')
         self.assertEqual(lca, 'HP:0012759')
@@ -143,7 +149,7 @@ class ScorerTestCase(unittest.TestCase):
         self.assertAlmostEqual(score_bmwa[2], 0.1822, places=4)
 
         record_a.update({
-            'terms': ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322'], # ATAX, DD,  HYP, SS, AbnSocBeh
+            'terms': ['HP:0001251', 'HP:0001263', 'HP:0001290', 'HP:0004322'],
             'weights': {'age': [0.67, 1., 1., 0.4]},
         })
         record_b.update({
