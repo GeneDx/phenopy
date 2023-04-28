@@ -282,17 +282,19 @@ def encode_phenotypes(
     Encode phenotypes into a feature array.
     """
 
-    def build_feature_array(cntr: Counter, n_features: int = k) -> List[int]:
+    def build_feature_array(cntr: Counter, n_features: int = k) -> np.ndarray:
         a = [0] * n_features
         for feature_index, count in cntr.items():
             a[feature_index] = count
         return a
 
+    def encode(hpo_ids: List) -> Counter:
+        return Counter(hpo_ids)
+
     nested = all(isinstance(element, list) for element in phenotypes)
 
-    encode = lambda hpo_ids: Counter(hpo_ids)
     if nested:
-        return [
+        return np.ndarray([
             build_feature_array(
                 encode(
                     [phenotype_groups[hpoid][f'k{k}']
@@ -300,7 +302,7 @@ def encode_phenotypes(
                         phenotypes_, hpo_network, alt2prim)
                      ]
                 )
-            ) for phenotypes_ in phenotypes]
+            ) for phenotypes_ in phenotypes])
 
     return build_feature_array(
         encode(

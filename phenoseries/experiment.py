@@ -8,9 +8,11 @@ import requests
 import sys
 
 from ast import literal_eval
-from phenopy.config import logger
 from phenopy.build_hpo import generate_annotated_hpo_network
-from phenopy.config import config, logger
+from phenopy.config import (
+    config,
+    logger
+)
 from phenopy.score import Scorer
 from phenopy.util import remove_parents, half_product
 from typing import (
@@ -262,7 +264,9 @@ def run_phenoseries_experiment(
                 "terms": convert_and_filter_hpoids(hpo_terms, hpo_network, alt2prim),
                 "weights": {},
             }
-            for mim_id, hpo_terms in dict(zip(mimdf["omim_id"], mimdf["hpo_terms"])).items()
+            for mim_id, hpo_terms in dict(
+                zip(mimdf["omim_id"], mimdf["hpo_terms"])
+            ).items()
         ]
 
         results = scorer.score_records(
