@@ -20,7 +20,7 @@ Install from GitHub:
 ```bash
 git clone https://github.com/GeneDx/phenopy.git
 cd phenopy
-python setup.py install
+poetry install
 ```
 
 **To complete installation on macOS please install lightgbm using brew**

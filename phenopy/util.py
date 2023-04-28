@@ -294,7 +294,7 @@ def encode_phenotypes(
     nested = all(isinstance(element, list) for element in phenotypes)
 
     if nested:
-        return np.ndarray([
+        return [
             build_feature_array(
                 encode(
                     [phenotype_groups[hpoid][f'k{k}']
@@ -302,7 +302,7 @@ def encode_phenotypes(
                         phenotypes_, hpo_network, alt2prim)
                      ]
                 )
-            ) for phenotypes_ in phenotypes])
+            ) for phenotypes_ in phenotypes]
 
     return build_feature_array(
         encode(
