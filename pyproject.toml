@@ -38,6 +38,7 @@ requests = "*"
 ruff = "*"
 pytest = "*"
 pytest-cov = "*"
+pre-commit = "*"
 
 [tool.ruff]
 line-length = 88
