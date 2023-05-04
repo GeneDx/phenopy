@@ -1,7 +1,7 @@
 from configparser import NoOptionError, NoSectionError
 import joblib
 import networkx as nx
-# import lightgbm as lgb
+import lightgbm as lgb
 
 from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.config import config, logger

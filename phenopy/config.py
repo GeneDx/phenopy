@@ -120,7 +120,7 @@ if not os.path.isfile(os.path.join(config_directory, 'phenopy.ini')):
                 'hp.obo',
             ),
             'obo_file_url':
-            'http://purl.obolibrary.org/obo/hp/releases/2023-04-05/hp.obo',
+            'http://purl.obolibrary.org/obo/hp.obo',
             'hpo_network_file': os.path.join(
                 data_directory,
                 'hpo_network.pickle',

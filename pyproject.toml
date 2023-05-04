@@ -35,6 +35,9 @@ joblib = "*"
 scipy = "*"
 lightgbm = "*"
 requests = "*"
-flake8 = "*"
+ruff = "*"
 pytest = "*"
 pytest-cov = "*"
+
+[tool.ruff]
+line-length = 88
