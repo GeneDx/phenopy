@@ -19,8 +19,7 @@ def predict_likelihood_moldx(
         alt2prim: Dict = None,
         k_phenotype_groups: int = 1000) -> List[float]:
     """
-    Predicts the likelihood of molecular diagnosis given a set of phenotypes.
-    :param phenotypes: A list of phenotypes or a list of lists of phenotypes.
+    Predicts the likelihood of molecular diagnosis given a set of phenotypes.:param phenotypes: A list of phenotypes or a list of lists of phenotypes.
     :param phenotype_groups: <optional> A dictionary of phenotype to phenotype
         group mappings.
     :param hpo_network: <optional> The hpo networkx object.
