@@ -27,4 +27,5 @@ flake8
 pytest
 pytest-cov
 pylint
+ruff
 twine

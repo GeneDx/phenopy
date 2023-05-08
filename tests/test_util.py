@@ -1,138 +1,121 @@
 import os
-import unittest
+import pytest
 
-from phenopy.util import parse, read_records_file
-
-from phenopy.config import config
-from phenopy.util import read_phenotype_groups, encode_phenotypes, parse_input
-from phenopy.build_hpo import generate_annotated_hpo_network
+from phenopy.util import parse, read_records_file, encode_phenotypes, parse_input
 
 
-class UtilTestCase(unittest.TestCase):
-    @classmethod
-    def setUp(cls):
-        # parent dir
-        cls.parent_dir = os.path.dirname(os.path.realpath(__file__))
+def test_parse(test_data):
+    string = "age=13;sex=Male"
+    assert parse(string, what="sex") == "Male"
+    assert parse(string, what="age") == 13.0
 
-        if 'hpo' not in config.sections():
-            config.add_section('hpo')
+    string = "age=13.64;sex=male"
+    assert parse(string, what="sex") == "Male"
+    assert parse(string, what="age") == 13.6
 
-        config.set('hpo', 'obo_file', os.path.join(cls.parent_dir, 'data/hp.obo'))
-        config.set(
-            'hpo', 'disease_to_phenotype_file', os.path.join(
-                cls.parent_dir, 'data/phenotype.hpoa'
-            )
-        )
+    string = "age=12.9;sex=female"
+    assert parse(string, what="sex") == "Female"
+    assert parse(string, what="age") == 12.9
 
-        cls.obo_file = config.get('hpo', 'obo_file')
-        cls.disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
+    string = "sex=Female"
+    assert parse(string, what="sex") == "Female"
 
-        cls.hpo_network, cls.alt2prim, cls.disease_records = \
-            generate_annotated_hpo_network(
-                cls.obo_file,
-                cls.disease_to_phenotype_file,
-            )
-        cls.phenotype_groups = read_phenotype_groups()
+    string = "sex=FEMALE"
+    assert parse(string, what="sex") == "Female"
 
-    def test_read_records_file(self):
-        with self.assertRaises(SystemExit) as se:
-            read_records_file('notafilepath/notafile')
+    string = "sex=F"
+    assert parse(string, what="sex") == "Female"
 
-        syserr = se.exception
-        self.assertEqual(syserr.code, 1)
-        records_truth = [
-            {
-                'sample': '118200',
-                'age': 9.0,
-                'gender': 'Female',
-                'terms': 'HP:0001263|HP:0001251|HP:0001290|HP:0004322'.split('|')
-             },
-            {
-                'sample': '118210',
-                'age': 4.0,
-                'gender': None,
-                'terms': 'HP:0001249|HP:0001263|HP:0001290'.split('|')
-            },
-            {
-                'sample': '118211',
-                'age': None,
-                'gender': None,
-                'terms': 'HP:0001249|HP:0001263|HP:0001290'.split('|')
-            }
-        ]
-        records_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), 'data/test.score-short.txt'
-        )
-        records = read_records_file(records_path, no_parents=False)
-        self.assertEqual(records, records_truth)
+    string = "age=1"
+    assert parse(string, what="age") == 1.0
 
-    def test_parse(self):
-        string = 'age=13;sex=Male'
-        self.assertEqual(parse(string, what='sex'), 'Male')
-        self.assertEqual(parse(string, what='age'), 13.0)
+    string = "."
+    assert not parse(string, what="age")
 
-        string = 'age=13.64;sex=male'
-        self.assertEqual(parse(string, what='sex'), 'Male')
-        self.assertEqual(parse(string, what='age'), 13.6)
+    string = ". "
+    assert not parse(string, what="age")
 
-        string = 'age=12.9;sex=female'
-        self.assertEqual(parse(string, what='sex'), 'Female')
-        self.assertEqual(parse(string, what='age'), 12.9)
+    string = " . "
+    assert not parse(string, what="age")
 
-        string = 'sex=Female'
-        self.assertEqual(parse(string, what='sex'), 'Female')
+    string = "13?"
+    assert not parse(string, what="age")
 
-        string = 'sex=FEMALE'
-        self.assertEqual(parse(string, what='sex'), 'Female')
+    string = "sex=NA"
+    assert not parse(string, what="sex")
 
-        string = 'sex=F'
-        self.assertEqual(parse(string, what='sex'), 'Female')
+    string = "sex=Unknown"
+    assert not parse(string, what="sex")
 
-        string = 'age=1'
-        self.assertEqual(parse(string, what='age'), 1.0)
 
-        string = '.'
-        self.assertEqual(parse(string, what='age'), None)
+def test_encode_phenotypes_file(test_data):
+    input_file = os.path.join(test_data["parent_dir"], "data/test.score-short.txt")
+    records = parse_input(input_file, test_data["hpo_network"], test_data["alt2prim"])
+    encoded_phenotypes = encode_phenotypes(
+        [record["terms"] for record in records],
+        test_data["phenotype_groups"],
+        test_data["hpo_network"],
+        test_data["alt2prim"],
+    )
+    assert sum(encoded_phenotypes[0]) == 4
 
-        string = '. '
-        self.assertEqual(parse(string, what='age'), None)
 
-        string = ' . '
-        self.assertEqual(parse(string, what='age'), None)
+def test_encode_1d_phenotypes(test_data):
+    phenotypes = ["HP:0012759", "HP:0003011", "HP:0011442"]
+    encoded_phenotypes = encode_phenotypes(
+        phenotypes,
+        test_data["phenotype_groups"],
+        test_data["hpo_network"],
+        test_data["alt2prim"],
+        k=1000,
+    )
+    assert sum(encoded_phenotypes) == 3
 
-        string = '13?'
-        self.assertEqual(parse(string, what='age'), None)
 
-        string = 'sex=NA'
-        self.assertEqual(parse(string, what='sex'), None)
+def test_encode_2d_phenotypes(test_data):
+    phenotypes = [
+        ["HP:0012759", "HP:0003011", "HP:0011442"],
+        ["HP:0012759", "HP:0003011"],
+    ]
+    encoded_phenotypes = encode_phenotypes(
+        phenotypes,
+        test_data["phenotype_groups"],
+        test_data["hpo_network"],
+        test_data["alt2prim"],
+        k=1000,
+    )
+    assert sum(encoded_phenotypes[1]) == 2
 
-        string = 'sex=Unknown'
-        self.assertEqual(parse(string, what='sex'), None)
 
-    def test_encode_phenotypes_file(self):
-        input_file = os.path.join(self.parent_dir, "data/test.score-short.txt")
-        records = parse_input(input_file, self.hpo_network, self.alt2prim)
-        encoded_phenotypes = encode_phenotypes(
-            [record["terms"] for record in records],
-            self.phenotype_groups,
-            self.hpo_network,
-            self.alt2prim
-        )
-        self.assertEqual(sum(encoded_phenotypes[0]), 4)
+def test_read_records_file(test_data):
+    with pytest.raises(SystemExit) as se:
+        read_records_file("notafilepath/notafile")
 
-    def test_encode_1d_phenotypes(self):
-        phenotypes = ['HP:0012759', 'HP:0003011', 'HP:0011442']
-        encoded_phenotypes = encode_phenotypes(
-            phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim, k=1000
-        )
-        self.assertEqual(sum(encoded_phenotypes), 3)
+    assert se.type == SystemExit
+    assert se.value.code == 1
 
-    def test_encode_2d_phenotypes(self):
-        phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'],
-            ['HP:0012759', 'HP:0003011'],
-        ]
-        encoded_phenotypes = encode_phenotypes(
-            phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim, k=1000
-        )
-        self.assertEqual(sum(encoded_phenotypes[1]), 2)
+    records_truth = [
+        {
+            "sample": "118200",
+            "age": 9.0,
+            "gender": "Female",
+            "terms": "HP:0001263|HP:0001251|HP:0001290|HP:0004322".split("|"),
+        },
+        {
+            "sample": "118210",
+            "age": 4.0,
+            "gender": None,
+            "terms": "HP:0001249|HP:0001263|HP:0001290".split("|"),
+        },
+        {
+            "sample": "118211",
+            "age": None,
+            "gender": None,
+            "terms": "HP:0001249|HP:0001263|HP:0001290".split("|"),
+        },
+    ]
+    records_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "data/test.score-short.txt"
+    )
+    records = read_records_file(records_path, no_parents=False)
+    assert records == records_truth

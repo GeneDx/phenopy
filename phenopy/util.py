@@ -26,10 +26,11 @@ def half_product(num_rows: int, num_columns: int) -> Tuple[int, int]:
 
 
 def export_phenotype_hpoa_with_no_parents(
-        phenotype_hpoa_file: str,
-        phenotype_hpoa_no_parents_file: str,
-        hpo_network: nx.MultiDiGraph,
-        logger: logging.Logger = None) -> None:
+    phenotype_hpoa_file: str,
+    phenotype_hpoa_no_parents_file: str,
+    hpo_network: nx.MultiDiGraph,
+    logger: logging.Logger = None,
+) -> None:
     """
     Load HPO terms associated to genes as annotated in
     https://hpo.jax.org/app/download/annotation.
@@ -44,12 +45,12 @@ def export_phenotype_hpoa_with_no_parents(
     :return: None
     """
     try:
-        with open(phenotype_hpoa_file, 'r') as tsv_fh:
+        with open(phenotype_hpoa_file, "r") as tsv_fh:
             # skip the comment lines
             [next(tsv_fh) for _ in range(4)]
             df = pd.read_csv(
                 tsv_fh,
-                sep='\t',
+                sep="\t",
             )
     except (FileNotFoundError, PermissionError) as e:
         if logger is not None:
@@ -59,17 +60,18 @@ def export_phenotype_hpoa_with_no_parents(
         exit(1)
 
     no_parents_df = df.copy()
-    for gene, annotations in df.groupby('database_id'):
-        termlist = [node for node in annotations['hpo_id'].tolist()
-                    if node in hpo_network.nodes()]
+    for gene, annotations in df.groupby("database_id"):
+        termlist = [
+            node
+            for node in annotations["hpo_id"].tolist()
+            if node in hpo_network.nodes()
+        ]
         termlist = remove_parents(termlist, hpo_network)
-        parent_idx = annotations.loc[~annotations['hpo_id'].isin(termlist)].index
+        parent_idx = annotations.loc[~annotations["hpo_id"].isin(termlist)].index
         no_parents_df.drop(parent_idx, inplace=True)
 
     try:
-        no_parents_df.to_csv(phenotype_hpoa_no_parents_file,
-                             sep='\t',
-                             index=False)
+        no_parents_df.to_csv(phenotype_hpoa_no_parents_file, sep="\t", index=False)
     except PermissionError as e:
         if logger is not None:
             logger.critical(e)
@@ -78,7 +80,7 @@ def export_phenotype_hpoa_with_no_parents(
         exit(1)
 
 
-def parse(string: str, what: str = 'HPO') -> Union[None, int, str, list]:
+def parse(string: str, what: str = "HPO") -> Union[None, int, str, list]:
     """
     Parse patient parameters in the records file
     :param string: string to parse
@@ -86,26 +88,26 @@ def parse(string: str, what: str = 'HPO') -> Union[None, int, str, list]:
     :return: parsed object, int for age, string for gender, list for terms
     """
     string = string.strip()
-    if string == '.':
+    if string == ".":
         return None
-    if what == 'HPO':
-        result = [x for x in string.split('|') if x.startswith('HP:')]
+    if what == "HPO":
+        result = [x for x in string.split("|") if x.startswith("HP:")]
         return result
-    elif f'{what}=' in string:
-        result = [x.split(f'{what}=')[1] for x in string.split(';') if what in x]
+    elif f"{what}=" in string:
+        result = [x.split(f"{what}=")[1] for x in string.split(";") if what in x]
         if result:
             result = result[0]
-            if what == 'age':
+            if what == "age":
                 try:
                     result = round(float(result), 1)
                 except ValueError:
                     result = None
 
-            if what == 'sex':
-                if result.lower().startswith('f'):
-                    result = 'Female'
-                elif result.lower().startswith('m'):
-                    result = 'Male'
+            if what == "sex":
+                if result.lower().startswith("f"):
+                    result = "Female"
+                elif result.lower().startswith("m"):
+                    result = "Male"
                 else:
                     result = None
             return result
@@ -114,29 +116,30 @@ def parse(string: str, what: str = 'HPO') -> Union[None, int, str, list]:
 
 
 def read_records_file(
-        records_file: str,
-        no_parents: bool = False,
-        hpo_network: nx.MultiDiGraph = None,
-        logger: logging.Logger = None) -> List:
+    records_file: str,
+    no_parents: bool = False,
+    hpo_network: nx.MultiDiGraph = None,
+    logger: logging.Logger = None,
+) -> List:
     """
     Parse input file for patient descriptions into an array of dictionaries
     """
     try:
         with open(records_file) as records_fh:
-            reader = csv.reader(records_fh, delimiter='\t')
+            reader = csv.reader(records_fh, delimiter="\t")
             records = []
             for line in reader:
-                if line[0].startswith('#'):
+                if line[0].startswith("#"):
                     continue
                 dict_ = {
-                    'sample': line[0],
-                    'age': parse(line[1], what='age'),
-                    'gender': parse(line[1], what='sex'),
-                    'terms': parse(line[2], what='HPO')
+                    "sample": line[0],
+                    "age": parse(line[1], what="age"),
+                    "gender": parse(line[1], what="sex"),
+                    "terms": parse(line[2], what="HPO"),
                 }
 
                 if no_parents is True and hpo_network is not None:
-                    dict_['terms'] = remove_parents(dict_['terms'], hpo_network)
+                    dict_["terms"] = remove_parents(dict_["terms"], hpo_network)
                 else:
                     pass
                 records.append(dict_)
@@ -181,7 +184,7 @@ def generate_alternate_ids(hpo_network: nx.MultiDiGraph) -> Dict[str, str]:
     for n in hpo_network.nodes(data=True):
         n = n[0]
         try:
-            for alt in hpo_network.nodes[n]['alt_id']:
+            for alt in hpo_network.nodes[n]["alt_id"]:
                 alt2prim[alt] = n
         except KeyError:
             # no alternate HPO ids for this term
@@ -190,22 +193,21 @@ def generate_alternate_ids(hpo_network: nx.MultiDiGraph) -> Dict[str, str]:
 
 
 def parse_input(
-        input_file: str,
-        hpo_network: nx.MultiDiGraph,
-        alt2prim: Dict[str, str]) -> List:
+    input_file: str, hpo_network: nx.MultiDiGraph, alt2prim: Dict[str, str]
+) -> List:
     """
     Parse input file.
     """
     try:
-        with open(input_file, 'r') as input_fh:
+        with open(input_file, "r") as input_fh:
             reader = csv.reader(
-                filter(lambda l: not l.startswith('#'), input_fh), delimiter='\t'
+                filter(lambda x: not x.startswith("#"), input_fh), delimiter="\t"
             )
             records = []
             for line in reader:
                 # prcoess terms with convert and filter first
                 terms = []
-                for term_id in line[2].split('|'):
+                for term_id in line[2].split("|"):
                     # convert alternate ids to primary
                     if term_id in alt2prim:
                         term_id = alt2prim[term_id]
@@ -215,30 +217,33 @@ def parse_input(
                     terms.append(term_id)
 
                 record = {
-                    'record_id': line[0],
-                    'terms': remove_parents(terms, hpo_network),
-                    'weights': {},
+                    "record_id": line[0],
+                    "terms": remove_parents(terms, hpo_network),
+                    "weights": {},
                     **dict(
-                        item.split('=') for item in line[1].split(';') if line[1] != '.'
-                    )
+                        item.split("=") for item in line[1].split(";") if line[1] != "."
+                    ),
                 }
 
                 # assign new weights here ex. Sex weights (similar to the age weights).
                 records.append(record)
 
     except (FileNotFoundError, PermissionError) as e:
-        logger.critical(f'Input file could not be loaded or does not exist: {e}')
+        logger.critical(f"Input file could not be loaded or does not exist: {e}")
         exit(1)
     except ValueError:
-        logger.critical(f'Unable to parse input file, invalid line number: '
-                        f'{reader.line_num}:{input_file}')
+        logger.critical(
+            f"Unable to parse input file, invalid line number: "
+            f"{reader.line_num}:{input_file}"
+        )
         exit(1)
 
     return records
 
 
 def read_phenotype_groups(
-        phenotype_group_file: str = None) -> Dict[str, Dict[str, int]]:
+    phenotype_group_file: str = None,
+) -> Dict[str, Dict[str, int]]:
     """
     Reads the phenotype group mappping file into a dictionary.
     """
@@ -249,19 +254,19 @@ def read_phenotype_groups(
     with open(phenotype_group_file, "r") as f:
         f.readline()
         for line in f:
-            hpid, phenotype_group_1000, phenotype_group_1500 = \
-                line.strip("\n").split("\t")
+            hpid, phenotype_group_1000, phenotype_group_1500 = line.strip("\n").split(
+                "\t"
+            )
             hp_to_pg[hpid] = {
-                'k1000': int(phenotype_group_1000),
-                'k1500': int(phenotype_group_1500),
+                "k1000": int(phenotype_group_1000),
+                "k1500": int(phenotype_group_1500),
             }
     return hp_to_pg
 
 
 def standardize_phenotypes(
-        terms: List[str],
-        hpo_network: nx.MultiDiGraph,
-        alt2prim: Dict[str, str]) -> List[str]:
+    terms: List[str], hpo_network: nx.MultiDiGraph, alt2prim: Dict[str, str]
+) -> List[str]:
     """
     Given a list of HPO ids, first try to convert synonyms to primary ids,
     then filter if terms are not in the ontology
@@ -273,11 +278,12 @@ def standardize_phenotypes(
 
 
 def encode_phenotypes(
-        phenotypes: List,
-        phenotype_groups: Dict,
-        hpo_network: nx.MultiDiGraph,
-        alt2prim: Dict[str, str],
-        k: int = 1000) -> np.ndarray:
+    phenotypes: List,
+    phenotype_groups: Dict,
+    hpo_network: nx.MultiDiGraph,
+    alt2prim: Dict[str, str],
+    k: int = 1000,
+) -> np.ndarray:
     """
     Encode phenotypes into a feature array.
     """
@@ -297,27 +303,31 @@ def encode_phenotypes(
         return [
             build_feature_array(
                 encode(
-                    [phenotype_groups[hpoid][f'k{k}']
-                     for hpoid in standardize_phenotypes(
-                        phenotypes_, hpo_network, alt2prim)
-                     ]
+                    [
+                        phenotype_groups[hpoid][f"k{k}"]
+                        for hpoid in standardize_phenotypes(
+                            phenotypes_, hpo_network, alt2prim
+                        )
+                    ]
                 )
-            ) for phenotypes_ in phenotypes]
+            )
+            for phenotypes_ in phenotypes
+        ]
 
     return build_feature_array(
         encode(
-            [phenotype_groups[hpoid][f'k{k}']
-             for hpoid in standardize_phenotypes(
-                phenotypes, hpo_network, alt2prim)
-             ]
+            [
+                phenotype_groups[hpoid][f"k{k}"]
+                for hpoid in standardize_phenotypes(phenotypes, hpo_network, alt2prim)
+            ]
         )
     )
 
 
 @contextmanager
 def open_or_stdout(filename: str) -> Generator:
-    if filename != '-':
-        with open(filename, 'w') as f:
+    if filename != "-":
+        with open(filename, "w") as f:
             yield f
     else:
         yield sys.stdout
