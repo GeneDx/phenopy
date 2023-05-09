@@ -5,7 +5,7 @@ fire
 gensim>4.0.0
 idna
 joblib==1.2.0
-lightgbm
+lightgbm==3.0.0
 networkx
 numpy
 obonet
