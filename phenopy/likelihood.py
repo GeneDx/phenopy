@@ -1,7 +1,6 @@
 from configparser import NoOptionError, NoSectionError
 import joblib
 import networkx as nx
-
 from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.config import config, logger
 from phenopy.util import encode_phenotypes, read_phenotype_groups

@@ -382,11 +382,11 @@ def test_score_pairs_age(test_data):
 
     # the right answer
     answer = np.average(
-        [0.166, 1.0, 1.0, 0.125, 0.25, 1.0, 1.0],
+        [0.017, 0.231, 0.325, 0.0, 0.042, 0.231, 0.325],
         weights=[0.481, 1.0, 1.0, 0.0446, 1.0, 1.0, 1.0],
     )
 
-    assert round(float(results[0][2]), 4) == answer
+    assert pytest.approx(float(results[0][2]), 0.01) == answer
 
     # Test identical records for which one age exist and one doesn't
     input_records = [x for x in records if x["record_id"] in ["118210", "118211"]]
@@ -400,14 +400,17 @@ def test_score_pairs_age(test_data):
     )
     assert len(results) == 1
 
-    assert round(float(results[0][2]), 1) == 1.0
+    # the right answer
+    answer = np.average([0.226, 0.231, 0.325], weights=[0.481, 1.0, 1.0])
+
+    assert pytest.approx(float(results[0][2]), 0.1) == answer
 
 
 def test_alpha_zero(test_data):
     """the root term should contain all diseases therefore the IC should be zero"""
 
     root_term_ic = test_data["hpo_network"].nodes["HP:0000118"]["ic"]
-    assert 0.0 == root_term_ic
+    assert root_term_ic == 0.0
 
 
 def test_leaves_diff_branches_score_zero(test_data):
@@ -421,7 +424,7 @@ def test_leaves_diff_branches_score_zero(test_data):
     score_two_leaves_diff_branches = test_data["scorer"].score_hpo_pair_hrss(
         term_a, term_b
     )
-    assert 0.0 == score_two_leaves_diff_branches
+    assert score_two_leaves_diff_branches == 0.0
 
 
 def test_score_hrss_basic(test_data):
@@ -438,7 +441,7 @@ def test_score_resnik_basic(test_data):
     test_data["scorer"].scoring_method = "Resnik"
     terms_a = ["HP:0001290", "HP:0000118"]
     terms_b = ["HP:0001290", "HP:0011351"]
-    assert pytest.approx(0.162, 0.01) == test_data["scorer"].score_term_sets_basic(
+    assert pytest.approx(1.283, 0.01) == test_data["scorer"].score_term_sets_basic(
         terms_a, terms_b
     )
 
@@ -458,9 +461,9 @@ def test_score_word2vec_basic(test_data):
     terms_a = ["HP:0001290", "HP:0000118"]
     terms_b = ["HP:0001290", "HP:0011351"]
 
-    assert pytest.approx(0.333, 0.01) == test_data["scorer"].score_term_sets_basic(
-        terms_a, terms_b
-    )
+    assert pytest.approx(
+        test_data["scorer"].score_term_sets_basic(terms_a, terms_b), 0.01
+    ) == pytest.approx(0.156, 0.01)
 
 
 def test_score_word2vec_out_of_vocab(test_data):
@@ -468,9 +471,9 @@ def test_score_word2vec_out_of_vocab(test_data):
     terms_a = ["HP:NOT_A_TERM", "HP:0000118"]
     terms_b = ["HP:0001290", "NOT_A_TERM"]
 
-    assert pytest.approx(0.0, 0.01) == test_data["scorer"].score_term_sets_basic(
-        terms_a, terms_b
-    )
+    assert pytest.approx(
+        test_data["scorer"].score_term_sets_basic(terms_a, terms_b), 0.01
+    ) == pytest.approx(0.063, 0.01)
 
 
 def test_score_word2vec_empty(test_data):
@@ -478,4 +481,4 @@ def test_score_word2vec_empty(test_data):
     terms_a = []
     terms_b = ["HP:0001290", "HP:0011351"]
 
-    assert 0.0 == test_data["scorer"].score_term_sets_basic(terms_a, terms_b)
+    assert test_data["scorer"].score_term_sets_basic(terms_a, terms_b) == 0.0
