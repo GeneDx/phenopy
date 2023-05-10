@@ -23,6 +23,12 @@ phenopy = "phenopy.__main__:main"
 homepage = "https://github.com/GeneDx/phenopy"
 "Bug Tracker" = "https://github.com/GeneDx/phenopy/issues"
 
+[tool.poetry.group.txt2hpo]
+optional = true
+
+[tool.poetry.group.txt2hpo.dependencies]
+txt2hpo = "^1.1.0"
+
 [tool.poetry.dependencies]
 python = "^3.7"
 fire = "*"
