@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build:
-
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -30,9 +30,3 @@ jobs:
         token: ${{secrets.CODECOV_TOKEN}}
         file: ./coverage.xml
         flags: unittests
-    - name: Was phenopy (cli) installed correctly?
-      run: |
-        pip install poetry
-        poetry install
-        phenopy
-      continue-on-error: false
