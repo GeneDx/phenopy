@@ -32,6 +32,6 @@ jobs:
         flags: unittests
     - name: Was phenopy (cli) installed correctly?
       run: |
-        poetry install
+        pip install .
         phenopy
       continue-on-error: false
