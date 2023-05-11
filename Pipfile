@@ -1,0 +1,25 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+flake8 = "*"
+pytest = "*"
+pytest-cov = "*"
+pylint = "*"
+twine = "*"
+
+[packages]
+gensim = "<4.0"
+obonet = "*"
+fire = "*"
+lightgbm = "*"
+pandas = "*"
+numpy = "*"
+scipy = "*"
+joblib = "1.1.1"
+requests = "*"
+
+[requires]
+python_version = "3.7"
