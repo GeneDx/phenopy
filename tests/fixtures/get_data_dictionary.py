@@ -8,7 +8,7 @@ from phenopy.score import Scorer
 from phenopy.util import generate_alternate_ids, read_phenotype_groups
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def test_data():
     data = {}
     data["parent_dir"] = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

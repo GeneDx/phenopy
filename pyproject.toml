@@ -11,7 +11,8 @@ authors = [
     "Kyle Retterer <retterer@genedx.com>",
     "Carlos Borroto <cborroto@genedx.com>",
     "Vlad Gainullin <vgainullin@genedx.com>",
-    "Vincent Ustach <vustach@genedx.com>"
+    "Vincent Ustach <vustach@genedx.com>",
+    "Stephen McGee <smcgee@genedx.com>"
 ]
 readme = "README.md"
 license = ""
@@ -25,20 +26,20 @@ homepage = "https://github.com/GeneDx/phenopy"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-fire = "*"
-gensim = "*"
-networkx = "*"
-numpy = "*"
-obonet = "*"
+fire = "^0.5.0"
+gensim = "^4.2.0"
+networkx = "2.6.3"
+numpy = "^1.21.1"
+obonet = "^1.0.0"
 pandas = "^1.0.0"
-joblib = "*"
-scipy = "*"
-lightgbm = "3.0.0"
-requests = "*"
-ruff = "*"
-pytest = "*"
-pytest-cov = "*"
-pre-commit = "*"
+scipy = "^1.6.1"
+requests = "^2.30.0"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.21.0"
+pytest = "^7.3.1"
+pytest-cov = "^4.0.0"
+ruff = "^0.0.264"
 
 [tool.ruff]
 line-length = 88

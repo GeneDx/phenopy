@@ -4,7 +4,7 @@
 [![DOI](https://zenodo.org/badge/207335538.svg)](https://zenodo.org/badge/latestdoi/207335538)
 
 # phenopy
-`phenopy` is a Python package to perform phenotype similarity scoring by semantic similarity. `phenopy` is a
+`phenopy` was developed using Python 3.7 and functions to perform phenotype similarity scoring by semantic similarity. `phenopy` is a
 lightweight but highly optimized command line tool and library to efficiently perform semantic similarity scoring on
 generic entities with phenotype annotations from the [Human Phenotype Ontology (HPO)](https://hpo.jax.org/app/).
 
@@ -20,30 +20,24 @@ Install from GitHub:
 ```bash
 git clone https://github.com/GeneDx/phenopy.git
 cd phenopy
+pipx install poetry
 poetry install
 ```
-
-**To complete installation on macOS please install lightgbm using brew**
-```bash
-brew install lightgbm
-```
-
-or by following macOS installation instructions from [lightgbm documentation](https://lightgbm.readthedocs.io/en/latest/Installation-Guide.html#macos).
 
 ## Command Line Usage
 ### score
 `phenopy` is primarily used as a command line tool. An entity, as described here, is presented as a sample, gene, or
-disease, but could be any concept that warrants annotation of phenotype terms. 
+disease, but could be any concept that warrants annotation of phenotype terms.
 
-Use `phenopy score` to perform semantic similarity scoring in various formats. Write the results of any command to file 
+Use `phenopy score` to perform semantic similarity scoring in various formats. Write the results of any command to file
 using `--output-file=/path/to/output_file.txt`
 
 1. Score similarity of entities defined by the HPO terms from an input file against all the OMIM diseases in
     `.phenopy/data/phenotype.hpoa`. We provide a test input file in the repo. The default summarization method is to
-     use `--summarization-method=BMWA` which weighs each diseases' phenotypes by the frequency of a phenotype seen in 
+     use `--summarization-method=BMWA` which weighs each diseases' phenotypes by the frequency of a phenotype seen in
      each particular disease.
     ```bash
-    phenopy score tests/data/test.score.txt  
+    phenopy score tests/data/test.score.txt
     ```
     Output:
     ```
@@ -53,10 +47,10 @@ using `--output-file=/path/to/output_file.txt`
     118200  613266  0.0052
     ...
     ```
-    
+
 2. Score similarity of entities defined by the HPO terms from an input file against all the OMIM diseases in
     `.phenopy/data/phenotype.hpoa`, to use the non-weighted summarization method use `--summarization-method=BMA` which
-    uses a traditional *best-match average* summarization of semantic similarity scores when comparing terms from record *a* 
+    uses a traditional *best-match average* summarization of semantic similarity scores when comparing terms from record *a*
     with terms from record *b*.
     ```bash
     phenopy score tests/data/test.score.txt --summarization-method=BMWA
@@ -98,7 +92,7 @@ using `--output-file=/path/to/output_file.txt`
     118210  118211  0.2048
     118211  118211  0.2048
     ```
-5. Score age-adjusted pairwise similarity of entities defined in the input file, 
+5. Score age-adjusted pairwise similarity of entities defined in the input file,
     using phenotype mean age and standard deviation defined in the `--ages_distribution_file`,
     select best-match weighted average as the scoring summarization method `--summarization-method BMWA`.
 
@@ -113,9 +107,9 @@ using `--output-file=/path/to/output_file.txt`
     118200  241520  0.0
     ...
     ```
-    
+
     The phenotype age file contains hpo-id, mean, sd as tab separated text as follows
-    
+
     |  |  | |
     |------------|------|-----|
     | HP:0001251 | 6.0  | 3.0 |
@@ -124,7 +118,7 @@ using `--output-file=/path/to/output_file.txt`
     | HP:0004322 | 10.0 | 3.0 |
     | HP:0001249 | 6.0  | 3.0 |
 
-  If no phenotype ages file is provided `--summarization-method=BMWA` can be selected to use default, open access literature-derived phenotype ages (~ 1,400 age weighted phenotypes).  
+  If no phenotype ages file is provided `--summarization-method=BMWA` can be selected to use default, open access literature-derived phenotype ages (~ 1,400 age weighted phenotypes).
    ```bash
     phenopy score tests/data/test.score-short.txt  --summarization-method BMWA --threads 4
    ```
@@ -138,7 +132,7 @@ To score a list of records with phenotypes:
 phenopy likelihood tests/data/test.score-long.txt
 ```
 
-If the `output_file` argument is not set, this command writes a file, `phenopy.likelihood_moldx.txt` to your current working directory. 
+If the `output_file` argument is not set, this command writes a file, `phenopy.likelihood_moldx.txt` to your current working directory.
 Look at the predicted probabilities for the first five records:
 
 ```bash
@@ -180,7 +174,7 @@ Output:
 
 ## Library Usage
 
-The `phenopy` library can be used as a `Python` module, allowing more control for advanced users.   
+The `phenopy` library can be used as a `Python` module, allowing more control for advanced users.
 
 ### score
 
@@ -253,7 +247,7 @@ import pandas as pd
 phenotype_groups = read_phenotype_groups()
 
 df = pd.read_csv(
-    "tests/data/test.score-long.txt", 
+    "tests/data/test.score-long.txt",
     sep="\t",
     header=None,
     names=["record_id", "info", "phenotypes"]
@@ -279,14 +273,14 @@ The library can be used to prune parent phenotypes from the `phenotype.hpoa` and
 ```python
 from phenopy.util import export_phenotype_hpoa_with_no_parents
 # saves a new file of phenotype disease annotations with parent HPO terms removed from phenotype lists.
-disease_to_phenotype_no_parents_file = os.path.join(phenopy_data_directory, 'phenotype.noparents.hpoa') 
+disease_to_phenotype_no_parents_file = os.path.join(phenopy_data_directory, 'phenotype.noparents.hpoa')
 export_phenotype_hpoa_with_no_parents(disease_to_phenotype_file, disease_to_phenotype_no_parents_file, hpo_network)
 ```
 
 
 ## Initial setup
 phenopy is designed to run with minimal setup from the user, to run phenopy with default parameters (recommended), skip ahead
-to the [Commands overview](#Commands-overview).  
+to the [Commands overview](#Commands-overview).
 
 This section provides details about where phenopy stores data resources and config files. The following occurs when
 you run phenopy for the first time.
@@ -301,7 +295,7 @@ While we recommend using the default settings for most users, the config file *c
 To run phenopy with a different version of `hp.obo`, set the path of `obo_file` in `$HOME/.phenopy/phenopy.ini`.
 
 ## Contributing
-We welcome contributions from the community. Please follow these steps to setup a local development environment.  
+We welcome contributions from the community. Please follow these steps to setup a local development environment.
 ```bash
 pipenv install --dev
 ```
@@ -311,7 +305,7 @@ To run tests locally:
 pipenv shell
 coverage run --source=. -m unittest discover --start-directory tests/
 coverage report -m
-```  
+```
 
 ## References
 The underlying algorithm which determines the semantic similarity for any two HPO terms is based on an implementation of HRSS, [published here](https://www.ncbi.nlm.nih.gov/pubmed/23741529).
@@ -323,8 +317,8 @@ Please use the following Bibtex to cite this software.
     title = {Phenopy},
     rights = {Attribution-NonCommercial-ShareAlike 4.0 International},
     url = {https://github.com/GeneDx/phenopy},
-    abstract = {Phenopy is a Python package to perform phenotype similarity scoring by semantic similarity. 
-        Phenopy is a lightweight but highly optimized command line tool and library to efficiently perform semantic 
+    abstract = {Phenopy is a Python package to perform phenotype similarity scoring by semantic similarity.
+        Phenopy is a lightweight but highly optimized command line tool and library to efficiently perform semantic
         similarity scoring on generic entities with phenotype annotations from the Human Phenotype Ontology (HPO).},
     version = {0.3.0},
     author = {Arvai, Kevin and Borroto, Carlos and Gainullin, Vladimir and Retterer, Kyle},
