@@ -291,12 +291,8 @@ class Scorer:
         elif self.scoring_method == "word2vec":
 
             # Instantiate a list to house all HPO terms that are within the vocab
-            in_vocab_terms_a = [
-                x for x in terms_a if x in self.word_vectors.key_to_index
-            ]
-            in_vocab_terms_b = [
-                x for x in terms_b if x in self.word_vectors.key_to_index
-            ]
+            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
+            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
 
             # If both lists exist (both are non-empty lists) return their similarity
             if in_vocab_terms_a and in_vocab_terms_b:
@@ -376,7 +372,7 @@ class Scorer:
                 weights_matrix[w].extend([1 for _ in range(max_b.shape[0])])
 
         for w in weights_b:
-            # for columns not in a, fill in with 1s for each a row
+            # for columns not in a fill in with 1s for each a row
             if w not in weights_matrix:
                 weights_matrix[w] = [1 for _ in range(max_a.shape[0])]
 
