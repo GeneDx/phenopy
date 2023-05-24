@@ -27,17 +27,16 @@ homepage = "https://github.com/GeneDx/phenopy"
 [tool.poetry.dependencies]
 python = "^3.7"
 fire = "^0.5.0"
-gensim = "^3.8.1"
-networkx = "2.6.3"
-numpy = "^1.21.1"
+gensim = "3.8.1"
+networkx = "^2.6.3"
+numpy = "^1.23.5"
 obonet = "^1.0.0"
-pandas = "^1.0.0"
-scipy = "^1.6.1"
+pandas = "^1.5.2"
 requests = "^2.30.0"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.21.0"
-pytest = "^7.3.1"
+pytest = "^7.2.0"
 pytest-cov = "^4.0.0"
 ruff = "^0.0.264"
 
