@@ -4,13 +4,13 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "phenopy"
-version = "0.5.3"
+version = "0.5.4"
 description = "Phenotype comparison scoring by semantic similarity."
 authors = [
-    "Kevin Arvai <karvai@genedx.com>",
-    "Kyle Retterer <retterer@genedx.com>",
+    "Kevin Arvai",
+    "Kyle Retterer",
     "Carlos Borroto <cborroto@genedx.com>",
-    "Vlad Gainullin <vgainullin@genedx.com>",
+    "Vlad Gainullin",
     "Vincent Ustach <vustach@genedx.com>",
     "Stephen McGee <smcgee@genedx.com>"
 ]
@@ -25,18 +25,19 @@ homepage = "https://github.com/GeneDx/phenopy"
 "Bug Tracker" = "https://github.com/GeneDx/phenopy/issues"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.9"
 fire = "^0.5.0"
-gensim = "3.8.1"
-networkx = "^2.6.3"
-numpy = "^1.23.5"
+gensim = "^4.2.0"
+networkx = "2.6.3"
+numpy = "^1.21.1"
 obonet = "^1.0.0"
-pandas = "^1.5.2"
+pandas = "^1.0.0"
+scipy = "^1.6.1"
 requests = "^2.30.0"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.21.0"
-pytest = "^7.2.0"
+pytest = "^7.3.1"
 pytest-cov = "^4.0.0"
 ruff = "^0.0.264"
 
