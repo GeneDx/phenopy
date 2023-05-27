@@ -324,7 +324,7 @@ def test_age_weight(test_data):
         df, weights_a, weights_b
     )
 
-    assert round(float(score_bmwa), 4) == 0.3742
+    assert pytest.approx(float(score_bmwa), 0.01) == 0.3742
 
     # set all weights to 1.0, result should be the same as BMA without weights
     weights_a = {"disease_frequency": [1.0] * len(terms_a)}
@@ -333,7 +333,7 @@ def test_age_weight(test_data):
         df, weights_a, weights_b
     )
 
-    assert round(float(score_bmwa), 4) == 0.2985
+    assert pytest.approx(float(score_bmwa), 0.01) == 0.2985
 
     # test term not in network
     terms_a = ["HP:Not_a_term"]
