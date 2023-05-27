@@ -4,7 +4,7 @@
 [![DOI](https://zenodo.org/badge/207335538.svg)](https://zenodo.org/badge/latestdoi/207335538)
 
 # phenopy
-`phenopy` was developed using Python 3.7 and functions to perform phenotype similarity scoring by semantic similarity. `phenopy` is a
+`phenopy` was developed using Python 3.9 and functions to perform phenotype similarity scoring by semantic similarity. `phenopy` is a
 lightweight but highly optimized command line tool and library to efficiently perform semantic similarity scoring on
 generic entities with phenotype annotations from the [Human Phenotype Ontology (HPO)](https://hpo.jax.org/app/).
 

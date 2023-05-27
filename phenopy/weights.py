@@ -17,7 +17,7 @@ def hpo_age_to_weight(hpo_network: nx.MultiGraph, term_id: str, age: int) -> flo
     if term_id not in hpo_network.nodes or age is None:
         return 1.0
     elif "age_dist" in hpo_network.nodes[term_id]:
-        return hpo_network.nodes[term_id]["age_dist"].cdf(float(age))
+        return get_empirical_cdf(float(age), hpo_network.nodes[term_id]["age_dist"])
     else:
         return 1.0
 

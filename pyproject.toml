@@ -33,7 +33,7 @@ numpy = "^1.21.1"
 obonet = "^1.0.0"
 pandas = "^1.0.0"
 scipy = "^1.6.1"
-requests = "^2.30.0"
+requests = "^2.31.0"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.21.0"

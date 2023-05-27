@@ -216,8 +216,12 @@ class Scorer:
         elif self.scoring_method == "word2vec":
 
             # Ensure that all HPO terms are in the vocab
-            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
-            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+            in_vocab_terms_a = [
+                x for x in terms_a if x in self.word_vectors.key_to_index
+            ]
+            in_vocab_terms_b = [
+                x for x in terms_b if x in self.word_vectors.key_to_index
+            ]
 
             # If both records have terms in the vocab (both are non-empty lists)
             if in_vocab_terms_a and in_vocab_terms_b:
@@ -291,8 +295,12 @@ class Scorer:
         elif self.scoring_method == "word2vec":
 
             # Instantiate a list to house all HPO terms that are within the vocab
-            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
-            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+            in_vocab_terms_a = [
+                x for x in terms_a if x in self.word_vectors.key_to_index
+            ]
+            in_vocab_terms_b = [
+                x for x in terms_b if x in self.word_vectors.key_to_index
+            ]
 
             # If both lists exist (both are non-empty lists) return their similarity
             if in_vocab_terms_a and in_vocab_terms_b:
