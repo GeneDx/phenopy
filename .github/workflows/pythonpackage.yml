@@ -4,7 +4,6 @@ on: [push]
 
 jobs:
   build:
-    timout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
