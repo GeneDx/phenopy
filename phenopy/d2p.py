@@ -18,28 +18,41 @@ def read_hpo_annotation_file(phenotype_annotations_file, hpo_network, logger=Non
     :return: records
     """
     try:
-        with open(phenotype_annotations_file, 'r') as tsv_fh:
+        with open(phenotype_annotations_file, "r") as tsv_fh:
             [next(tsv_fh) for _ in range(4)]
             reader = csv.DictReader(tsv_fh, delimiter='\t')
             # this removes the leading hash
-            reader.fieldnames[0] = 'DatabaseID'
+            reader.fieldnames[0] = reader.fieldnames[0].lstrip("#")
 
             records = []
 
             for row in reader:
                 # phenotype term id
-                term_id = row['HPO_ID']
+                term_id = row.get("HPO_ID") if "HPO_ID" in row else row.get("hpo_id")
                 if term_id not in hpo_network.nodes():
                     continue
                 # parse disease id, currently only supports omim entries
-                db, disease_accession = row['DatabaseID'].split(':')
-                if db not in ['OMIM']:
+                database_id = (
+                    row.get("DatabaseID")
+                    if "DatabaseID" in row
+                    else row.get("database_id")
+                )
+                db, disease_accession = database_id.split(":")
+                if db not in ["OMIM"]:
                     continue
                 # For now, skip negative phenotype annotations
-                if row['Qualifier'] == 'NOT':
+                qualifier = (
+                    row.get("Qualifier") if "Qualifier" in row else row.get("qualifier")
+                )
+                if qualifier == "NOT":
                     continue
 
-                records.append((term_id, disease_accession, frequency_converter(row['Frequency'])))
+                frequency = (
+                    row.get("Frequency") if "Frequency" in row else row.get("frequency")
+                )
+                records.append(
+                    (term_id, disease_accession, frequency_converter(frequency))
+                )
 
         return records
 

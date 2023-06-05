@@ -1,6 +1,5 @@
 import fire
 import itertools
-import lightgbm as lgb
 import sys
 
 from configparser import NoOptionError, NoSectionError
@@ -8,7 +7,6 @@ from configparser import NoOptionError, NoSectionError
 from phenopy.util import open_or_stdout
 from phenopy.build_hpo import generate_annotated_hpo_network
 from phenopy.config import config, logger
-from phenopy.likelihood import predict_likelihood_moldx
 from phenopy.score import Scorer
 from phenopy.util import parse_input, half_product
 from phenoseries.experiment import run_phenoseries_experiment
@@ -131,61 +129,10 @@ def validate_phenoseries(phenotypic_series_filepath, outdir=None, min_hpos=4, mi
         pairwise_mim_scores_file=pairwise_mim_scores_file,
         )
 
-def likelihood_moldx(input_file, output_file=None, k_phenotype_groups=1000):
-    """
-    :param input_file: The file path to a file containing three columns. [ID\tkey=value\thpodid,hpoid,hpoid]
-    :param output_file: The file path to an output file containing the predicted probabilities
-    :param k_phenotype_groups: The number of phenotype groups to use for encoding phenotypes. The CLI version of phenopy allows for one of [1000, 1500] 
-    """
-    try:
-        obo_file = config.get('hpo', 'obo_file')
-    except (NoSectionError, NoOptionError):
-        logger.critical(
-            'No HPO OBO file found in the configuration file. See "hpo:obo_file" parameter.')
-        sys.exit(1)
-    try:
-        disease_to_phenotype_file = config.get('hpo', 'disease_to_phenotype_file')
-    except (NoSectionError, NoOptionError):
-        logger.critical(
-            'No HPO annotated dataset file found in the configuration file.'
-            ' See "hpo:disease_to_phenotype_file" parameter.'
-        )
-        sys.exit(1)
-
-    logger.info(f'Loading HPO OBO file: {obo_file}')
-    hpo_network, alt2prim, _ = \
-        generate_annotated_hpo_network(obo_file,
-                                       disease_to_phenotype_file,
-                                       )
-
-    # parse input records
-    input_records = parse_input(input_file, hpo_network, alt2prim)
-    record_ids = [record["record_id"] for record in input_records]
-    phenotypes = [record["terms"] for record in input_records]
-
-    # predict likelihood of molecular diagnosis
-    positive_probabilities = predict_likelihood_moldx(
-        phenotypes,
-        phenotype_groups=None, 
-        hpo_network=hpo_network, 
-        alt2prim=alt2prim,
-        k_phenotype_groups=k_phenotype_groups,
-        )
-
-    if output_file is None:
-        output_file = "phenopy.likelihood_moldx.txt"
-    try:
-        with open(output_file, "w") as f:
-            for sample_id, probability in zip(record_ids, positive_probabilities):
-                f.write(f"{sample_id}\t{probability}\n")
-    except IOError:
-        sys.exit("Something went wrong writing the probabilities to file")
-
 
 def main():
     fire.Fire({
         'score': score,
-        'likelihood': likelihood_moldx,
         'validate-phenoseries': validate_phenoseries,
     })
 

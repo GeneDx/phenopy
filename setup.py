@@ -14,7 +14,7 @@ setup(
     description='Phenotype comparison scoring by semantic similarity.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    author='Kevin Arvai <karvai@genedx.com>, Kyle Retterer <retterer@genedx.com>, Carlos Borroto <cborroto@genedx.com>, Vlad Gainullin <vgainullin@genedx.com>, Vincent Ustach <vustach@genedx.com>',
+    author='Kevin Arvai <karvai@genedx.com>, Kyle Retterer <retterer@genedx.com>, Carlos Borroto <cborroto@genedx.com>, Vlad Gainullin <vgainullin@genedx.com>, Vincent Ustach <vustach@genedx.com>, Stephen McGee <smcgee@genedx.com',
     author_email='<datascience@genedx.com>',
     license='',
     entry_points={
@@ -25,14 +25,12 @@ setup(
     include_package_data=True,
     install_requires=[
         'fire',
-        'gensim<4.0 ',
+        'gensim<4.0',
         'networkx',
         'numpy',
         'obonet',
         'pandas',
-        'joblib',
         'scipy',
-        'lightgbm',
         'requests',
     ]
 )

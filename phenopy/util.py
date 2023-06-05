@@ -1,5 +1,4 @@
 import csv
-import os
 import sys
 import networkx as nx
 import pandas as pd
@@ -45,10 +44,16 @@ def export_phenotype_hpoa_with_no_parents(phenotype_hpoa_file, phenotype_hpoa_no
         exit(1)
 
     no_parents_df = df.copy()
-    for gene, annotations in df.groupby('#DatabaseID'):
-        termlist = [node for node in annotations['HPO_ID'].tolist() if node in hpo_network.nodes()]
+    # Establish the proper column headers (different for various versions)
+    database_id = "#DatabaseID" if "#DatabaseID" in df.columns else "database_id"
+    hpo_id = "HPO_ID" if "HPO_ID" in df.columns else "hpo_id"
+
+    for gene, annotations in df.groupby(database_id):
+        termlist = [
+            node for node in annotations[hpo_id].tolist() if node in hpo_network.nodes()
+        ]
         termlist = remove_parents(termlist, hpo_network)
-        parent_idx = annotations.loc[~annotations['HPO_ID'].isin(termlist)].index
+        parent_idx = annotations.loc[~annotations[hpo_id].isin(termlist)].index
         no_parents_df.drop(parent_idx, inplace=True)
 
     try:
