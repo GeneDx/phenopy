@@ -24,13 +24,13 @@ setup(
     },
     include_package_data=True,
     install_requires=[
-        'fire',
+        'fire==0.5.0',
         'gensim<4.0',
-        'networkx',
-        'numpy',
+        'networkx==2.6.3',
+        'numpy==1.21.6',
         'obonet',
-        'pandas',
-        'scipy',
-        'requests',
+        'pandas==1.3.5',
+        'scipy==1.7.3',
+        'requests==2.31.0',
     ]
 )
