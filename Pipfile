@@ -14,11 +14,9 @@ twine = "*"
 gensim = "<4.0"
 obonet = "*"
 fire = "*"
-lightgbm = "*"
 pandas = "*"
 numpy = "*"
 scipy = "*"
-joblib = "1.1.1"
 requests = "*"
 
 [requires]
