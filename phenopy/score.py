@@ -8,36 +8,65 @@ from functools import lru_cache
 from multiprocessing import Pool
 from phenopy.weights import calculate_age_weights
 from phenopy.config import config
+from typing import (
+    Tuple,
+    Dict,
+    List,
+    Set,
+)
 
 
 class Scorer:
-    def __init__(self, hpo_network, summarization_method='BMWA', min_score_mask=0.05,
-                 scoring_method='HRSS'):
+    def __init__(
+        self,
+        hpo_network: nx.MultiDiGraph,
+        summarization_method: str = "BMWA",
+        min_score_mask: float = 0.05,
+        scoring_method: str = "HRSS",
+    ) -> None:
+
+        # Establish hpo_network
         self.hpo_network = hpo_network
-        if summarization_method not in ['BMA', 'BMWA', 'maximum']:
-            raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
+
+        # Establish summarization method
+        if summarization_method not in ["BMA", "BMWA", "maximum"]:
+            raise ValueError(
+                "Unsupported summarization method, please choose from "
+                "BMA, BMWA, or maximum."
+            )
         self.summarization_method = summarization_method
+
+        # Assign min_score_mask
         self.min_score_mask = min_score_mask
-        if scoring_method not in ['HRSS', 'Resnik', 'Jaccard', 'word2vec']:
-            raise ValueError('Unsupported semantic similarity scoring method, please choose from HRSS, Resnik, Jaccard, or word2vec.')
+
+        # Assign scoring method
+        if scoring_method not in ["HRSS", "Resnik", "Jaccard", "word2vec"]:
+            raise ValueError(
+                "Unsupported semantic similarity scoring method, please "
+                "choose from HRSS, Resnik, Jaccard, or word2vec."
+            )
         self.scoring_method = scoring_method
-        if scoring_method == 'word2vec':
+
+        # Load the word vectors if using word2vec
+        if scoring_method == "word2vec":
             try:
-                self.word_vectors = gensim.models.KeyedVectors.load(config.get('models', 'phenopy.wv.model'))
+                self.word_vectors = gensim.models.KeyedVectors.load(
+                    config.get("models", "phenopy.wv.model")
+                )
             except FileNotFoundError:
-                raise ValueError("Please make sure that a word2vec model is in your project data directory.")
+                raise ValueError(
+                    "Please make sure that a word2vec model is in "
+                    "your project data directory."
+                )
 
-    def find_lca(self, term_a, term_b):
+    def find_lca(self, term_a: str, term_b: str) -> str:
         """
-        Determine the lowest common ancestor for a two terms
+        Determine the lowest common ancestor for two HPO terms
+        """
 
-        :param term_a: HPO term A.
-        :param term_b: HPO term B.
-        :return: Least Common Ancestor for two terms, "HP:0000001"
-        """
         # if either term is HP:0000001 return it
-        if any(term == 'HP:0000001' for term in [term_a, term_b]):
-            return 'HP:0000001'
+        if any(term == "HP:0000001" for term in [term_a, term_b]):
+            return "HP:0000001"
 
         # if one of the terms is a child of the other return the parent
         if self.hpo_network.has_edge(term_a, term_b):
@@ -48,82 +77,92 @@ class Scorer:
         # find common breadth-first-search predecessors
         parents = []
         for i, term in enumerate([term_a, term_b]):
-            parents.append(
-                {p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
+            parents.append({p[0] for p in nx.bfs_predecessors(self.hpo_network, term)})
             parents[i].add(term)
-        common_parents = parents[0].intersection(
-            parents[1])
-        # lca node
-        # find the ancestor with the highest IC
+
+        # Find the intersection between the two sets of parents
+        common_parents = parents[0].intersection(parents[1])
+
+        # lca node - find the ancestor with the highest IC
         # break ties by choosing the node with the greatest depth
-        return max(common_parents, key=lambda n: (self.hpo_network.nodes[n]['ic'], self.hpo_network.nodes[n]['depth']))
+        return max(
+            common_parents,
+            key=lambda n: (
+                self.hpo_network.nodes[n]["ic"],
+                self.hpo_network.nodes[n]["depth"],
+            ),
+        )
 
-    def calculate_beta(self, term_a, term_b):
-        """calculates the beta term in HRSS equation
-
-        :param term_a: Any HPO term.
-        :param term_b: Any HPO term.
-        :return: `float` beta
+    def calculate_beta(self, term_a: str, term_b: str) -> float:
+        """
+        calculates the beta term in HRSS equation
         """
         # find information content for the most informative leaf for each term
         mil_ic = []
+
+        # For each term, if it has children, find the most informative leaf
         for term in [term_a, term_b]:
             if self.hpo_network.in_edges(term):
+
                 # children terms generator
                 children = nx.ancestors(self.hpo_network, term)
+
+                # Establish the leaf nodes
+                leaves = {
+                    p
+                    for p in children
+                    if self.hpo_network.out_degree(p) >= 1
+                    and self.hpo_network.in_degree(p) == 0
+                }
+
                 # append the max IC leaf (choose the one with the max depth)
-                leaves = {p for p in children if self.hpo_network.out_degree(
-                    p) >= 1 and self.hpo_network.in_degree(p) == 0}
-                mil = max(leaves, key=lambda n: (self.hpo_network.nodes[n]['ic'], self.hpo_network.nodes[n]['depth']))
-                mil_ic.append(self.hpo_network.nodes[mil]['ic'])
+                mil = max(
+                    leaves,
+                    key=lambda n: (
+                        self.hpo_network.nodes[n]["ic"],
+                        self.hpo_network.nodes[n]["depth"],
+                    ),
+                )
+                mil_ic.append(self.hpo_network.nodes[mil]["ic"])
+
             # the node is a leaf
             else:
-                mil_ic.append(self.hpo_network.nodes[term]['ic'])
+                mil_ic.append(self.hpo_network.nodes[term]["ic"])
 
         # calculate beta_ic
-        beta_ic = ((mil_ic[0] - self.hpo_network.nodes[term_a]['ic'])
-                   + (mil_ic[1] - self.hpo_network.nodes[term_b]['ic'])) / 2.0
+        beta_ic = (
+            (mil_ic[0] - self.hpo_network.nodes[term_a]["ic"])
+            + (mil_ic[1] - self.hpo_network.nodes[term_b]["ic"])
+        ) / 2.0
+
         return beta_ic
 
-    def calculate_gamma(self, term_a, term_b, term_lca):
+    def calculate_gamma(self, term_a: str, term_b: str, term_lca: str) -> int:
         """
         Calculate gamma term for the HRSS algorithm.
-
-        :param term_a: HPO term A.
-        :param term_b: HPO term B.
-        :param term_lca: Lowest common ancestor term.
-        :return: `int` (term pair distance to lca)
         """
         # calculate gamma
         # "such that the value equals zero if the two terms are the same"
         if term_a == term_b:
             return 0
 
-        # if one of the terms is a child of the other
-        term_a_child = False
-        term_b_child = False
-
-        if self.hpo_network.has_edge(term_a, term_b):
-            term_b_child = True
-        if self.hpo_network.has_edge(term_b, term_a):
-            term_a_child = True
-
+        # If one of the terms is a child of the other return 1
+        term_a_child = self.hpo_network.has_edge(term_a, term_b)
+        term_b_child = self.hpo_network.has_edge(term_b, term_a)
         if term_a_child or term_b_child:
             return 1
 
+        # Otherwise calculate the shortest-path length to the LCA
         a_to_lca = nx.shortest_path_length(self.hpo_network, term_a, term_lca)
         b_to_lca = nx.shortest_path_length(self.hpo_network, term_b, term_lca)
 
         return a_to_lca + b_to_lca
 
     @lru_cache(maxsize=72000000)
-    def score_hpo_pair_hrss(self, term_a, term_b):
+    def score_hpo_pair_hrss(self, term_a: str, term_b: str) -> float:
         """
-        Scores the comparison of a pair of terms, using Hybrid Relative Specificity Similarity (HRSS) algorithm.
-
-        :param term_a: HPO term A
-        :param term_b: HPO term B
-        :return: `float` (term pair comparison score)
+        Scores the comparison of a pair of terms, using Hybrid Relative Specificity
+        Similarity (HRSS) algorithm.
         """
 
         # calculate beta_ic
@@ -133,129 +172,160 @@ class Scorer:
         lca_node = self.find_lca(term_a, term_b)
 
         # calculate alpha_ic
-        alpha_ic = self.hpo_network.nodes[lca_node]['ic']
-        if self.scoring_method == 'Resnik':
+        alpha_ic = self.hpo_network.nodes[lca_node]["ic"]
+        if self.scoring_method == "Resnik":
             return alpha_ic
 
+        # Return 0 if alpha_ic and beta_ic are both 0
         if (alpha_ic == 0.0) and (beta_ic == 0.0):
             return 0.0
 
+        # calculate gamma
         gamma = self.calculate_gamma(term_a, term_b, lca_node)
-        I = (alpha_ic / (alpha_ic + beta_ic))
-        D = (1.0 / (1.0 + gamma))
-        return I * D
 
-    def score(self, record_a, record_b):
+        # Assign the I and D variables in the HRSS equation
+        i_variable = alpha_ic / (alpha_ic + beta_ic)
+        d_variable = 1.0 / (1.0 + gamma)
+
+        return i_variable * d_variable
+
+    def score(self, record_a: Dict, record_b: Dict) -> Tuple[str, str, float]:
         """
         Scores the comparison of terms listed in record A to terms listed in record B.
-
-        :param record_a: record A.
-        :param record_b: record B.
-        :return: record_a record id, record_b record id, `float` (comparison score)
-        :rtype: tuple
         """
-        if self.summarization_method not in ['BMA', 'BMWA', 'maximum']:
-            raise ValueError('Unsupported summarization method, please choose from BMA, BMWA, or maximum.')
+        if self.summarization_method not in ["BMA", "BMWA", "maximum"]:
+            raise ValueError(
+                "Unsupported summarization method, please choose from "
+                "BMA, BMWA, or maximum."
+            )
 
         # if either set is empty return 0.0
-        terms_a = record_a['terms']
-        terms_b = record_b['terms']
+        terms_a = record_a["terms"]
+        terms_b = record_b["terms"]
         if not terms_a or not terms_b:
-            return record_a['record_id'], record_b['record_id'], 0.0
+            return record_a["record_id"], record_b["record_id"], 0.0
 
-        if self.scoring_method == 'Jaccard':
+        # If specified, calculate the Jaccard similarity
+        if self.scoring_method == "Jaccard":
             intersection = len(list(set(terms_a).intersection(terms_b)))
             union = (len(terms_a) + len(terms_b)) - intersection
-            return record_a['record_id'], record_b['record_id'], float(intersection) / union
+            comparison_score = float(intersection) / union
+            return record_a["record_id"], record_b["record_id"], comparison_score
 
-        elif self.scoring_method == 'word2vec':
-            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
-            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+        # If specified, calculate the word2vec similarity
+        elif self.scoring_method == "word2vec":
 
+            # Ensure that all HPO terms are in the vocab
+            in_vocab_terms_a = [
+                x for x in terms_a if x in self.word_vectors.key_to_index
+            ]
+            in_vocab_terms_b = [
+                x for x in terms_b if x in self.word_vectors.key_to_index
+            ]
+
+            # If both records have terms in the vocab (both are non-empty lists)
             if in_vocab_terms_a and in_vocab_terms_b:
-                return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
-            else:
-                return record_a['record_id'], record_b['record_id'], 0.0
+                return self.word_vectors.n_similarity(
+                    in_vocab_terms_a, in_vocab_terms_b
+                )
 
+            # One record or the other has no terms in the word2vec vocab
+            else:
+                return record_a["record_id"], record_b["record_id"], 0.0
 
         # calculate weights for record_a and record_b
-        weights_a = record_a['weights'].copy() if record_a['weights'] is not None else []
-        weights_b = record_b['weights'].copy() if record_b['weights'] is not None else []
+        if record_a["weights"] is not None:
+            weights_a = record_a["weights"].copy()
+        else:
+            weights_a = []
+        if record_b["weights"] is not None:
+            weights_b = record_b["weights"].copy()
+        else:
+            weights_b = []
 
         # set weights
         # if we have age of record_a use it to set age weights for record_b
-        if 'age' in record_a:
-            weights_b['age'] = calculate_age_weights(record_b['terms'], record_a['age'], self.hpo_network)
+        if "age" in record_a:
+            weights_b["age"] = calculate_age_weights(
+                record_b["terms"], record_a["age"], self.hpo_network
+            )
 
         # if we have age of record_b use it to set age weights for record_a
-        if 'age' in record_b:
-            weights_a['age'] = calculate_age_weights(record_a['terms'], record_b['age'], self.hpo_network)
+        if "age" in record_b:
+            weights_a["age"] = calculate_age_weights(
+                record_a["terms"], record_b["age"], self.hpo_network
+            )
 
-        term_pairs = itertools.product(terms_a, terms_b)
-        df = pd.DataFrame(
-            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair[0], pair[1]))
-             for pair in term_pairs],
-            columns=['a', 'b', 'score']
-        ).set_index(
-            ['a', 'b']
-        ).unstack()
+        # Creates a dataframe that houses the HRSS for each term pair
+        df = self.get_term_pair_dataframe(terms_a, terms_b)
 
-        if self.summarization_method == 'maximum':
-            return record_a['record_id'], record_b['record_id'], self.maximum(df)
-        elif self.summarization_method == 'BMWA' and any([weights_a, weights_b]):
-            return record_a['record_id'], record_b['record_id'], self.best_match_weighted_average(df, weights_a=weights_a, weights_b=weights_b)
+        # Return maximum if specified
+        if self.summarization_method == "maximum":
+            return record_a["record_id"], record_b["record_id"], self.maximum(df)
+
+        # Retrun BMWA if specified
+        elif self.summarization_method == "BMWA" and any([weights_a, weights_b]):
+            score_output = self.best_match_weighted_average(
+                df, weights_a=weights_a, weights_b=weights_b
+            )
+
+            return record_a["record_id"], record_b["record_id"], score_output
+
+        # Otherwise return the best-match-average
         else:
-            return record_a['record_id'], record_b['record_id'], self.best_match_average(df)
+            score_output = self.best_match_average(df)
+            return record_a["record_id"], record_b["record_id"], score_output
 
-    def score_term_sets_basic(self, terms_a, terms_b):
+    def score_term_sets_basic(self, terms_a: str, terms_b: str) -> float:
         """
         Calculate the semantic similarity of two lists of terms.
         This is intended to be used as a library function. It is not used by the CLI.
-        :param terms_a: List of HPO identifiers.
-        :param terms_b: List of HPO identifiers.
-        :return: Semantic similarity score
         """
+        # Instantiate the two lists of HPO identifiers
         terms_a = set(terms_a)
         terms_b = set(terms_b)
 
-        if self.scoring_method == 'Jaccard':
+        # Calculate the Jaccard similarity if specified
+        if self.scoring_method == "Jaccard":
             intersection = len(list(set(terms_a).intersection(terms_b)))
             union = (len(terms_a) + len(terms_b)) - intersection
             return float(intersection) / union
 
-        elif self.scoring_method == 'word2vec':
+        # Calculate the word vector similarity if word2vec is specified
+        elif self.scoring_method == "word2vec":
 
-            in_vocab_terms_a = [x for x in terms_a if x in self.word_vectors.vocab]
-            in_vocab_terms_b = [x for x in terms_b if x in self.word_vectors.vocab]
+            # Instantiate a list to house all HPO terms that are within the vocab
+            in_vocab_terms_a = [
+                x for x in terms_a if x in self.word_vectors.key_to_index
+            ]
+            in_vocab_terms_b = [
+                x for x in terms_b if x in self.word_vectors.key_to_index
+            ]
 
+            # If both lists exist (both are non-empty lists) return their similarity
             if in_vocab_terms_a and in_vocab_terms_b:
+                return self.word_vectors.n_similarity(
+                    in_vocab_terms_a, in_vocab_terms_b
+                )
 
-                return self.word_vectors.n_similarity(in_vocab_terms_a, in_vocab_terms_b)
+            # Otherwise return 0.0
             else:
                 return 0.0
 
-        term_pairs = itertools.product(terms_a, terms_b)
-        df = pd.DataFrame(
-            [(pair[0], pair[1], self.score_hpo_pair_hrss(pair[0], pair[1]))
-             for pair in term_pairs],
-            columns=['a', 'b', 'score']
-        ).set_index(
-            ['a', 'b']
-        ).unstack()
+        # Creates a dataframe that houses the HRSS for each term pair
+        df = self.get_term_pair_dataframe(terms_a, terms_b)
 
-        if self.summarization_method == 'maximum':
+        # If set to maximum, return the maximum, otherwise best-match-average
+        if self.summarization_method == "maximum":
             return self.maximum(df)
         else:
             return self.best_match_average(df)
 
-
-    def score_records(self, a_records, b_records, record_pairs, threads=1):
+    def score_records(
+        self, a_records: Dict, b_records: Dict, record_pairs: List, threads: int = 1
+    ) -> List:
         """
-            Score list pair of records.
-        :param a_records: Input records dictionary.
-        :param b_records: Score against records.
-        :param record_pairs: iterable of record pairs to score.
-        :param threads: Total number of threads for multiprocessing.
+        Scores a pair of records based on the specified number of threads
         """
         with Pool(processes=threads) as p:
             results = p.starmap(
@@ -264,26 +334,34 @@ class Scorer:
                     (
                         a_records[record_a],  # a records
                         b_records[record_b],  # b records
-                    ) for (record_a, record_b) in record_pairs
-                ]
+                    )
+                    for (record_a, record_b) in record_pairs
+                ],
             )
 
         return results
 
     @staticmethod
-    def best_match_average(df):
-        """Returns the Best-Match average of a termlist to termlist similarity matrix."""
-        max1 = df.max(axis=1).values
-        max0 = df.max(axis=0).values
-        return np.average(np.append(max1, max0))
+    def best_match_average(df: pd.DataFrame) -> float:
+        """
+        Returns the Best-Match average of a termlist to termlist similarity matrix.
+        """
+        # Determine the max values of the rows and columns
+        max_column_values = df.max(axis=1).values
+        max_row_values = df.max(axis=0).values
+        return np.average(np.append(max_column_values, max_row_values))
 
     @staticmethod
-    def maximum(df):
+    def maximum(dataframe: pd.DataFrame) -> float:
         """Returns the maximum similarity value between to term lists"""
-        return df.values.max()
+        return dataframe.values.max()
 
-    def best_match_weighted_average(self, df, weights_a, weights_b):
-        """Returns Best-Match Weighted Average of a termlist to termlist similarity matrix."""
+    def best_match_weighted_average(
+        self, df: pd.DataFrame, weights_a: Dict, weights_b: Dict
+    ) -> float:
+        """
+        Returns Best-Match Weighted Average of a termlist to termlist similarity matrix.
+        """
         max_a = df.max(axis=1).values
         max_b = df.max(axis=0).values
         scores = np.append(max_a, max_b)
@@ -302,7 +380,7 @@ class Scorer:
                 weights_matrix[w].extend([1 for _ in range(max_b.shape[0])])
 
         for w in weights_b:
-            # for columns not in a, fill in with 1s for each a row
+            # for columns not in a fill in with 1s for each a row
             if w not in weights_matrix:
                 weights_matrix[w] = [1 for _ in range(max_a.shape[0])]
 
@@ -324,3 +402,26 @@ class Scorer:
             weights = np.ones(len(weights))
 
         return np.average(scores, weights=weights)
+
+    def get_term_pair_dataframe(self, terms_a: Set, terms_b: Set) -> pd.DataFrame:
+        """
+        Creates a dataframes of pairwise HRSS scores between them
+        """
+        # Create the list of term pairs
+        # e.g., ['a', 'b']['c', 'd'] -> [('a', 'c'), ('a', 'd'), ('b', 'c), ('b','d')]
+        term_pairs = itertools.product(terms_a, terms_b)
+
+        # Apply the HRSS score to each pair within the dataframe
+        dataframe = (
+            pd.DataFrame(
+                [
+                    (pair[0], pair[1], self.score_hpo_pair_hrss(pair[0], pair[1]))
+                    for pair in term_pairs
+                ],
+                columns=["a", "b", "score"],
+            )
+            .set_index(["a", "b"])
+            .unstack()
+        )
+
+        return dataframe

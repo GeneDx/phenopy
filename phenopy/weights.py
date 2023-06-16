@@ -1,34 +1,32 @@
+import logging
+
+import networkx as nx
 import pandas as pd
 import sys
 
 from functools import lru_cache
-from scipy.stats import truncnorm
+from typing import List
+import numpy as np
 
 
 @lru_cache(maxsize=1300000)
-def hpo_age_to_weight(hpo_network, term_id, age):
+def hpo_age_to_weight(hpo_network: nx.MultiGraph, term_id: str, age: int) -> float:
     """
     calculate weight based on truncated normal distribution CDF
-    :param hpo_network: The hpo_network networkx object
-    :param term_id: the hpo term id
-    :param age:
-    :return:
     """
     if term_id not in hpo_network.nodes or age is None:
         return 1.0
-    elif 'age_dist' in hpo_network.nodes[term_id]:
-        return hpo_network.nodes[term_id]['age_dist'].cdf(float(age))
+    elif "age_dist" in hpo_network.nodes[term_id]:
+        return get_empirical_cdf(float(age), hpo_network.nodes[term_id]["age_dist"])
     else:
         return 1.0
 
 
-def calculate_age_weights(terms, age, hpo_network):
+def calculate_age_weights(
+    terms: List, age: int, hpo_network: nx.MultiGraph
+) -> List[float]:
     """
     Calculates an age-based weight vector given an iterable of terms.
-    :param terms: iterable of hpo terms
-    :param age: numeric age of patient
-    :param hpo_network: HPO network
-    :return: list of weights in same order as terms
     """
     weights = []
     for term_id in terms:
@@ -37,29 +35,48 @@ def calculate_age_weights(terms, age, hpo_network):
     return weights
 
 
-def get_truncated_normal(mean=0.0, sd=1.0, low=0.0, upp=10.0):
+def get_truncated_normal(
+    mean: float, sd: float, lower: float, upper: float, instances: int = 1000000
+) -> np.ndarray:
     """
-    Model truncated normal given summary stats
-    :param mean: mean
-    :param sd: standard deviation
-    :param low: lower boundary
-    :param upp: upper boundary
-    :return: distribution
+    Simulates a truncated normal distribution
     """
-    return truncnorm(
-        (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+    # Create the normal distribution
+    distribution = np.random.normal(mean, sd, instances)
+
+    # Truncate all values outside of the range
+    distribution = np.array([i for i in distribution if lower <= i <= upper])
+
+    return distribution
 
 
-def make_age_distributions(phenotype_age_file, logger=None):
+def get_empirical_cdf(value: float, distribution: np.ndarray) -> float:
+    """
+    Calculates the empirical cumulative distribution function for a given value within
+    a given distribution.
+    """
+    # Sort the distribution
+    data_sorted = np.sort(distribution)
+
+    # Determine the CDF for the values within the distribution
+    cdf = np.linspace(0, 1, len(distribution))
+
+    # Establish as a dataframe
+    df = pd.DataFrame(list(zip(data_sorted, cdf)), columns=["value", "cdf"])
+
+    # Return the maximum CDF value for the given value
+    return df[df["value"] <= value]["cdf"].max()
+
+
+def make_age_distributions(
+    phenotype_age_file: str, logger: logging.Logger = None
+) -> pd.DataFrame:
     """
     Read in phenotype ages file and convert to pandas object with modeled distributions
-    :param phenotype_age_file: path to tab file containing hpid, mean phenotype age, standard deviation
-    :param logger: to log
-    :return: pandas df
     """
 
     try:
-        df = pd.read_csv(phenotype_age_file, sep='\t', names=['hpid', 'mean', 'std'])
+        df = pd.read_csv(phenotype_age_file, sep="\t", names=["hpid", "mean", "std"])
 
     except (FileNotFoundError, PermissionError) as e:
 
@@ -70,12 +87,14 @@ def make_age_distributions(phenotype_age_file, logger=None):
         exit(1)
 
     distributions = []
-    for rec in df.to_dict('records'):
+    for rec in df.to_dict("records"):
 
         try:
             # model truncated normal
-            dist = get_truncated_normal(mean=rec['mean'], sd=rec['std'], low=0, upp=rec['mean'])
-            distributions.append({'hpid': rec['hpid'], 'age_dist': dist})
+            dist = get_truncated_normal(
+                mean=rec["mean"], sd=rec["std"], lower=0, upper=rec["mean"]
+            )
+            distributions.append({"hpid": rec["hpid"], "age_dist": dist})
 
         except ValueError as e:
             if logger is not None:
@@ -84,5 +103,4 @@ def make_age_distributions(phenotype_age_file, logger=None):
                 sys.stderr.write(str(e))
             exit(1)
 
-    return pd.DataFrame.from_dict(distributions).set_index('hpid')
-
+    return pd.DataFrame.from_dict(distributions).set_index("hpid")
