@@ -2,9 +2,15 @@ from phenopy.util import generate_alternate_ids
 from phenopy.d2p import load as load_d2p
 from phenopy.network import load as load_network
 from phenopy.network import annotate
+from typing import Tuple
 
 
-def generate_annotated_hpo_network(obo_file, disease_to_phenotype_file, annotations_file=None, ages_distribution_file=None):
+def generate_annotated_hpo_network(
+        obo_file: str, disease_to_phenotype_file: str,
+        annotations_file=None, ages_distribution_file=None) -> Tuple:
+    """
+    Generate an annotated HPO network, alternate ids to primary ids and disease records
+    """
     hpo_network = load_network(obo_file)
 
     alt2prim = generate_alternate_ids(hpo_network)

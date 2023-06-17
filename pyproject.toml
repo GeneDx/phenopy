@@ -1,0 +1,46 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "phenopy"
+version = "0.6.0"
+description = "Phenotype comparison scoring by semantic similarity."
+authors = [
+    "Kevin Arvai",
+    "Kyle Retterer",
+    "Carlos Borroto <cborroto@genedx.com>",
+    "Vlad Gainullin",
+    "Vincent Ustach <vustach@genedx.com>",
+    "Stephen McGee <smcgee@genedx.com>"
+]
+readme = "README.md"
+license = ""
+
+[tool.poetry.scripts]
+phenopy = "phenopy.__main__:main"
+
+[tool.poetry.urls]
+homepage = "https://github.com/GeneDx/phenopy"
+"Bug Tracker" = "https://github.com/GeneDx/phenopy/issues"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fire = "^0.5.0"
+gensim = "^4.3.0"
+networkx = "2.6.3"
+numpy = "^1.21.1"
+obonet = "^1.0.0"
+pandas = "^1.0.0"
+scipy = "^1.6.1"
+requests = "^2.31.0"
+pytest = "^7.3.1"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.21.0"
+pytest = "^7.3.1"
+pytest-cov = "^4.0.0"
+ruff = "^0.0.264"
+
+[tool.ruff]
+line-length = 88
