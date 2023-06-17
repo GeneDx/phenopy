@@ -123,32 +123,6 @@ using `--output-file=/path/to/output_file.txt`
     phenopy score tests/data/test.score-short.txt  --summarization-method BMWA --threads 4
    ```
 
-### likelihood
-Phenopy can be used to predict the likelihood of a molecular diagnosis given an input set of HPO phenotypes. This functionality takes the same input records file as the `score` functionality. The likelhood command outputs a probability of finding a moleular diagnosis using a model trained on 46,674 probands primarily with the majority of them having a neurodevelopmental delay phenotype.
-
-To score a list of records with phenotypes:
-
-```bash
-phenopy likelihood tests/data/test.score-long.txt
-```
-
-If the `output_file` argument is not set, this command writes a file, `phenopy.likelihood_moldx.txt` to your current working directory.
-Look at the predicted probabilities for the first five records:
-
-```bash
-$ head -5 phenopy.likelihood_moldx.txt
-```
-
-The columns are `record_id` and `probability_of_molecular_diagnosis`:
-
-```bash
-118200	0.34306641357469214
-118210	0.47593450032769
-118220	0.385742949333819
-118230	0.5833031588175435
-118300	0.5220058151734898
-```
-
 #### Parameters
 For a full list of command arguments use `phenopy [subcommand] --help`:
 ```bash
@@ -219,53 +193,6 @@ Output:
 0.11213185474495047
 ```
 
-### likelihood
-
-**Generate the hpo network and supporting objects**:
-
-```python
-import os
-from phenopy.build_hpo import generate_annotated_hpo_network
-from phenopy.util import read_phenotype_groups
-
-# data directory
-phenopy_data_directory = os.path.join(os.getenv('HOME'), '.phenopy/data')
-
-# files used in building the annotated HPO network
-obo_file = os.path.join(phenopy_data_directory, 'hp.obo')
-disease_to_phenotype_file = os.path.join(phenopy_data_directory, 'phenotype.hpoa')
-
-hpo_network, alt2prim, disease_records = \
-    generate_annotated_hpo_network(obo_file, disease_to_phenotype_file)
-```
-
-**Read the phenotype_groups file and the records file into a pandas DataFrame:**
-
-```python
-import pandas as pd
-
-phenotype_groups = read_phenotype_groups()
-
-df = pd.read_csv(
-    "tests/data/test.score-long.txt",
-    sep="\t",
-    header=None,
-    names=["record_id", "info", "phenotypes"]
-)
-
-df["phenotypes"] = df["phenotypes"].apply(lambda row: row.split("|"))
-```
-
-**Predict probabilities from the phenotypes in the DataFrame:**
-
-```python
-from phenopy.likelihood import predict_likelihood_moldx
-
-probabilities = predict_likelihood_moldx(df["phenotypes"])
-print(probabilities[:5])
-[0.34306641 0.4759345  0.38574295 0.58330316 0.52200582]
-```
-
 ### miscellaneous
 
 The library can be used to prune parent phenotypes from the `phenotype.hpoa` and store pruned annotations as a file
@@ -320,7 +247,7 @@ Please use the following Bibtex to cite this software.
     abstract = {Phenopy is a Python package to perform phenotype similarity scoring by semantic similarity.
         Phenopy is a lightweight but highly optimized command line tool and library to efficiently perform semantic
         similarity scoring on generic entities with phenotype annotations from the Human Phenotype Ontology (HPO).},
-    version = {0.3.0},
+    version = {0.6.0},
     author = {Arvai, Kevin and Borroto, Carlos and Gainullin, Vladimir and Retterer, Kyle},
     date = {2019-11-05},
     year = {2019},
