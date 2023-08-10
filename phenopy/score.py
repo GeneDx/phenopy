@@ -116,7 +116,6 @@ class Scorer:
 
         return a_to_lca + b_to_lca
 
-    @lru_cache(maxsize=72000000)
     def score_hpo_pair_hrss(self, term_a, term_b):
         """
         Scores the comparison of a pair of terms, using Hybrid Relative Specificity Similarity (HRSS) algorithm.
