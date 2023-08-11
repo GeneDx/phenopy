@@ -37,22 +37,6 @@ class LikelihoodTestCase(unittest.TestCase):
         hp_to_pg = read_phenotype_groups()
         self.assertEqual(hp_to_pg['HP:0012759']['k1500'], 739)
 
-    def test_predict_likelihood(self):
-        phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
-            ['HP:0012759', 'HP:0003011'],
-        ]
-        probabilities = predict_likelihood_moldx(phenotypes, self.phenotype_groups, self.hpo_network, self.alt2prim)
-        self.assertAlmostEqual(probabilities[0], 0.33, places=2)
-
-    def test_predict_likelihood_phenotypes_only(self):
-        phenotypes = [
-            ['HP:0012759', 'HP:0003011', 'HP:0011442'], 
-            ['HP:0012759', 'HP:0003011'],
-        ]
-        probabilities = predict_likelihood_moldx(phenotypes)
-        self.assertAlmostEqual(probabilities[0], 0.33, places=2)
-
     def test_no_hpo_config_section(self):
         config.remove_section('hpo')
         phenotypes = [

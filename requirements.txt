@@ -1,0 +1,14 @@
+flake8
+pytest
+pytest-cov
+pylint
+twine
+gensim<=4.0
+obonet
+fire
+lightgbm
+pandas
+numpy
+scipy
+joblib==0.17
+requests
