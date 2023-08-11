@@ -3,7 +3,7 @@ pytest
 pytest-cov
 pylint
 twine
-gensim<=4.0
+gensim<4.0
 obonet
 fire
 lightgbm
