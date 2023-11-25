@@ -9,24 +9,24 @@ RUN apt-get clean all && \
   apt-get update && \
   apt-get upgrade -y && \
   apt-get install -y  \
-      build-essential
+      build-essential \
+      curl
 
 # apt clean and remove cached source lists
 RUN apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-# install pipenv
-RUN pip install pipenv --upgrade
+# install poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
 
 # copy app code
 COPY . /app
 WORKDIR /app
 
 # install python requirements
-RUN pipenv install --dev --deploy --system
-
-# install phenopy
-RUN pip install .
+RUN poetry config virtualenvs.create false
+RUN poetry install
 
 # default command
 CMD ["phenopy"]
